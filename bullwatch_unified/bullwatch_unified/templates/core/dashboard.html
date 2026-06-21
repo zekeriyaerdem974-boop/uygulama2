@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <section class="card">
+    <h1>Dashboard</h1>
+    <p>Starter dashboard page. Add widgets here (price, OI, funding, alerts).</p>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>Orderflow</h2>
+      <p>Spot/perp trades, delta, CVD, footprint.</p>
+      <a class="btn" href="{{ url_for('orderflow.index') }}">Open</a>
+    </div>
+    <div class="card">
+      <h2>Liquidation</h2>
+      <p>Liquidation feed, clusters, heatmap placeholders.</p>
+      <a class="btn" href="{{ url_for('liquidation.index') }}">Open</a>
+    </div>
+    <div class="card">
+      <h2>Alpha</h2>
+      <p>Signals, scanners, backtest hooks placeholder.</p>
+      <a class="btn" href="{{ url_for('alpha.index') }}">Open</a>
+    </div>
+  </section>
+{% endblock %}

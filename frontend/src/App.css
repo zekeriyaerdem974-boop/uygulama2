@@ -1,0 +1,33 @@
+.app-root, html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #0B0E11;
+  color: #EAECEF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Basic layout helpers */
+.flex { display: flex; }
+.column { flex-direction: column; }
+
+/* Scrollbar for dark theme */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0B0E11; }
+::-webkit-scrollbar-thumb { background: #1E2329; border-radius: 8px; border: 2px solid #0B0E11; }
+
+/* Header */
+header { background: #181A20; border-bottom: 1px solid #2B3139; }
+
+/* Small utilities */
+.muted { color: #848E9C; }
+.accent { color: #00C087; }
+.gold { color: #FCD535; }
+
+/* Ensure main content areas fill available space */
+main { display: flex; flex-direction: column; height: 100%; }
+

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(../.venv/bin/python -c ' *)",
+      "Bash(find /home/zkr-kripto2 -maxdepth 5 -name \".git\" -type d 2>/dev/null | head -20)",
+      "Read(//home/zkr-kripto2/**)"
+    ]
+  }
+}
