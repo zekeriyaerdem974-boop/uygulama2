@@ -61,7 +61,7 @@ class Config:
     DEBUG = _env_bool("ZKR_ANALIZ_DEBUG")
 
     # --- Server ---
-    HOST = os.getenv("ZKR_ANALIZ_HOST", "127.0.0.1")
+    HOST = os.getenv("ZKR_ANALIZ_HOST", "0.0.0.0")  # 0.0.0.0 for remote access (development)
     PORT = _env_int("ZKR_ANALIZ_PORT", 48200)
 
     # --- Redis (optional cache backend) ---
