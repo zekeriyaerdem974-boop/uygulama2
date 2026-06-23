@@ -1,0 +1,302 @@
+/* ══════════════════════════════════════════════════════════════
+   ZKR Analiz AI Copilot — Styles (FAZ 21)
+   Premium dark theme matching discover design language.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Loading skeleton ─────────────────────────────────────── */
+.copilot-loading {
+  padding: 16px;
+}
+.copilot-skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%);
+  background-size: 200% 100%;
+  animation: copilot-shimmer 1.5s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+.copilot-skeleton-line.w-full { width: 100%; }
+.copilot-skeleton-line.w-3\/4 { width: 75%; }
+.copilot-skeleton-line.w-5\/6 { width: 83%; }
+.copilot-skeleton-line.w-2\/3 { width: 66%; }
+
+@keyframes copilot-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.copilot-loading-text {
+  text-align: center;
+  color: rgba(255,255,255,0.3);
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+/* ── Answer container ─────────────────────────────────────── */
+.copilot-answer {
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.85);
+}
+
+.copilot-summary {
+  padding: 12px 14px;
+  background: rgba(41,121,255,0.06);
+  border: 1px solid rgba(41,121,255,0.12);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.9);
+}
+
+.copilot-detail {
+  padding: 8px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+}
+
+/* ── Sections ─────────────────────────────────────────────── */
+.copilot-section {
+  margin-top: 12px;
+}
+.copilot-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.copilot-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.copilot-list li {
+  position: relative;
+  padding: 6px 0 6px 18px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.75);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.copilot-list li:last-child { border-bottom: none; }
+.copilot-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.copilot-key-list li::before {
+  background: #2979FF;
+}
+.copilot-risk-list li::before {
+  background: #FF1744;
+}
+
+/* ── Suggested Alerts ─────────────────────────────────────── */
+.copilot-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.copilot-alert-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.copilot-alert-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.copilot-alert-symbol {
+  font-weight: 600;
+  font-size: 12px;
+  color: #2979FF;
+}
+.copilot-alert-cond {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  font-family: monospace;
+}
+.copilot-alert-reason {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 8px;
+}
+.copilot-alert-btn {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid rgba(41,121,255,0.3);
+  border-radius: 8px;
+  background: rgba(41,121,255,0.08);
+  color: #2979FF;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copilot-alert-btn:hover {
+  background: rgba(41,121,255,0.15);
+  border-color: rgba(41,121,255,0.5);
+}
+.copilot-alert-btn-done {
+  background: rgba(0,200,83,0.1) !important;
+  border-color: rgba(0,200,83,0.3) !important;
+  color: #00C853 !important;
+  cursor: default;
+}
+
+/* ── Disclaimer ───────────────────────────────────────────── */
+.copilot-disclaimer {
+  margin-top: 14px;
+  padding: 8px 12px;
+  background: rgba(255,215,0,0.04);
+  border: 1px solid rgba(255,215,0,0.08);
+  border-radius: 8px;
+  font-size: 10px;
+  color: rgba(255,215,0,0.6);
+  text-align: center;
+}
+
+/* ── Error ────────────────────────────────────────────────── */
+.copilot-error {
+  text-align: center;
+  padding: 20px 16px;
+  color: #FF1744;
+  font-size: 13px;
+}
+.copilot-error-hint {
+  color: rgba(255,255,255,0.3);
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+/* ── Quick prompt buttons ─────────────────────────────────── */
+.copilot-quick-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.copilot-quick-btn,
+.discover-ai-quick,
+.screener-ai-btn {
+  padding: 5px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.copilot-quick-btn:hover,
+.discover-ai-quick:hover,
+.screener-ai-btn:hover {
+  background: rgba(41,121,255,0.08);
+  border-color: rgba(41,121,255,0.2);
+  color: #2979FF;
+}
+
+/* ── Copilot input row (trade panel) ──────────────────────── */
+.copilot-input-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.copilot-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+  color: white;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.copilot-input::placeholder {
+  color: rgba(255,255,255,0.25);
+}
+.copilot-input:focus {
+  border-color: rgba(41,121,255,0.4);
+}
+.copilot-send-btn {
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #2979FF;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.copilot-send-btn:hover {
+  background: #1565C0;
+}
+
+/* ── Discover AI card ─────────────────────────────────────── */
+.discover-ai-card {
+  background: linear-gradient(135deg, rgba(41,121,255,0.08), rgba(41,121,255,0.02));
+  border: 1px solid rgba(41,121,255,0.12);
+  border-radius: 16px;
+  padding: 16px;
+}
+.discover-ai-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.discover-ai-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(41,121,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2979FF;
+}
+.discover-ai-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+.discover-ai-subtitle {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+}
+
+/* ── Screener AI section ──────────────────────────────────── */
+.screener-ai-section {
+  background: rgba(41,121,255,0.04);
+  border: 1px solid rgba(41,121,255,0.08);
+  border-radius: 12px;
+  padding: 12px;
+  margin-top: 12px;
+}
+.screener-ai-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}

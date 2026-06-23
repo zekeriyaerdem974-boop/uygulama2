@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}BullWatch TV{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --tv-bg:#0b1220;
+    --tv-panel:#0f1a2d;
+    --tv-panel2:#101f36;
+    --tv-border:#1b2a44;
+    --tv-text:#e7eefc;
+    --tv-muted:#9bb0d1;
+    --tv-accent:#7c5cff;
+  }
+
+  body.tv-page main{max-width:none; padding:0;}
+  body.tv-mobile header, body.tv-mobile footer{display:none;}
+  body.tv-mobile main{padding:0;}
+
+  .tv-shell{background:var(--tv-bg); color:var(--tv-text); border:1px solid var(--tv-border); border-radius:14px; overflow:hidden; min-height:100vh; display:flex; flex-direction:column;}
+  .tv-top{display:flex; align-items:center; gap:10px; padding:10px 12px; background:linear-gradient(180deg, var(--tv-panel), var(--tv-panel2)); border-bottom:1px solid var(--tv-border);}
+  .tv-brand{display:flex; align-items:center; gap:10px; font-weight:700; letter-spacing:.3px; white-space:nowrap;}
+  .tv-dot{width:10px;height:10px;border-radius:999px;background:var(--tv-accent);box-shadow:0 0 0 4px rgba(124,92,255,.18)}
+  .tv-tabs{display:flex; gap:8px; flex-wrap:wrap;}
+  .tv-tab{padding:7px 10px; border:1px solid var(--tv-border); border-radius:999px; background:rgba(255,255,255,.03); color:var(--tv-muted); font-size:13px; cursor:pointer; user-select:none;}
+  .tv-tab.active{color:var(--tv-text); border-color:rgba(124,92,255,.55); background:rgba(124,92,255,.14)}
+  .tv-actions{margin-left:auto; display:flex; gap:8px; align-items:center;}
+  .tv-btn{padding:7px 10px; border:1px solid var(--tv-border); border-radius:10px; background:rgba(255,255,255,.03); color:var(--tv-text); font-size:13px; cursor:pointer;}
+  .tv-btn:hover{border-color:rgba(124,92,255,.55)}
+
+  /* Chart Controls Bar — FAZ 53 */
+  .cc-bar{display:flex; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--tv-border); background:rgba(255,255,255,.02); flex-wrap:wrap;}
+  .cc-group{display:flex; align-items:center; gap:4px; position:relative;}
+  .cc-select{padding:6px 10px; background:rgba(255,255,255,.04); border:1px solid var(--tv-border); border-radius:8px; color:var(--tv-text); font-size:12px; outline:none; cursor:pointer; min-width:100px;}
+  .cc-select option, .cc-select optgroup{background:var(--tv-panel); color:var(--tv-text);}
+  .cc-tf-group{gap:2px;}
+  .cc-tf-btn{padding:5px 8px; border:1px solid var(--tv-border); border-radius:6px; background:rgba(255,255,255,.02); color:var(--tv-muted); font-size:11px; cursor:pointer;}
+  .cc-tf-btn.active{color:var(--tv-text); border-color:rgba(124,92,255,.55); background:rgba(124,92,255,.14);}
+  .cc-btn{padding:6px 10px; border:1px solid var(--tv-border); border-radius:8px; background:rgba(255,255,255,.03); color:var(--tv-text); font-size:12px; cursor:pointer;}
+  .cc-btn:hover{border-color:rgba(124,92,255,.55);}
+  .cc-fs-btn{margin-left:auto; font-size:16px; padding:4px 10px;}
+  .cc-dropdown{position:absolute; top:100%; left:0; margin-top:4px; background:var(--tv-panel); border:1px solid var(--tv-border); border-radius:10px; padding:6px; min-width:160px; z-index:100; box-shadow:0 8px 24px rgba(0,0,0,.4);}
+  .cc-dropdown-item{display:flex; align-items:center; gap:8px; padding:6px 8px; font-size:12px; color:var(--tv-text); cursor:pointer; border-radius:6px;}
+  .cc-dropdown-item:hover{background:rgba(255,255,255,.05);}
+  .cc-compact .cc-ind-group{display:none;}
+
+  .tv-grid{flex:1; display:grid; grid-template-columns: 280px 1fr; min-height:0;}
+  .tv-left{border-right:1px solid var(--tv-border); background:rgba(255,255,255,.02); overflow:auto;}
+  .tv-left-head{padding:10px 12px; border-bottom:1px solid var(--tv-border); display:flex; gap:8px; align-items:center;}
+  .tv-search{width:100%; padding:9px 10px; background:rgba(255,255,255,.03); border:1px solid var(--tv-border); border-radius:10px; color:var(--tv-text); outline:none;}
+  .tv-list{padding:8px; display:flex; flex-direction:column; gap:6px;}
+  .tv-item{padding:10px 10px; border:1px solid var(--tv-border); border-radius:12px; background:rgba(255,255,255,.02); cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px;}
+  .tv-item:hover{border-color:rgba(124,92,255,.55)}
+  .tv-item.active{border-color:rgba(124,92,255,.75); box-shadow:0 0 0 3px rgba(124,92,255,.12) inset}
+  .tv-item small{color:var(--tv-muted)}
+
+  .tv-main{display:flex; flex-direction:column; min-width:0;}
+  .tv-main-head{padding:10px 12px; border-bottom:1px solid var(--tv-border); display:flex; align-items:center; gap:10px;}
+  .tv-title{font-weight:700;}
+  .tv-sub{color:var(--tv-muted); font-size:13px;}
+  .tv-frame{flex:1; background:#000; min-height:0;}
+  .tv-iframe{border:0; width:100%; height:100%; background:#000;}
+
+  .tv-bottom{display:none; border-top:1px solid var(--tv-border); background:linear-gradient(180deg, rgba(16,31,54,.92), rgba(15,26,45,.92)); padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); gap:6px;}
+  .tv-navbtn{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:8px 6px; border:1px solid transparent; border-radius:12px; color:var(--tv-muted); cursor:pointer; user-select:none; font-size:11px;}
+  .tv-navbtn svg{width:18px; height:18px; opacity:.95;}
+  .tv-navbtn.active{color:var(--tv-text); border-color:rgba(124,92,255,.55); background:rgba(124,92,255,.12)}
+
+  body.tv-mobile .tv-shell{border-radius:0; border-left:0; border-right:0;}
+  body.tv-mobile .tv-tabs{display:none;}
+  body.tv-mobile .tv-grid{grid-template-columns: 1fr;}
+  body.tv-mobile .tv-left{display:none;}
+  body.tv-mobile .tv-top{position:sticky; top:0; z-index:50;}
+  body.tv-mobile .tv-bottom{display:flex; position:sticky; bottom:0; z-index:60;}
+
+  @media (max-width: 980px){
+    .tv-grid{grid-template-columns: 1fr;}
+    .tv-left{display:none;}
+  }
+</style>
+
+<div class="tv-shell">
+  <div class="tv-top">
+    <div class="tv-brand"><span class="tv-dot"></span> BullWatch</div>
+    <div class="tv-tabs" id="tabs"></div>
+    <div class="tv-actions">
+      <button class="tv-btn" id="openNew">Yeni sekme</button>
+      <button class="tv-btn" id="mobileToggle">Telefon</button>
+    </div>
+  </div>
+
+  <div class="tv-grid">
+    <div class="tv-left">
+      <div class="tv-left-head">
+        <input class="tv-search" id="search" placeholder="Panel ara (orderflow, alpha, chat...)" />
+      </div>
+      <div class="tv-list" id="list"></div>
+    </div>
+
+    <div class="tv-main">
+      <div class="tv-main-head">
+        <div>
+          <div class="tv-title" id="title">-</div>
+          <div class="tv-sub" id="subtitle">-</div>
+        </div>
+      </div>
+      <div id="chartControlsBar"></div>
+      <div class="tv-frame">
+        <iframe class="tv-iframe" id="frame" title="BullWatch View"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="tv-bottom" id="bottom"></div>
+</div>
+
+<script>
+  document.body.classList.add('tv-page');
+
+  const VIEWS = [
+    { key: 'bullwatch', title: 'Ana Panel', sub: 'BullWatch dashboard', url: '/' },
+    { key: 'orderflow', title: 'Orderflow', sub: 'Canlı orderflow + AI', url: '/orderflow/' },
+    { key: 'likidasyon', title: 'Likidasyon', sub: 'Fiyat birikimi + liquidation', url: '/likidasyon/' },
+    { key: 'alpha', title: 'Binance Alpha', sub: 'Alpha ekranı', url: '/alpha/' },
+    { key: 'chat', title: 'Sohbet', sub: 'Yerel AI asistan', url: '/chat' },
+  ];
+
+  const ICONS = {
+    bullwatch: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12c2-6 6-8 8-8s6 2 8 8"/><path d="M6 12c0 6 4 9 6 10"/><path d="M18 12c0 6-4 9-6 10"/></svg>',
+    orderflow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7 15l3-3 3 2 4-5"/></svg>',
+    likidasyon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M5 7h14"/><path d="M7 17h10"/></svg>',
+    alpha: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l3 6 6 .9-4.4 4.3 1 6-5.6-3-5.6 3 1-6L3 9.9 9 9z"/></svg>',
+    chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
+  };
+
+  const qs = new URLSearchParams(window.location.search);
+  const prefer = qs.get('mobile');
+  const autoMobile = window.matchMedia && window.matchMedia('(max-width: 980px)').matches;
+  const isMobile = prefer === '1' || (prefer !== '0' && autoMobile);
+  if (isMobile) document.body.classList.add('tv-mobile');
+
+  const els = {
+    tabs: document.getElementById('tabs'),
+    list: document.getElementById('list'),
+    search: document.getElementById('search'),
+    frame: document.getElementById('frame'),
+    title: document.getElementById('title'),
+    subtitle: document.getElementById('subtitle'),
+    openNew: document.getElementById('openNew'),
+    mobileToggle: document.getElementById('mobileToggle'),
+    bottom: document.getElementById('bottom'),
+  };
+
+  function setActive(key){
+    const v = VIEWS.find(x => x.key === key) || VIEWS[0];
+    localStorage.setItem('bw_tv_view', v.key);
+    els.title.textContent = v.title;
+    els.subtitle.textContent = v.sub + ' • ' + v.url;
+    els.frame.src = v.url;
+
+    document.querySelectorAll('.tv-tab').forEach(t => t.classList.toggle('active', t.dataset.key === v.key));
+    document.querySelectorAll('.tv-item').forEach(t => t.classList.toggle('active', t.dataset.key === v.key));
+    document.querySelectorAll('.tv-navbtn').forEach(t => t.classList.toggle('active', t.dataset.key === v.key));
+  }
+
+  function render(){
+    els.tabs.innerHTML = '';
+    els.list.innerHTML = '';
+    els.bottom.innerHTML = '';
+
+    for (const v of VIEWS){
+      const tab = document.createElement('div');
+      tab.className = 'tv-tab';
+      tab.textContent = v.title;
+      tab.dataset.key = v.key;
+      tab.addEventListener('click', () => setActive(v.key));
+      els.tabs.appendChild(tab);
+
+      const item = document.createElement('div');
+      item.className = 'tv-item';
+      item.dataset.key = v.key;
+      item.innerHTML = `<div><div style="font-weight:600">${v.title}</div><small>${v.sub}</small></div><small>→</small>`;
+      item.addEventListener('click', () => setActive(v.key));
+      els.list.appendChild(item);
+    }
+
+    const mobileKeys = ['bullwatch','orderflow','likidasyon','alpha','chat'];
+    for (const key of mobileKeys){
+      const v = VIEWS.find(x => x.key === key);
+      if (!v) continue;
+      const btn = document.createElement('div');
+      btn.className = 'tv-navbtn';
+      btn.dataset.key = v.key;
+      btn.innerHTML = `${ICONS[v.key] || ''}<div>${v.title}</div>`;
+      btn.addEventListener('click', () => setActive(v.key));
+      els.bottom.appendChild(btn);
+    }
+  }
+
+  els.search.addEventListener('input', (e) => {
+    const q = (e.target.value || '').trim().toLowerCase();
+    document.querySelectorAll('.tv-item').forEach(it => {
+      const key = it.dataset.key;
+      const v = VIEWS.find(x => x.key === key);
+      const hay = (v.title + ' ' + v.sub + ' ' + v.url).toLowerCase();
+      it.style.display = hay.includes(q) ? '' : 'none';
+    });
+  });
+
+  els.openNew.addEventListener('click', () => {
+    window.open(els.frame.src, '_blank', 'noopener');
+  });
+
+  els.mobileToggle.addEventListener('click', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('mobile', document.body.classList.contains('tv-mobile') ? '0' : '1');
+    window.location.href = url.toString();
+  });
+
+  render();
+  setActive(localStorage.getItem('bw_tv_view') || 'bullwatch');
+</script>
+<script src="{{ url_for('static', filename='js/chart_controls.js') }}"></script>
+{% endblock %}

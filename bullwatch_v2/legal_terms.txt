@@ -1,0 +1,58 @@
+ZKR ANALİZ PRO - KULLANICI SÖZLEŞMESİ
+
+Bu belge, ZKR Analiz Pro platformunun ("Platform") hizmetlerini kullanacak kullanıcılar ("Kullanıcı") ile Platform işletmecisi arasında akdedilen elektronik sözleşmedir. Aşağıda belirtilen şartları kabul ederek Platform hizmetlerini kullanmaya başladığınız tarihten itibaren bu sözleşme yürürlüğe girmektedir.
+
+1. PLATFORM AMACI VE HİZMETLER
+
+1.1 Platform, teknik analiz, pazar radası, simülatör ve sosyal ticaret fonksiyonlarını içeren bir finansal analiz ve eğitim platformudur.
+
+1.2 Platform tarafından sunulan tüm analiz, grafik, göstergeler, tahminler ve diğer içerikler sadece eğitim ve bilgilendirme amaçlıdır.
+
+1.3 Platform, gerçek finansal tavsiyesi, yatırım danışmanlığı veya ticari tavsiyesi sunmaz.
+
+2. SORUMLULUK RED VE RİSK UYARISI
+
+2.1 Platform'un sunduğu tüm analiz ve bilgiler "olduğu gibi" temelinde sunulmaktadır. Platform, sunulan bilgilerin doğruluğu, güncelliği, bütünlüğü veya uygunluğu hakkında hiçbir garanti vermez.
+
+2.2 Kullanıcı, Platform'u kullanarak yatırım kararlarını tamamen kendi sorumluluğunda alır. Platform, kullanıcının yatırım kararlarından kaynaklanan kayıplar veya zararlardan sorumlu değildir.
+
+2.3 Finansal piyasalara yatırım yapmak yüksek risk içerir. Kullanıcı, bu riski tamamen anlayarak ve kabul ederek Platform'u kullanmaya başlar.
+
+2.4 Sermaye Piyasası Kurulu (SPK) mevzuatına uygun olarak, hiçbir kişi veya kuruluş finansal araçlara yatırım tavsiyesi vermek hakkına sahip değildir. Platform'u kullanıcılar "emre amme mahkûm" prensibine uygun hareket etmelidir.
+
+3. FIKRI MÜLKİYET HAKLARI
+
+3.1 Platform'da sunulan tüm içerik (kod, grafik, göstergeler, yazılar, videolar, tasarım) Platform'un münhasır mülkiyetidir.
+
+3.2 Kullanıcı, Platform'u sadece kişisel ve eğitim amaçları için kullanmaya izin verilir. Ticari amaçlarla yeniden üretim, dağıtım veya değiştirilmesi yasaktır.
+
+3.3 Platform'daki sosyal ticaret özelliğinde, Kullanıcı tarafından yayınlanan stratejiler, analiz ve yazılar Platform'a sınırsız lisans verildiğini kabul eder.
+
+4. SİSTEM ERİŞİMİ VE GÜVENLIK
+
+4.1 Kullanıcı, Platform'a erişimi sağlayan kimlik bilgilerini (şifre, token, session) gizli tutmaktan sorumludur.
+
+4.2 Kullanıcı, kendi hesabı aracılığıyla yapılan tüm işlemlerden sorumludur.
+
+4.3 Platform, kimlik bilgilerinin açığa çıkması, çalınması veya kötüye kullanılmasından sorumlu değildir.
+
+4.4 Kullanıcı şüphelenebilecek bir etkinlik veya hesabı tehlikeye atan durum fark ederse hemen Platform yönetimine bildirecektir.
+
+5. KRIPTOGRAFIK KANIT VE HMK MADDE 193 UYGUNLUĞU
+
+5.1 Bu sözleşmenin kabul tarihinde, Kullanıcının IP adresi, kullanıcı aracı (User-Agent) bilgisi ve zaman damgası kayıt altına alınır.
+
+5.2 Kullanıcının sözleşme kabulü SHA-256 kriptografik hash algoritması kullanılarak dijitalleştirilir ve veritabanında saklanır. Türk Medeni Kanunu (TMK) Madde 193 ve Hukuk Usulü Muhakemeleri Kanunu (HUMK) Madde 294 uyarınca, işbu SHA-256 hash, doğru şekilde saklanması ve korunması şartıyla "KESİN DELİL" teşkil eder.
+
+5.3 Kriptografik kanıt, veritabanı günlükleri ve sistem kayıtları gizliliği ve bütünlüğü korumak üzere korunacaktır. Bu kayıtlar hukuki ihtilaflar halinde mahkemede delil olarak sunulabilir.
+
+6. YETKİLİ MAHKEME VE UYGULANACAK HUKUK
+
+6.1 Bu sözleşmeden doğan tüm uyuşmazlıklar İstanbul Cumhuriyet Savcılığı ve İstanbul Mahkemelerine tabii olacak, Türkiye Cumhuriyeti Hukuku hükümleri uygulanacaktır.
+
+6.2 Kullanıcı, bu sözleşmeyi kabul ederek yukarıda belirtilen mahkemelerin yetkili olduğunu ve Türk Hukuku'nun uygulanacağını peşinen kabul etmektedir.
+
+Sözleşme Kabul Tarihi: {ACCEPTANCE_DATE}
+SHA-256 Hash: {SHA256_HASH}
+IP Adresi: {IP_ADDRESS}
+Kullanıcı Aracı: {USER_AGENT}

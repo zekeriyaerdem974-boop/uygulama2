@@ -1,0 +1,21 @@
+from __future__ import annotations
+
+from flask import Blueprint, current_app, jsonify
+
+
+bp = Blueprint("orderflow", __name__, url_prefix="/api/orderflow")
+
+
+def _svc():
+    return current_app.extensions["market_data"]
+
+
+@bp.get("/health")
+def health():
+    return jsonify({"ok": True, "status": "ok"})
+
+
+@bp.get("/symbols")
+def symbols():
+    syms = _svc().get_symbols()
+    return jsonify({"ok": True, "symbols": syms, "count": len(syms)})

@@ -1,0 +1,36 @@
+#!/usr/bin/env python
+"""BullWatch unified entry point.
+
+Usage:
+    python run.py
+
+Starts the Flask dev server on port 34000 with background jobs.
+"""
+from __future__ import annotations
+
+import os
+import sys
+
+# Ensure the project root is on sys.path so that
+# legacy_monolith, blueprints/, core/ are importable.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from app import create_app, start_background_jobs
+
+app = create_app()
+
+
+if __name__ == "__main__":
+    start_background_jobs()
+
+    debug = os.getenv("BULLWATCH_DEBUG", "0") == "1"
+    host = os.getenv("BULLWATCH_HOST", "0.0.0.0")
+    port = int(os.getenv("BULLWATCH_PORT", "34000"))
+
+    print(f"[bullwatch] serving on http://{host}:{port}  debug={debug}")
+    app.run(
+        host=host,
+        port=port,
+        debug=debug,
+        use_reloader=False,
+    )

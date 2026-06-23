@@ -1,0 +1,77 @@
+from __future__ import annotations
+
+import numpy as np
+import pandas as pd
+from flask import Blueprint, current_app, jsonify, request
+
+
+bp = Blueprint("indicators", __name__, url_prefix="/api/indicators")
+
+
+def _svc():
+    return current_app.extensions["market_data"]
+
+
+def _compute_rsi(closes: pd.Series, period: int = 14) -> pd.Series:
+    delta = closes.diff()
+    up = delta.clip(lower=0)
+    down = (-delta).clip(lower=0)
+    roll_up = up.ewm(alpha=1 / period, adjust=False).mean()
+    roll_down = down.ewm(alpha=1 / period, adjust=False).mean()
+    rs = roll_up / roll_down.replace(0, np.nan)
+    return 100 - (100 / (1 + rs))
+
+
+def _compute_macd(closes: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9):
+    ema_fast = closes.ewm(span=fast, adjust=False).mean()
+    ema_slow = closes.ewm(span=slow, adjust=False).mean()
+    macd = ema_fast - ema_slow
+    sig = macd.ewm(span=signal, adjust=False).mean()
+    hist = macd - sig
+    return macd, sig, hist
+
+
+@bp.get("/rsi")
+def rsi():
+    symbol = (request.args.get("symbol") or "BTCUSDT").upper()
+    interval = request.args.get("interval") or "15m"
+    limit = int(request.args.get("limit") or "200")
+    period = int(request.args.get("period") or "14")
+
+    rows = _svc().get_klines(symbol, interval, limit, ttl_s=2.0)
+    closes = pd.Series([r["close"] for r in rows], dtype=float)
+    t = [int(r["open_time"] // 1000) for r in rows]
+    rsi_series = _compute_rsi(closes, period)
+
+    out = [
+        {"time": int(t[i]), "value": None if pd.isna(rsi_series.iloc[i]) else float(rsi_series.iloc[i])}
+        for i in range(len(t))
+    ]
+    return jsonify({"ok": True, "symbol": symbol, "interval": interval, "rsi": out})
+
+
+@bp.get("/macd")
+def macd():
+    symbol = (request.args.get("symbol") or "BTCUSDT").upper()
+    interval = request.args.get("interval") or "15m"
+    limit = int(request.args.get("limit") or "300")
+
+    rows = _svc().get_klines(symbol, interval, limit, ttl_s=2.0)
+    closes = pd.Series([r["close"] for r in rows], dtype=float)
+    t = [int(r["open_time"] // 1000) for r in rows]
+
+    m, s, h = _compute_macd(closes)
+    macd_series = [{"time": int(t[i]), "value": None if pd.isna(m.iloc[i]) else float(m.iloc[i])} for i in range(len(t))]
+    sig_series = [{"time": int(t[i]), "value": None if pd.isna(s.iloc[i]) else float(s.iloc[i])} for i in range(len(t))]
+    hist_series = [{"time": int(t[i]), "value": None if pd.isna(h.iloc[i]) else float(h.iloc[i])} for i in range(len(t))]
+
+    return jsonify(
+        {
+            "ok": True,
+            "symbol": symbol,
+            "interval": interval,
+            "macd": macd_series,
+            "signal": sig_series,
+            "hist": hist_series,
+        }
+    )

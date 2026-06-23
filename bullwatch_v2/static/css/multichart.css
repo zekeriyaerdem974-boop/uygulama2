@@ -1,0 +1,234 @@
+/* =====================================================================
+   ZKR Analiz Multi-Chart Layout — FAZ 18
+   Styles for layout selector, chart grid, slot toolbars, per-chart UI.
+   ===================================================================== */
+
+/* ── Layout Selector (topbar) ───────────────────────────────────────── */
+.mc-layout-selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mc-layout-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .3px;
+}
+.mc-layout-btns {
+  display: flex;
+  gap: 2px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.mc-layout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.mc-layout-btn:hover {
+  color: var(--text);
+  background: var(--glass2);
+}
+.mc-layout-btn.active {
+  color: var(--accent);
+  background: rgba(59,130,246,.15);
+}
+
+/* ── Multi-Chart Grid ───────────────────────────────────────────────── */
+.mc-grid {
+  flex: 1;
+  min-height: 0;
+  gap: 2px;
+  background: var(--border);
+}
+.mc-layout-2 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr;
+}
+.mc-layout-4 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+/* ── Chart Slot ─────────────────────────────────────────────────────── */
+.mc-slot {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 2px solid transparent;
+  transition: border-color .2s;
+  overflow: hidden;
+  min-height: 0;
+}
+.mc-slot:hover {
+  border-color: var(--border2);
+}
+.mc-slot.mc-active {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,.15);
+}
+
+/* ── Slot Toolbar ───────────────────────────────────────────────────── */
+.mc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  background: var(--glass);
+  flex-shrink: 0;
+  min-height: 30px;
+}
+.mc-sym-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+  min-width: 0;
+}
+.mc-market-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mc-sym-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Slot Timeframe Buttons ─────────────────────────────────────────── */
+.mc-tf-group {
+  display: flex;
+  gap: 1px;
+  margin-left: auto;
+}
+.mc-tf-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .12s;
+  white-space: nowrap;
+}
+.mc-tf-btn:hover {
+  color: var(--text);
+  border-color: var(--border2);
+}
+.mc-tf-btn.active {
+  color: var(--accent);
+  background: rgba(59,130,246,.1);
+  border-color: rgba(59,130,246,.3);
+}
+
+/* ── Slot Indicator Dropdown ────────────────────────────────────────── */
+.mc-ind-wrap {
+  position: relative;
+}
+.mc-ind-btn {
+  padding: 2px 5px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color .12s;
+}
+.mc-ind-btn:hover {
+  border-color: var(--accent);
+}
+.mc-ind-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
+  z-index: 300;
+  padding: 4px 0;
+  backdrop-filter: blur(12px);
+}
+.mc-ind-dropdown.mc-ind-open {
+  display: block;
+  animation: mcFadeIn .12s ease-out;
+}
+@keyframes mcFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.mc-ind-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background .1s;
+  user-select: none;
+}
+.mc-ind-item:hover {
+  background: var(--glass2);
+}
+.mc-ind-item input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 13px;
+  height: 13px;
+}
+
+/* ── Chart Area (per slot) ──────────────────────────────────────────── */
+.mc-chart-area {
+  flex: 1;
+  min-height: 0;
+  background: #000;
+  position: relative;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
+@media (max-width: 1000px) {
+  .mc-layout-selector { display: none; }
+}
+@media (max-width: 768px) {
+  .mc-layout-2,
+  .mc-layout-4 {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+  }
+  .mc-slot {
+    min-height: 200px;
+  }
+  .mc-toolbar {
+    padding: 3px 6px;
+    gap: 4px;
+  }
+  .mc-sym-wrap {
+    font-size: 11px;
+  }
+  .mc-tf-btn {
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+}

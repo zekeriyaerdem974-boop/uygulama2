@@ -1,0 +1,117 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Feed — ZKR Analiz Pro Terminal{% endblock %}
+{% block page_title %}Feed{% endblock %}
+{% block topbar_title %}Feed{% endblock %}
+
+{% block header_actions %}
+<button id="newPostBtn" class="pro-btn-primary pro-btn-sm" style="font-size:12px;padding:6px 14px;" onclick="SF.openNewPost()">
+  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+  Share
+</button>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Feed Terminal Styles ────────────────────────────── */
+.sf-tabs { display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px; }
+.sf-tab {
+  padding:10px 20px;font-size:13px;font-weight:500;color:var(--text-dim);
+  border-bottom:2px solid transparent;cursor:pointer;transition:all .2s;
+}
+.sf-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
+.sf-tab:hover { color:var(--text-secondary); }
+
+/* Post Card — uses terminal.css t-post-card classes */
+.sf-card { background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;margin-bottom:12px; }
+.sf-card:hover { border-color:var(--border-hover); }
+.sf-card-header { display:flex;align-items:center;gap:12px;margin-bottom:12px; }
+.sf-avatar { width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8B5CF6);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0; }
+.sf-user-info { flex:1;min-width:0; }
+.sf-username { font-size:14px;font-weight:600;color:var(--text-primary);cursor:pointer;text-decoration:none; }
+.sf-username:hover { color:var(--accent); }
+.sf-time { font-size:11px;color:var(--text-dim); }
+.sf-symbol-badge { display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(59,130,246,0.12);color:var(--accent); }
+.sf-content { font-size:14px;line-height:1.6;color:var(--text-secondary);margin-bottom:12px;white-space:pre-wrap;word-break:break-word; }
+.sf-chart-img { width:100%;border-radius:var(--radius-md);margin-bottom:12px;border:1px solid var(--border);max-height:350px;object-fit:contain;background:var(--bg-primary); }
+.sf-actions { display:flex;align-items:center;gap:20px; }
+.sf-action { display:flex;align-items:center;gap:5px;font-size:13px;color:var(--text-dim);cursor:pointer;transition:color .2s;border:none;background:none;padding:0; }
+.sf-action:hover { color:var(--text-primary); }
+.sf-action.liked { color:var(--danger); }
+.sf-action.liked svg { fill:var(--danger); }
+
+/* Comments */
+.sf-comments { padding:0 0 12px 48px; }
+.sf-comment { display:flex;gap:8px;margin-bottom:8px; }
+.sf-comment-avatar { width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--text-dim);flex-shrink:0; }
+.sf-comment-body { flex:1; }
+.sf-comment-user { font-size:12px;font-weight:600;color:var(--text-secondary); }
+.sf-comment-text { font-size:12px;color:var(--text-muted);line-height:1.4; }
+.sf-comment-input-wrap { display:flex;gap:8px;padding:8px 0 8px 48px; }
+.sf-comment-input { flex:1;padding:8px 12px;border-radius:var(--radius-full);font-size:12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text-primary);outline:none;font-family:var(--font); }
+.sf-comment-input:focus { border-color:var(--accent); }
+.sf-comment-send { padding:6px 14px;border-radius:var(--radius-full);font-size:12px;font-weight:600;background:var(--accent);color:#fff;border:none;cursor:pointer; }
+
+/* Modal */
+.sf-modal-overlay { display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);justify-content:center;align-items:flex-start;padding-top:80px; }
+.sf-modal-overlay.open { display:flex; }
+.sf-modal { background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:92%;max-width:500px;padding:20px;box-shadow:var(--shadow-elevated); }
+.sf-modal-title { font-size:16px;font-weight:700;margin-bottom:14px;color:var(--text-primary); }
+.sf-modal textarea { width:100%;min-height:100px;padding:12px;border-radius:var(--radius-md);background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-primary);font-size:14px;resize:vertical;outline:none;font-family:var(--font); }
+.sf-modal textarea:focus { border-color:var(--accent); }
+.sf-modal-meta { display:flex;gap:8px;margin:10px 0;flex-wrap:wrap; }
+.sf-modal-meta input { flex:1;min-width:80px;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-primary);outline:none;font-family:var(--font); }
+.sf-modal-meta input:focus { border-color:var(--accent); }
+.sf-modal-chart-preview { margin:10px 0;border-radius:var(--radius-sm);overflow:hidden;display:none; }
+.sf-modal-chart-preview img { width:100%;max-height:200px;object-fit:contain;background:var(--bg-primary); }
+.sf-modal-actions { display:flex;justify-content:flex-end;gap:8px;margin-top:14px; }
+.sf-modal-cancel { padding:8px 18px;border-radius:var(--radius-sm);font-size:13px;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text-muted);cursor:pointer; }
+.sf-modal-submit { padding:8px 22px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;background:var(--accent);color:#fff;border:none;cursor:pointer;box-shadow:0 0 16px var(--accent-glow); }
+
+.sf-loading,.sf-empty { text-align:center;padding:40px 16px;color:var(--text-dim);font-size:14px; }
+.sf-loading::after { content:'';display:block;width:24px;height:24px;margin:12px auto 0;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sfSpin .8s linear infinite; }
+@keyframes sfSpin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Tabs -->
+<div class="sf-tabs">
+  <div class="sf-tab active" data-feed="global" onclick="SF.switchTab('global')">Discover</div>
+  <div class="sf-tab" data-feed="following" onclick="SF.switchTab('following')">Following</div>
+  <div class="sf-tab" data-feed="trending" onclick="SF.switchTab('trending')">Trending</div>
+</div>
+
+<!-- Feed Container -->
+<div id="sfFeed">
+  <div class="sf-loading">Loading…</div>
+</div>
+
+<!-- New Post Modal -->
+<div id="sfNewPostModal" class="sf-modal-overlay">
+  <div class="sf-modal">
+    <div class="sf-modal-title">New Post</div>
+    <textarea id="sfPostContent" placeholder="Share your analysis…"></textarea>
+    <div class="sf-modal-meta">
+      <input id="sfPostSymbol" placeholder="Symbol (BTCUSDT)" />
+      <input id="sfPostMarket" placeholder="Market" value="crypto" />
+      <input id="sfPostTimeframe" placeholder="Timeframe" value="1h" />
+    </div>
+    <div id="sfChartPreview" class="sf-modal-chart-preview">
+      <img id="sfChartPreviewImg" src="" alt="chart" />
+    </div>
+    <div class="sf-modal-actions">
+      <button class="sf-modal-cancel" onclick="SF.closeNewPost()">Cancel</button>
+      <button class="sf-modal-submit" onclick="SF.submitPost()">Share</button>
+    </div>
+  </div>
+</div>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section style="margin-top:24px;">
+  {% include "legal_disclaimer.html" %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/feed.js') }}"></script>
+{% endblock %}

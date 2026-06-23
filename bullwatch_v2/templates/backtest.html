@@ -1,0 +1,250 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Backtest — ZKR Analiz{% endblock %}
+{% block page_title %}Strateji Backtest{% endblock %}
+{% block topbar_title %}Backtest{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/backtest.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="bt-container">
+
+  <!-- ══════════ CONTROL PANEL ══════════ -->
+  <section class="bt-panel bt-controls">
+    <h2 class="bt-section-title">Test Parametreleri</h2>
+
+    <div class="bt-form-grid">
+      <!-- Symbol -->
+      <div class="bt-field">
+        <label for="bt-symbol">Sembol</label>
+        <input type="text" id="bt-symbol" class="bt-input" value="BTCUSDT" placeholder="BTCUSDT" autocomplete="off" />
+      </div>
+
+      <!-- Market -->
+      <div class="bt-field">
+        <label for="bt-market">Piyasa</label>
+        <select id="bt-market" class="bt-input">
+          <option value="crypto" selected>Kripto</option>
+          <option value="stocks">Hisse</option>
+          <option value="bist">BIST</option>
+          <option value="forex">Forex</option>
+          <option value="commodities">Emtia</option>
+        </select>
+      </div>
+
+      <!-- Strategy -->
+      <div class="bt-field">
+        <label for="bt-strategy">Strateji</label>
+        <select id="bt-strategy" class="bt-input">
+          <option value="ema_cross">EMA Cross (20/50)</option>
+          <option value="rsi_reversal">RSI Reversal</option>
+          <option value="breakout">Breakout</option>
+          <option value="vwap_trend">VWAP Trend</option>
+        </select>
+      </div>
+
+      <!-- Interval -->
+      <div class="bt-field">
+        <label for="bt-interval">Zaman Dilimi</label>
+        <select id="bt-interval" class="bt-input">
+          <option value="1h">1 Saat</option>
+          <option value="4h">4 Saat</option>
+          <option value="1d" selected>1 Gün</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="bt-run-btn" class="bt-run-btn" onclick="runBacktest()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      Backtest Başlat
+    </button>
+
+    <div id="bt-status" class="bt-status" style="display:none;"></div>
+  </section>
+
+  <!-- ══════════ METRICS ══════════ -->
+  <section id="bt-metrics-section" class="bt-panel" style="display:none;">
+    <h2 class="bt-section-title">Performans Metrikleri</h2>
+    <div class="bt-metrics-grid" id="bt-metrics-grid"></div>
+  </section>
+
+  <!-- ══════════ EQUITY CURVE ══════════ -->
+  <section id="bt-chart-section" class="bt-panel" style="display:none;">
+    <h2 class="bt-section-title">Equity Curve</h2>
+    <canvas id="bt-equity-chart" height="220"></canvas>
+  </section>
+
+  <!-- ══════════ TRADE LIST ══════════ -->
+  <section id="bt-trades-section" class="bt-panel" style="display:none;">
+    <h2 class="bt-section-title">İşlemler <span id="bt-trade-count" class="bt-badge">0</span></h2>
+    <div class="bt-table-wrap">
+      <table class="bt-table">
+        <thead>
+          <tr>
+            <th>Giriş Fiyat</th>
+            <th>Çıkış Fiyat</th>
+            <th>Miktar</th>
+            <th>Bar</th>
+            <th>PnL</th>
+            <th>PnL %</th>
+          </tr>
+        </thead>
+        <tbody id="bt-trades-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  let equityChart = null;
+
+  window.runBacktest = function() {
+    const symbol = document.getElementById("bt-symbol").value.trim().toUpperCase();
+    const market = document.getElementById("bt-market").value;
+    const strategy = document.getElementById("bt-strategy").value;
+    const interval = document.getElementById("bt-interval").value;
+    const btn = document.getElementById("bt-run-btn");
+    const status = document.getElementById("bt-status");
+
+    if (!symbol) { alert("Sembol girin"); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Çalışıyor...";
+    status.style.display = "block";
+    status.textContent = symbol + " için " + strategy + " testi çalışıyor...";
+    status.className = "bt-status loading";
+
+    const url = "/api/backtest/run?symbol=" + encodeURIComponent(symbol)
+      + "&market=" + market
+      + "&strategy=" + strategy
+      + "&interval=" + interval
+      + "&limit=500";
+
+    fetch(url)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Backtest Başlat';
+
+        if (!d.ok) {
+          status.textContent = "Hata: " + (d.error || "Bilinmeyen hata");
+          status.className = "bt-status error";
+          return;
+        }
+
+        status.textContent = d.candle_count + " mum analiz edildi — " + d.trades.length + " işlem bulundu";
+        status.className = "bt-status success";
+
+        renderMetrics(d.metrics);
+        renderTrades(d.trades);
+        renderEquityCurve(d.equity_curve);
+      })
+      .catch(function(err) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Backtest Başlat';
+        status.textContent = "Bağlantı hatası: " + err.message;
+        status.className = "bt-status error";
+      });
+  };
+
+  function renderMetrics(m) {
+    var section = document.getElementById("bt-metrics-section");
+    section.style.display = "block";
+
+    var grid = document.getElementById("bt-metrics-grid");
+    var items = [
+      { label: "Toplam İşlem", value: m.total_trades, cls: "" },
+      { label: "Kazanma Oranı", value: m.win_rate + "%", cls: m.win_rate >= 50 ? "positive" : "negative" },
+      { label: "Kâr Faktörü", value: m.profit_factor, cls: m.profit_factor >= 1 ? "positive" : "negative" },
+      { label: "Net Kâr", value: "$" + m.net_profit.toLocaleString(), cls: m.net_profit >= 0 ? "positive" : "negative" },
+      { label: "Net Kâr %", value: m.net_profit_pct + "%", cls: m.net_profit_pct >= 0 ? "positive" : "negative" },
+      { label: "Ort. Kâr", value: "$" + m.avg_profit.toLocaleString(), cls: "positive" },
+      { label: "Ort. Zarar", value: "$" + m.avg_loss.toLocaleString(), cls: "negative" },
+      { label: "Maks. Düşüş", value: m.max_drawdown_pct + "%", cls: "negative" },
+      { label: "En İyi İşlem", value: "$" + m.best_trade.toLocaleString(), cls: "positive" },
+      { label: "En Kötü İşlem", value: "$" + m.worst_trade.toLocaleString(), cls: "negative" },
+      { label: "Ort. Bar", value: m.avg_bars_held, cls: "" },
+    ];
+
+    grid.innerHTML = items.map(function(it) {
+      return '<div class="bt-metric-card">'
+        + '<div class="bt-metric-label">' + it.label + '</div>'
+        + '<div class="bt-metric-value ' + it.cls + '">' + it.value + '</div>'
+        + '</div>';
+    }).join("");
+  }
+
+  function renderTrades(trades) {
+    var section = document.getElementById("bt-trades-section");
+    section.style.display = "block";
+    document.getElementById("bt-trade-count").textContent = trades.length;
+
+    var tbody = document.getElementById("bt-trades-body");
+    if (!trades.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;opacity:.5;">İşlem bulunamadı</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = trades.map(function(t) {
+      var cls = t.pnl >= 0 ? "positive" : "negative";
+      return '<tr>'
+        + '<td>$' + (t.analysis_price || t.entry_price || 0).toLocaleString() + '</td>'
+        + '<td>$' + (t.close_price || t.exit_price || 0).toLocaleString() + '</td>'
+        + '<td>' + t.quantity.toFixed(4) + '</td>'
+        + '<td>' + t.bars_held + '</td>'
+        + '<td class="' + cls + '">$' + t.pnl.toLocaleString() + '</td>'
+        + '<td class="' + cls + '">' + t.pnl_pct + '%</td>'
+        + '</tr>';
+    }).join("");
+  }
+
+  function renderEquityCurve(curve) {
+    var section = document.getElementById("bt-chart-section");
+    section.style.display = "block";
+
+    var labels = curve.map(function(p, i) { return i; });
+    var data = curve.map(function(p) { return p.equity; });
+
+    if (equityChart) { equityChart.destroy(); }
+
+    var ctx = document.getElementById("bt-equity-chart").getContext("2d");
+    equityChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Equity ($)",
+          data: data,
+          borderColor: "#2979FF",
+          backgroundColor: "rgba(41,121,255,0.1)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { display: false },
+          y: {
+            grid: { color: "rgba(255,255,255,0.05)" },
+            ticks: { color: "#999", callback: function(v) { return "$" + v.toLocaleString(); } }
+          }
+        }
+      }
+    });
+  }
+
+})();
+</script>
+{% endblock %}

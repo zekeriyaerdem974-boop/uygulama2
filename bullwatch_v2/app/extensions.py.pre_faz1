@@ -1,0 +1,24 @@
+"""Extension initialization for BullWatch.
+
+Currently a placeholder.  As refactoring progresses, the following
+will be initialized here instead of inside legacy_monolith.py:
+
+  - Flask-CORS
+  - Flask-Sock (WebSocket)
+  - JobManager  (core.job_manager)
+  - MarketDataService  (core.market_data)
+  - Cache layer (Redis / in-memory fallback)
+"""
+from __future__ import annotations
+
+from flask import Flask
+
+
+def init_extensions(app: Flask) -> None:
+    """Initialize Flask extensions on the given app.
+
+    Currently a no-op because extensions are still initialized
+    in legacy_monolith.py.  This function will grow as modules
+    are extracted from the monolith.
+    """
+    pass

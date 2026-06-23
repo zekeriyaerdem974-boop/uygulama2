@@ -1,0 +1,144 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Tarayıcı • ZKR Analiz Pro{% endblock %}
+{% block page_title %}Tarayıcı{% endblock %}
+{% block topbar_title %}Screener{% endblock %}
+
+{% block header_actions %}
+<button id="btnMobileFilter" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors md:hidden" aria-label="Filtreler">
+  <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+</button>
+<a href="/trade" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Trade Terminal">
+  <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+</a>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/screener.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/copilot.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="screener-container">
+  <!-- ==================== MARKET TABS ==================== -->
+  <section class="scr-topbar">
+    <div id="scrMarketTabs" class="scr-tabs-row">
+      <button class="scr-mtab active" data-market="crypto">
+        <span class="scr-mdot crypto-dot"></span> Kripto
+      </button>
+      <button class="scr-mtab" data-market="stocks">
+        <span class="scr-mdot stocks-dot"></span> ABD Hisseleri
+      </button>
+      <button class="scr-mtab" data-market="bist">
+        <span class="scr-mdot bist-dot"></span> BIST
+      </button>
+      <button class="scr-mtab" data-market="forex">
+        <span class="scr-mdot forex-dot"></span> Forex
+      </button>
+      <button class="scr-mtab" data-market="commodities">
+        <span class="scr-mdot comm-dot"></span> Emtia
+      </button>
+    </div>
+    <div class="scr-search-wrap">
+      <svg class="scr-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" stroke-width="2" d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="scrSearch" class="scr-search" placeholder="Sembol ara… (BTC, AAPL, THYAO)" autocomplete="off" spellcheck="false">
+    </div>
+  </section>
+
+  <!-- ==================== MAIN LAYOUT ==================== -->
+  <div class="scr-main">
+    <!-- ── Filter Panel ────────────────────────────────── -->
+    <aside class="scr-filters" id="scrFilters">
+      <h3 class="scr-filter-title">Filtreler</h3>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="trend">▸ Trend</h4>
+        <div class="scr-fgroup-body" id="fg-trend"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="momentum">▸ Momentum</h4>
+        <div class="scr-fgroup-body" id="fg-momentum"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="volume">▸ Hacim</h4>
+        <div class="scr-fgroup-body" id="fg-volume"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="breakout">▸ Kırılım</h4>
+        <div class="scr-fgroup-body" id="fg-breakout"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="support">▸ Destek</h4>
+        <div class="scr-fgroup-body" id="fg-support"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="cross">▸ MA Kesişim</h4>
+        <div class="scr-fgroup-body" id="fg-cross"></div>
+      </div>
+
+      <div class="scr-fgroup">
+        <h4 class="scr-fgroup-title" data-toggle="volatility">▸ Volatilite</h4>
+        <div class="scr-fgroup-body" id="fg-volatility"></div>
+      </div>
+
+      <div class="scr-filter-actions">
+        <button class="scr-btn scr-btn-apply" id="btnApply">Uygula</button>
+        <button class="scr-btn scr-btn-clear" id="btnClear">Temizle</button>
+      </div>
+
+      <div class="scr-info" id="scrInfo">
+        <span id="scrCount">0</span> sonuç / <span id="scrTotal">0</span> taranan
+      </div>
+    </aside>
+
+    <!-- ── Results ──────────────────────────────────────── -->
+    <section class="scr-results">
+      <div class="scr-status" id="scrStatus">Piyasa seçin ve taramayı başlatın</div>
+
+      <!-- Empty state -->
+      <div class="scr-empty" id="scrEmpty" style="display:none">
+        <div class="scr-empty-icon">🔍</div>
+        <div class="scr-empty-title">Sonuç Bulunamadı</div>
+        <div class="scr-empty-desc">Farklı filtreler deneyin veya başka bir piyasa seçin</div>
+      </div>
+
+      <!-- Results list -->
+      <div class="scr-list" id="scrList"></div>
+
+      <!-- AI Copilot Section -->
+      <div class="screener-ai-section">
+        <div class="screener-ai-title">
+          <svg style="width:14px;height:14px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 2a4 4 0 014 4v1h1a3 3 0 013 3v1a3 3 0 01-3 3h-1v1a4 4 0 01-8 0v-1H7a3 3 0 01-3-3v-1a3 3 0 013-3h1V6a4 4 0 014-4z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
+          AI Copilot
+        </div>
+        <div class="flex flex-wrap gap-2 mb-2">
+          <button class="screener-ai-btn" data-prompt="Bu sonuçları yorumla">📊 Yorumla</button>
+          <button class="screener-ai-btn" data-prompt="En güçlü adayları açıkla">🏆 En Güçlüler</button>
+          <button class="screener-ai-btn" data-prompt="Bu filtre neden bunları döndürdü?">❓ Neden Bunlar?</button>
+        </div>
+        <div id="screenerAiOutput" style="display:none"></div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/copilot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/screener.js') }}"></script>
+<script>
+  // Mobile filter toggle
+  var mfBtn = document.getElementById('btnMobileFilter');
+  var filters = document.getElementById('scrFilters');
+  if (mfBtn && filters) {
+    mfBtn.addEventListener('click', function() {
+      filters.classList.toggle('mobile-open');
+    });
+  }
+</script>
+{% endblock %}

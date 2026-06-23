@@ -1,0 +1,226 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}AI Market Radar • ZKR Analiz Pro{% endblock %}
+{% block page_title %}AI Radar{% endblock %}
+{% block topbar_title %}Market Radar{% endblock %}
+
+{% block extra_head %}
+<style>
+  .radar-sector-tag {
+    display:inline-block;padding:4px 12px;border-radius:var(--radius-full);
+    font-size:12px;font-weight:600;margin:3px 4px;
+  }
+  .radar-bull-tag { background:var(--success-bg);color:var(--success); }
+  .radar-bear-tag { background:var(--danger-bg);color:var(--danger); }
+  .radar-asset-row {
+    display:flex;align-items:center;gap:10px;padding:10px 0;
+    border-bottom:1px solid var(--border);font-size:13px;
+  }
+  .radar-asset-row:last-child { border-bottom:none; }
+  .radar-news-card {
+    background:rgba(255,255,255,0.02);border:1px solid var(--border-subtle);
+    border-radius:var(--radius-md);padding:14px;margin-bottom:8px;
+    transition:border-color .2s;
+  }
+  .radar-news-card:hover { border-color:var(--border-hover); }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Subtitle -->
+<p style="font-size:13px;color:var(--text-dim);margin-bottom:16px;">Analyze market impact of news with AI intelligence</p>
+
+<!-- Market Filter -->
+<div style="display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;" class="scrollbar-hide">
+  <button class="pro-chip active" data-market="">All</button>
+  <button class="pro-chip" data-market="crypto">Crypto</button>
+  <button class="pro-chip" data-market="bist">BIST</button>
+  <button class="pro-chip" data-market="stocks">Stocks</button>
+  <button class="pro-chip" data-market="macro">Macro</button>
+  <button class="pro-chip" data-market="forex">Forex</button>
+  <button class="pro-chip" data-market="commodities">Commodities</button>
+</div>
+
+<!-- Confidence Filter -->
+<div style="display:flex;gap:8px;margin-bottom:20px;">
+  <button class="pro-chip active" data-conf="0" style="padding:4px 12px;font-size:11px;">All Confidence</button>
+  <button class="pro-chip" data-conf="50" style="padding:4px 12px;font-size:11px;">≥50%</button>
+  <button class="pro-chip" data-conf="70" style="padding:4px 12px;font-size:11px;">≥70%</button>
+</div>
+
+<!-- Radar Grid -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
+  <!-- Bullish Sectors -->
+  <div class="pro-card">
+    <div class="pro-card-header">
+      <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">📈 Bullish Sectors</span>
+    </div>
+    <div class="pro-card-body" id="radar-bull-sectors-list">
+      <div class="pro-skeleton" style="height:20px;margin-bottom:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Bearish Sectors -->
+  <div class="pro-card">
+    <div class="pro-card-header">
+      <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">📉 Bearish Sectors</span>
+    </div>
+    <div class="pro-card-body" id="radar-bear-sectors-list">
+      <div class="pro-skeleton" style="height:20px;margin-bottom:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Most Impacted Assets -->
+<div class="pro-card" style="margin-bottom:20px;">
+  <div class="pro-card-header">
+    <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">🎯 Most Impacted Assets</span>
+  </div>
+  <div class="pro-card-body" id="radar-assets-list">
+    <div class="pro-skeleton" style="height:20px;margin-bottom:8px;"></div>
+  </div>
+</div>
+
+<!-- News Driving the Market -->
+<div class="pro-card" style="margin-bottom:20px;">
+  <div class="pro-card-header">
+    <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">📰 Market-Driving News</span>
+  </div>
+  <div class="pro-card-body" id="radar-news-list">
+    <div class="pro-skeleton" style="height:20px;margin-bottom:8px;"></div>
+    <div class="pro-skeleton" style="height:20px;margin-bottom:8px;"></div>
+  </div>
+</div>
+
+<!-- Stats -->
+<div style="text-align:center;padding:12px;font-size:12px;color:var(--text-dim);">
+  <span id="radar-stats">Loading...</span>
+</div>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section style="margin-top:16px;">
+  {% include "legal_disclaimer.html" %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  var currentMarket='';
+  var currentConf=0;
+
+  function loadRadar(){
+    var params=new URLSearchParams();
+    if(currentMarket) params.set('market',currentMarket);
+    params.set('min_confidence',currentConf);
+    params.set('hours',24);
+    params.set('limit',30);
+
+    fetch('/api/news/radar?'+params.toString())
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(!d.ok||!d.radar) return;
+        var r=d.radar;
+
+        // Bullish sectors
+        var bullEl=document.getElementById('radar-bull-sectors-list');
+        var bullSectors=r.top_bullish_sectors||[];
+        bullEl.innerHTML=bullSectors.length
+          ? bullSectors.map(function(s){return '<span class="radar-sector-tag radar-bull-tag">'+s[0]+' ('+s[1]+')</span>';}).join('')
+          : '<span style="font-size:13px;color:var(--text-dim);">No data</span>';
+
+        // Bearish sectors
+        var bearEl=document.getElementById('radar-bear-sectors-list');
+        var bearSectors=r.top_bearish_sectors||[];
+        bearEl.innerHTML=bearSectors.length
+          ? bearSectors.map(function(s){return '<span class="radar-sector-tag radar-bear-tag">'+s[0]+' ('+s[1]+')</span>';}).join('')
+          : '<span style="font-size:13px;color:var(--text-dim);">No data</span>';
+
+        // Assets
+        var assetsEl=document.getElementById('radar-assets-list');
+        var allAssets={};
+        (r.trending_bullish_assets||[]).forEach(function(a){
+          allAssets[a[0]]=allAssets[a[0]]||{bull:0,bear:0};
+          allAssets[a[0]].bull=a[1];
+        });
+        (r.trending_bearish_assets||[]).forEach(function(a){
+          allAssets[a[0]]=allAssets[a[0]]||{bull:0,bear:0};
+          allAssets[a[0]].bear=a[1];
+        });
+        var sorted=Object.entries(allAssets).sort(function(a,b){return(b[1].bull+b[1].bear)-(a[1].bull+a[1].bear);});
+        if(sorted.length){
+          assetsEl.innerHTML=sorted.slice(0,10).map(function(entry){
+            var sym=entry[0],c=entry[1];
+            var net=c.bull-c.bear;
+            var color=net>0?'var(--success)':net<0?'var(--danger)':'var(--text-muted)';
+            var arrow=net>0?'↑':net<0?'↓':'→';
+            return '<div class="radar-asset-row">'+
+              '<span style="font-weight:600;color:var(--text-primary);min-width:80px;">'+sym+'</span>'+
+              '<span style="color:var(--success);font-size:12px;">📈 '+c.bull+'</span>'+
+              '<span style="color:var(--danger);font-size:12px;">📉 '+c.bear+'</span>'+
+              '<span style="color:'+color+';font-weight:600;margin-left:auto;">'+arrow+'</span>'+
+            '</div>';
+          }).join('');
+        }else{
+          assetsEl.innerHTML='<span style="font-size:13px;color:var(--text-dim);">No data</span>';
+        }
+
+        // News
+        var newsEl=document.getElementById('radar-news-list');
+        var news=r.most_impactful_news||[];
+        if(news.length){
+          newsEl.innerHTML=news.map(function(n){
+            var confColor=n.confidence_score>=70?'var(--success)':n.confidence_score>=40?'var(--warning)':'var(--danger)';
+            var hMap={short_term:'Short-term',mid_term:'Mid-term',long_term:'Long-term'};
+            var bullAssets=(n.bullish_assets||[]).slice(0,3).join(', ');
+            var bearAssets=(n.bearish_assets||[]).slice(0,3).join(', ');
+            return '<div class="radar-news-card">'+
+              '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+                '<span style="font-size:11px;color:var(--text-dim);">'+(n.news_source||'')+' · '+(n.news_market||'')+'</span>'+
+                '<span class="pro-badge" style="font-size:10px;">AI '+n.confidence_score+'%</span>'+
+              '</div>'+
+              '<div style="font-weight:500;font-size:13px;color:var(--text-primary);margin-bottom:6px;">'+(n.news_title||'')+'</div>'+
+              '<div style="display:flex;gap:8px;font-size:12px;flex-wrap:wrap;">'+
+                (bullAssets?'<span style="color:var(--success);">📈 '+bullAssets+'</span>':'')+
+                (bearAssets?'<span style="color:var(--danger);">📉 '+bearAssets+'</span>':'')+
+                '<span style="color:var(--accent);margin-left:auto;">'+(hMap[n.time_horizon]||n.time_horizon)+'</span>'+
+              '</div>'+
+            '</div>';
+          }).join('');
+        }else{
+          newsEl.innerHTML='<span style="font-size:13px;color:var(--text-dim);">No analyzed news yet</span>';
+        }
+
+        document.getElementById('radar-stats').textContent=
+          'Last '+(r.hours||24)+'h: '+(r.total_analyzed||0)+' articles analyzed'+
+          (r.market_filter&&r.market_filter!=='all'?' ('+r.market_filter+')':'');
+      })
+      .catch(function(){
+        document.getElementById('radar-stats').textContent='Failed to load data';
+      });
+  }
+
+  // Market filter buttons
+  document.querySelectorAll('[data-market]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('[data-market]').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      currentMarket=btn.dataset.market||'';
+      loadRadar();
+    });
+  });
+
+  // Confidence filter buttons
+  document.querySelectorAll('[data-conf]').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      document.querySelectorAll('[data-conf]').forEach(function(b){b.classList.remove('active');});
+      btn.classList.add('active');
+      currentConf=parseInt(btn.dataset.conf)||0;
+      loadRadar();
+    });
+  });
+
+  loadRadar();
+})();
+</script>
+{% endblock %}

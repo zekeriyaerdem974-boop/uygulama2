@@ -1,0 +1,971 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}{{ t('sidebar.discover', 'Keşfet') }} • ZKR Analiz Pro{% endblock %}
+{% block page_title %}{{ t('sidebar.discover', 'Keşfet') }}{% endblock %}
+{% block topbar_title %}<span data-i18n="sidebar.discover">{{ t('sidebar.discover', 'Keşfet') }}</span>{% endblock %}
+
+{% block topbar_right %}
+<div style="display:flex;align-items:center;gap:8px;">
+  <span style="width:6px;height:6px;border-radius:50%;background:var(--mt-positive);display:inline-block;"></span>
+  <span style="font-size:11px;color:var(--mt-text-secondary);font-weight:500;" data-i18n="discover.live">Canlı</span>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══ DISCOVER PAGE — Section-based mobile layout ═══ */
+.discover-page {
+  padding-bottom: calc(var(--mt-bottombar-h, 56px) + 8px);
+  background: var(--mt-bg, #000);
+  min-height: 100vh;
+}
+
+/* ── Quick Stats Ticker ── */
+.dsc-ticker {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  gap: 0;
+  border-bottom: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+  background: var(--mt-surface, #0B0B0F);
+}
+.dsc-ticker::-webkit-scrollbar { display: none; }
+.dsc-ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  white-space: nowrap;
+  border-right: 1px solid var(--mt-border-light, rgba(255,255,255,0.04));
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.dsc-ticker-item:hover { background: rgba(255,255,255,0.03); }
+.dsc-ticker-sym { font-size: 11px; font-weight: 600; color: var(--mt-text, #fff); }
+.dsc-ticker-price { font-size: 11px; font-weight: 500; color: var(--mt-text-secondary, #8B8B95); font-family: var(--mt-font-mono); }
+.dsc-ticker-chg { font-size: 10px; font-weight: 600; padding: 1px 5px; border-radius: 3px; }
+.dsc-ticker-chg.up { color: var(--mt-positive); background: rgba(22,199,132,0.12); }
+.dsc-ticker-chg.down { color: var(--mt-negative); background: rgba(255,77,109,0.12); }
+
+/* ── Badges ── */
+.dsc-badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
+.dsc-badge.bullish { color: var(--mt-positive); background: rgba(22,199,132,0.12); }
+.dsc-badge.bearish { color: var(--mt-negative); background: rgba(255,77,109,0.12); }
+
+/* ── News modal ── */
+.dsc-modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 10000;
+  align-items: flex-end;
+  justify-content: center;
+}
+.dsc-modal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  background: var(--mt-surface, #0B0B0F);
+  border-radius: 16px 16px 0 0;
+  overflow-y: auto;
+  padding: 20px;
+}
+.dsc-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dsc-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--mt-surface-3);
+  border: none;
+  color: var(--mt-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (min-width: 769px) {
+  .dsc-modal-overlay {
+    align-items: center;
+  }
+  .dsc-modal {
+    border-radius: 16px;
+    max-height: 80vh;
+  }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="discover-page" id="discoverPage">
+
+  <!-- ═══ QUICK TICKER BAR ═══ -->
+  <div class="dsc-ticker" id="tickerBar">
+    <a class="dsc-ticker-item" data-sym="crypto:BTCUSDT">
+      <span class="dsc-ticker-sym">BTC</span>
+      <span class="dsc-ticker-price" id="tk-btc-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-btc-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="crypto:ETHUSDT">
+      <span class="dsc-ticker-sym">ETH</span>
+      <span class="dsc-ticker-price" id="tk-eth-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-eth-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="crypto:SOLUSDT">
+      <span class="dsc-ticker-sym">SOL</span>
+      <span class="dsc-ticker-price" id="tk-sol-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-sol-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="commodities:GC=F">
+      <span class="dsc-ticker-sym">GOLD</span>
+      <span class="dsc-ticker-price" id="tk-gold-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-gold-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="stocks:SPY">
+      <span class="dsc-ticker-sym">S&amp;P 500</span>
+      <span class="dsc-ticker-price" id="tk-sp-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-sp-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="forex:DX=F">
+      <span class="dsc-ticker-sym">DXY</span>
+      <span class="dsc-ticker-price" id="tk-dxy-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-dxy-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="crypto:BNBUSDT">
+      <span class="dsc-ticker-sym">BNB</span>
+      <span class="dsc-ticker-price" id="tk-bnb-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-bnb-c">—</span>
+    </a>
+    <a class="dsc-ticker-item" data-sym="crypto:XRPUSDT">
+      <span class="dsc-ticker-sym">XRP</span>
+      <span class="dsc-ticker-price" id="tk-xrp-p">—</span>
+      <span class="dsc-ticker-chg" id="tk-xrp-c">—</span>
+    </a>
+  </div>
+
+  <!-- ═══ METRICS STATS BAR ═══ -->
+  <div class="mt-stats-bar" id="metricsBar">
+    <div class="mt-stat">
+      <div class="mt-stat-label" data-i18n="discover.volume">Hacim</div>
+      <div class="mt-stat-value" id="mc-volume">—</div>
+    </div>
+    <div class="mt-stat">
+      <div class="mt-stat-label" data-i18n="discover.fear_greed">F&amp;G</div>
+      <div class="mt-stat-value" id="mc-fng">—</div>
+    </div>
+    <div class="mt-stat">
+      <div class="mt-stat-label" data-i18n="discover.funding">Fonlama</div>
+      <div class="mt-stat-value" id="mc-funding">—</div>
+    </div>
+    <div class="mt-stat">
+      <div class="mt-stat-label" data-i18n="discover.btc_dom">BTC Dom</div>
+      <div class="mt-stat-value" id="mc-dom">—</div>
+    </div>
+    <div class="mt-stat">
+      <div class="mt-stat-label" data-i18n="discover.ai_sentiment">AI Sent.</div>
+      <div class="mt-stat-value" id="mc-ai-sent">—</div>
+    </div>
+  </div>
+
+  <!-- ═══ AI MARKET BRIEF ═══ -->
+  <div class="mt-section">
+    <div class="mt-ai-brief" id="aiBriefCard">
+      <div class="mt-ai-brief-header">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="mt-ai-brief-label" data-i18n="discover.ai_brief_label">AI Piyasa Özeti</span>
+        <span id="mc-sentiment" style="margin-left:auto;font-size:11px;font-weight:600;color:var(--mt-positive);">—</span>
+      </div>
+      <div class="mt-ai-brief-text" id="aiBriefText" data-i18n="discover.ai_loading">Piyasa analizi yükleniyor...</div>
+    </div>
+  </div>
+
+  <!-- ═══ WATCHLIST / MARKET LIST ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.watchlist">İzleme Listesi</h2>
+      <a href="/tv" class="mt-section-action" data-i18n="discover.go_chart">Grafiğe Git →</a>
+    </div>
+    <div id="watchlistItems">
+      <div class="mt-empty"><div class="mt-empty-icon">📊</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ TRENDING COINS ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.trending_coins">Trending Coinler</h2>
+    </div>
+    <div class="mt-trending-grid" id="trendingCoins">
+      <div class="mt-empty"><div class="mt-empty-icon">🔥</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ ÖNE ÇIKAN FIRSATLAR ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.featured_opps">Öne Çıkan Fırsatlar</h2>
+      <a href="/opportunities" class="mt-section-action" data-i18n="discover.view_all">Tümü →</a>
+    </div>
+    <div id="featuredOpps">
+      <div class="mt-empty"><div class="mt-empty-icon">🎯</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ ACTIVITY STREAM ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.activity">Aktivite</h2>
+      <a href="/activity" class="mt-section-action" data-i18n="discover.view_all">Tümü →</a>
+    </div>
+    <div id="activityItems">
+      <div class="mt-empty"><div class="mt-empty-icon">⚡</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ PİYASA HABERLERİ (Compact) ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.market_news">Piyasa Haberleri</h2>
+    </div>
+    <div id="marketNewsCompact">
+      <div class="mt-empty"><div class="mt-empty-icon">📰</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ NEWS FEED ═══ -->
+  <div class="mt-section">
+    <div class="mt-section-header">
+      <h2 class="mt-section-title" data-i18n="discover.news_title">Haberler</h2>
+    </div>
+    <div class="mt-chips" id="newsChips">
+      <button class="mt-chip active" data-news="crypto" data-i18n="discover.chip_crypto">Kripto</button>
+      <button class="mt-chip" data-news="stocks" data-i18n="discover.chip_stocks">Hisseler</button>
+      <button class="mt-chip" data-news="forex" data-i18n="discover.chip_forex">Forex</button>
+      <button class="mt-chip" data-news="macro" data-i18n="discover.chip_macro">Makro</button>
+    </div>
+    <div id="newsItems">
+      <div class="mt-empty"><div class="mt-empty-icon">📰</div><div class="mt-empty-text">Yükleniyor...</div></div>
+    </div>
+  </div>
+
+  <div class="mt-spacer-lg"></div>
+
+</div><!-- /discover-page -->
+
+<!-- ═══ NEWS DETAIL MODAL ═══ -->
+<div id="news-detail-modal" class="dsc-modal-overlay">
+  <div class="dsc-modal">
+    <div class="dsc-modal-header">
+      <button id="news-modal-back" class="dsc-modal-close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <span id="news-modal-source" style="font-size:12px;color:var(--mt-text-dim);"></span>
+      <a id="news-modal-external" href="#" target="_blank" rel="noopener noreferrer" style="margin-left:auto;color:var(--mt-text-secondary);">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+      </a>
+    </div>
+    <div id="news-modal-sentiment" class="dsc-badge" style="margin-bottom:8px;display:inline-block;"></div>
+    <h2 id="news-modal-title" style="font-size:18px;font-weight:700;color:var(--mt-text);margin:0 0 8px;line-height:1.4;"></h2>
+    <div id="news-modal-meta" style="font-size:12px;color:var(--mt-text-dim);margin-bottom:12px;"></div>
+    <div id="news-modal-symbols" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
+    <p id="news-modal-summary" style="font-size:14px;color:var(--mt-text-secondary);line-height:1.7;margin:0;"></p>
+    <div id="news-modal-impact" style="display:none;margin-top:16px;padding:16px;background:var(--mt-surface-3);border-radius:10px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+        <span style="font-size:1rem;">📡</span>
+        <span style="font-weight:600;color:var(--mt-text);font-size:.9rem;">AI Market Impact</span>
+        <span id="news-impact-confidence" style="margin-left:auto;font-size:11px;color:var(--mt-accent);font-weight:600;"></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <div style="font-size:.7rem;color:var(--mt-positive);font-weight:600;margin-bottom:4px;">📈 Bullish</div>
+          <div id="news-impact-bullish-sectors" style="font-size:.78rem;color:var(--mt-text-dim);margin-bottom:4px;"></div>
+          <div id="news-impact-bullish-assets" style="font-size:.78rem;color:var(--mt-text);"></div>
+        </div>
+        <div>
+          <div style="font-size:.7rem;color:var(--mt-negative);font-weight:600;margin-bottom:4px;">📉 Bearish</div>
+          <div id="news-impact-bearish-sectors" style="font-size:.78rem;color:var(--mt-text-dim);margin-bottom:4px;"></div>
+          <div id="news-impact-bearish-assets" style="font-size:.78rem;color:var(--mt-text);"></div>
+        </div>
+      </div>
+      <div id="news-impact-summary" style="margin-top:10px;font-size:.78rem;color:var(--mt-text-dim);border-top:1px solid var(--mt-border);padding-top:8px;"></div>
+      <div id="news-impact-horizon" style="margin-top:6px;font-size:.7rem;color:var(--mt-accent);"></div>
+    </div>
+    <a id="news-modal-readmore" href="#" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;margin-top:16px;padding:10px 20px;background:var(--mt-accent);color:#fff;border-radius:8px;font-size:13px;font-weight:600;text-decoration:none;">
+      <span data-i18n="discover.go_source">Kaynağa Git →</span>
+    </a>
+  </div>
+</div>
+
+<!-- Legal Disclaimer -->
+{% include "legal_disclaimer.html" %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  'use strict';
+
+  /* ═══════════════════════════════════════════════════════
+     HELPERS
+     ═══════════════════════════════════════════════════════ */
+  function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+  function fmtPrice(p) {
+    return p >= 1000 ? p.toLocaleString('en-US',{maximumFractionDigits:0}) :
+           p >= 1   ? p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}) :
+                      p.toLocaleString('en-US',{minimumFractionDigits:4,maximumFractionDigits:4});
+  }
+  function fmtChg(c) { return (c >= 0 ? '+' : '') + c.toFixed(2) + '%'; }
+  function timeAgo(iso) {
+    var s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return s + 's'; if (s < 3600) return Math.floor(s/60) + 'm';
+    if (s < 86400) return Math.floor(s/3600) + 'h'; return Math.floor(s/86400) + 'd';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     BINANCE WEBSOCKET — Live Market Data
+     ═══════════════════════════════════════════════════════ */
+  var TICKER_MAP = {
+    'BTCUSDT':{id:'btc'},'ETHUSDT':{id:'eth'},'SOLUSDT':{id:'sol'},
+    'BNBUSDT':{id:'bnb'},'XRPUSDT':{id:'xrp'}
+  };
+  var liveData = {};
+  var marketWS = null;
+
+  function connectMarketWS() {
+    if (marketWS && marketWS.readyState <= 1) return;
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try { marketWS = new WebSocket(proto + '//' + location.host + '/ws/market'); } catch(e) { return; }
+
+    marketWS.onopen = function() {
+      marketWS.send(JSON.stringify({action:'watchlist'}));
+    };
+    marketWS.onmessage = function(event) {
+      try {
+        var msg = JSON.parse(event.data);
+        if (msg.type === 'watchlist' && msg.tickers) onWatchlistTickers(msg.tickers);
+      } catch(e) {}
+    };
+    marketWS.onclose = function() { setTimeout(connectMarketWS, 3000); };
+    marketWS.onerror = function() {};
+    setInterval(function() {
+      if (marketWS && marketWS.readyState === WebSocket.OPEN) marketWS.send(JSON.stringify({action:'ping'}));
+    }, 25000);
+  }
+
+  function onWatchlistTickers(tickers) {
+    if (!Array.isArray(tickers)) return;
+    tickers.forEach(function(t) {
+      var sym = t.symbol || t.s; if (!sym) return;
+      liveData[sym] = { last: parseFloat(t.last||t.c||0), change24_pct: parseFloat(t.change24_pct||t.P||0), quoteVolume: parseFloat(t.quoteVolume||t.q||0) };
+    });
+    // Update ticker bar
+    Object.keys(TICKER_MAP).forEach(function(sym) {
+      var d = liveData[sym]; if (!d) return;
+      var info = TICKER_MAP[sym];
+      var pEl = document.getElementById('tk-'+info.id+'-p');
+      var cEl = document.getElementById('tk-'+info.id+'-c');
+      if (pEl) pEl.textContent = fmtPrice(d.last);
+      if (cEl) { cEl.textContent = fmtChg(d.change24_pct); cEl.className = 'dsc-ticker-chg '+(d.change24_pct>=0?'up':'down'); }
+    });
+    // Update watchlist rows
+    watchlistSymbols.forEach(function(w) {
+      if (w.market !== 'crypto') return;
+      var d = liveData[w.sym]; if (!d) return;
+      var row = document.querySelector('.mt-row[data-sym="'+w.sym+'"]');
+      if (!row) return;
+      var priceEl = row.querySelector('.mt-row-price-value');
+      var chgEl = row.querySelector('.mt-row-price-chg');
+      if (priceEl) priceEl.textContent = fmtPrice(d.last);
+      if (chgEl) { chgEl.textContent = fmtChg(d.change24_pct); chgEl.className = 'mt-row-price-chg '+(d.change24_pct>=0?'up':'down'); }
+    });
+
+    // Update volume metric
+    var btcData = liveData['BTCUSDT'];
+    if (btcData && btcData.quoteVolume) {
+      var volEl = document.getElementById('mc-volume');
+      if (volEl) volEl.textContent = '$' + (btcData.quoteVolume / 1e9).toFixed(2) + 'B';
+    }
+  }
+
+  /* Non-crypto ticker REST */
+  function loadNonCryptoTicker() {
+    var items = [{id:'gold',key:'commodities:GC=F'},{id:'sp',key:'stocks:SPY'},{id:'dxy',key:'forex:DX=F'}];
+    var query = items.map(function(s){ return s.key; }).join(',');
+    fetch('/api/snapshot?items='+encodeURIComponent(query)).then(function(r){return r.json();}).then(function(d){
+      if (!d.ok||!d.data) return;
+      items.forEach(function(s){
+        var t = d.data[s.key]; if (!t) return;
+        var pEl = document.getElementById('tk-'+s.id+'-p');
+        var cEl = document.getElementById('tk-'+s.id+'-c');
+        if (pEl && t.lastPrice) pEl.textContent = fmtPrice(parseFloat(t.lastPrice));
+        if (cEl && t.priceChangePercent !== undefined) { var c = parseFloat(t.priceChangePercent); cEl.textContent = fmtChg(c); cEl.className = 'dsc-ticker-chg '+(c>=0?'up':'down'); }
+      });
+    }).catch(function(){});
+  }
+  loadNonCryptoTicker();
+  setInterval(loadNonCryptoTicker, 30000);
+
+  /* Initial ticker REST load */
+  (function initialTickerLoad() {
+    var items = [{id:'btc',key:'crypto:BTCUSDT'},{id:'eth',key:'crypto:ETHUSDT'},{id:'sol',key:'crypto:SOLUSDT'},{id:'bnb',key:'crypto:BNBUSDT'},{id:'xrp',key:'crypto:XRPUSDT'},{id:'gold',key:'commodities:GC=F'},{id:'sp',key:'stocks:SPY'},{id:'dxy',key:'forex:DX=F'}];
+    var query = items.map(function(s){ return s.key; }).join(',');
+    fetch('/api/snapshot?items='+encodeURIComponent(query)).then(function(r){return r.json();}).then(function(d){
+      if (!d.ok||!d.data) return;
+      items.forEach(function(s){
+        var t = d.data[s.key]; if (!t) return;
+        var pEl = document.getElementById('tk-'+s.id+'-p');
+        var cEl = document.getElementById('tk-'+s.id+'-c');
+        if (pEl && t.lastPrice) pEl.textContent = fmtPrice(parseFloat(t.lastPrice));
+        if (cEl && t.priceChangePercent !== undefined) { var c = parseFloat(t.priceChangePercent); cEl.textContent = fmtChg(c); cEl.className = 'dsc-ticker-chg '+(c>=0?'up':'down'); }
+      });
+    }).catch(function(){});
+  })();
+
+  /* ═══════════════════════════════════════════════════════
+     WATCHLIST — Market list with mt-row style
+     ═══════════════════════════════════════════════════════ */
+  var COIN_ICONS = {
+    'BTC':'₿','ETH':'Ξ','SOL':'◎','BNB':'♦','XRP':'✕','AVAX':'▲','DOGE':'Ð','ADA':'♠'
+  };
+  var watchlistSymbols = [
+    {sym:'BTCUSDT',market:'crypto',display:'Bitcoin',short:'BTC'},
+    {sym:'ETHUSDT',market:'crypto',display:'Ethereum',short:'ETH'},
+    {sym:'SOLUSDT',market:'crypto',display:'Solana',short:'SOL'},
+    {sym:'BNBUSDT',market:'crypto',display:'BNB',short:'BNB'},
+    {sym:'XRPUSDT',market:'crypto',display:'XRP',short:'XRP'},
+    {sym:'AVAXUSDT',market:'crypto',display:'Avalanche',short:'AVAX'},
+    {sym:'DOGEUSDT',market:'crypto',display:'Dogecoin',short:'DOGE'},
+    {sym:'ADAUSDT',market:'crypto',display:'Cardano',short:'ADA'},
+    {sym:'XU100.IS',market:'bist',display:'BIST 100',short:'XU100'},
+    {sym:'THYAO.IS',market:'bist',display:'THY',short:'THYAO'},
+    {sym:'AAPL',market:'stocks',display:'Apple',short:'AAPL'},
+    {sym:'NVDA',market:'stocks',display:'NVIDIA',short:'NVDA'}
+  ];
+
+  function renderWatchlistInitial() {
+    var container = document.getElementById('watchlistItems');
+    if (!container) return;
+    var html = '';
+    watchlistSymbols.forEach(function(w) {
+      var icon = COIN_ICONS[w.short] || w.short.charAt(0);
+      html += '<div class="mt-row" data-sym="'+esc(w.sym)+'" data-market="'+esc(w.market)+'">' +
+                '<div class="mt-icon">' + icon + '</div>' +
+                '<div class="mt-row-info">' +
+                  '<div class="mt-row-name">' + esc(w.short) + '</div>' +
+                  '<div class="mt-row-sub">' + esc(w.display) + '</div>' +
+                '</div>' +
+                '<div class="mt-row-price">' +
+                  '<div class="mt-row-price-value">—</div>' +
+                  '<div class="mt-row-price-chg">—</div>' +
+                '</div>' +
+              '</div>';
+    });
+    container.innerHTML = html;
+
+    container.querySelectorAll('.mt-row').forEach(function(item) {
+      item.addEventListener('click', function() {
+        var sym = item.dataset.sym;
+        var market = item.dataset.market;
+        var tvSym = market==='crypto'?'BINANCE:'+sym:market==='bist'?'BIST:'+sym.replace('.IS',''):'NASDAQ:'+sym;
+        window.location.href = '/tv?symbol=' + encodeURIComponent(tvSym);
+      });
+    });
+  }
+
+  function loadNonCryptoWatchlist() {
+    var nonCrypto = watchlistSymbols.filter(function(w) { return w.market !== 'crypto'; });
+    nonCrypto.forEach(function(w) {
+      var apiPath = w.market==='bist'?'/api/bist/ticker?symbol='+w.sym:w.market==='stocks'?'/api/stocks/ticker?symbol='+w.sym:null;
+      if (!apiPath) return;
+      fetch(apiPath).then(function(r){return r.json();}).then(function(d){
+        if (!d.ok||!d.data) return;
+        var row = document.querySelector('.mt-row[data-sym="'+w.sym+'"]'); if (!row) return;
+        var p = parseFloat(d.data.lastPrice||d.data.price||0);
+        var c = parseFloat(d.data.priceChangePercent||d.data.change_percent||0);
+        var priceEl = row.querySelector('.mt-row-price-value');
+        var chgEl = row.querySelector('.mt-row-price-chg');
+        if (priceEl) priceEl.textContent = fmtPrice(p);
+        if (chgEl) { chgEl.textContent = fmtChg(c); chgEl.className = 'mt-row-price-chg '+(c>=0?'up':'down'); }
+      }).catch(function(){});
+    });
+  }
+
+  renderWatchlistInitial();
+  
+  function loadCryptoWatchlist() {
+    var cryptoSymbols = watchlistSymbols.filter(function(w) { return w.market === 'crypto'; });
+    if (!cryptoSymbols.length) return;
+    var query = cryptoSymbols.map(function(w) { return 'crypto:' + w.sym; }).join(',');
+    fetch('/api/snapshot?items=' + encodeURIComponent(query)).then(function(r) {
+      return r.json();
+    }).then(function(d) {
+      if (!d.ok || !d.data) return;
+      cryptoSymbols.forEach(function(w) {
+        var key = 'crypto:' + w.sym;
+        var t = d.data[key]; if (!t) return;
+        var row = document.querySelector('.mt-row[data-sym="'+w.sym+'"]'); if (!row) return;
+        var p = parseFloat(t.lastPrice || 0);
+        var c = parseFloat(t.priceChangePercent || 0);
+        var priceEl = row.querySelector('.mt-row-price-value');
+        var chgEl = row.querySelector('.mt-row-price-chg');
+        if (priceEl && p > 0) priceEl.textContent = fmtPrice(p);
+        if (chgEl && (c !== undefined && c !== null)) { chgEl.textContent = fmtChg(c); chgEl.className = 'mt-row-price-chg '+(c>=0?'up':'down'); }
+      });
+    }).catch(function(){});
+  }
+  
+  loadCryptoWatchlist();
+  loadNonCryptoWatchlist();
+  setInterval(function() { loadCryptoWatchlist(); loadNonCryptoWatchlist(); }, 30000);
+
+  /* ═══════════════════════════════════════════════════════
+     ACTIVITY FEED — Event rows
+     ═══════════════════════════════════════════════════════ */
+  var EVENT_META = {
+    volume_spike:{icon:'📊',color:'#3b82f6'}, volatility_spike:{icon:'⚡',color:'#f59e0b'},
+    momentum_shift:{icon:'🚀',color:'#10b981'}, news_impact:{icon:'📰',color:'#6366f1'},
+    strategy_activity:{icon:'⚙️',color:'#06b6d4'}, social_trending:{icon:'🔥',color:'#eab308'},
+    mentor_live_room:{icon:'🔴',color:'#ef4444'}, sector_rotation:{icon:'🔄',color:'#ec4899'},
+    macro_impact:{icon:'🌍',color:'#8b5cf6'}, asset_activity:{icon:'💹',color:'#14b8a6'},
+    mentor_post:{icon:'🎓',color:'#f97316'}, portfolio_risk_change:{icon:'🛡️',color:'#dc2626'}
+  };
+  var activityWS = null;
+
+  function renderActivity(events) {
+    var container = document.getElementById('activityItems');
+    if (!container || !events || !events.length) {
+      if (container) container.innerHTML = '<div class="mt-empty"><div class="mt-empty-icon">⚡</div><div class="mt-empty-text">Henüz aktivite yok</div></div>';
+      return;
+    }
+    var html = '';
+    events.forEach(function(ev) {
+      var etype = ev.event_type || ev.type || 'asset_activity';
+      var m = EVENT_META[etype] || { icon: '💹', color: '#6b7280' };
+      html += '<div class="mt-event-row">' +
+                '<div class="mt-event-icon">' + m.icon + '</div>' +
+                '<div class="mt-event-body">' +
+                  '<div class="mt-event-title">' + esc(ev.title) + '</div>' +
+                  '<div class="mt-event-meta">' +
+                    (ev.symbol ? '<span style="color:var(--mt-accent);font-size:11px;font-weight:600;">' + esc(ev.symbol) + '</span>' : '') +
+                    '<span class="mt-event-time">' + timeAgo(ev.created_at) + '</span>' +
+                  '</div>' +
+                '</div>' +
+              '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  function prependActivity(ev) {
+    var container = document.getElementById('activityItems');
+    if (!container) return;
+    if (container.querySelector('.mt-empty')) container.innerHTML = '';
+    var etype = ev.event_type || ev.type || 'asset_activity';
+    var m = EVENT_META[etype] || { icon: '💹', color: '#6b7280' };
+    var div = document.createElement('div');
+    div.className = 'mt-event-row';
+    div.style.animation = 'actFlash .6s ease';
+    div.innerHTML = '<div class="mt-event-icon">' + m.icon + '</div>' +
+                    '<div class="mt-event-body"><div class="mt-event-title">' + esc(ev.title) + '</div>' +
+                    '<div class="mt-event-meta">' + (ev.symbol ? '<span style="color:var(--mt-accent);font-size:11px;font-weight:600;">' + esc(ev.symbol) + '</span>' : '') +
+                    '<span class="mt-event-time">şimdi</span></div></div>';
+    container.insertBefore(div, container.firstChild);
+    while (container.children.length > 15) container.removeChild(container.lastChild);
+  }
+
+  function connectActivityWS() {
+    if (activityWS && activityWS.readyState <= 1) return;
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try { activityWS = new WebSocket(proto + '//' + location.host + '/ws/activity'); } catch(e) { return; }
+    activityWS.onopen = function() { activityWS.send(JSON.stringify({action:'subscribe'})); };
+    activityWS.onmessage = function(event) {
+      try {
+        var msg = JSON.parse(event.data);
+        if (msg.type === 'activity_event' && msg.event) prependActivity(msg.event);
+      } catch(e) {}
+    };
+    activityWS.onclose = function() { setTimeout(connectActivityWS, 5000); };
+    activityWS.onerror = function() {};
+  }
+
+  fetch('/api/activity?limit=10&hours=24')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok && d.data && d.data.length) renderActivity(d.data);
+      else {
+        fetch('/api/demo/activity?limit=10').then(function(r){ return r.json(); }).then(function(dd){
+          if (dd.ok && dd.events) renderActivity(dd.events);
+          else renderActivity([]);
+        }).catch(function(){ renderActivity([]); });
+      }
+    }).catch(function(){ renderActivity([]); });
+
+  /* ═══════════════════════════════════════════════════════
+     TRENDING COINS — compact horizontal pills
+     ═══════════════════════════════════════════════════════ */
+  var TRENDING_FALLBACK = [
+    {sym:'BTCUSDT',short:'BTC',name:'Bitcoin'},
+    {sym:'ETHUSDT',short:'ETH',name:'Ethereum'},
+    {sym:'SOLUSDT',short:'SOL',name:'Solana'},
+    {sym:'BNBUSDT',short:'BNB',name:'BNB'},
+    {sym:'XRPUSDT',short:'XRP',name:'XRP'},
+    {sym:'AVAXUSDT',short:'AVAX',name:'Avalanche'},
+    {sym:'DOGEUSDT',short:'DOGE',name:'Dogecoin'}
+  ];
+
+  function renderTrending(coins) {
+    var container = document.getElementById('trendingCoins');
+    if (!container) return;
+    if (!coins || !coins.length) coins = TRENDING_FALLBACK;
+    var html = '';
+    coins.slice(0, 7).forEach(function(c) {
+      var sym = c.sym || c.symbol || '';
+      var short = c.short || sym.replace('USDT','');
+      var icon = COIN_ICONS[short] || short.charAt(0);
+      var d = liveData[sym];
+      var price = d ? fmtPrice(d.last) : '—';
+      var chg = d ? d.change24_pct : null;
+      var chgStr = chg !== null ? fmtChg(chg) : '—';
+      var cls = chg !== null ? (chg >= 0 ? 'up' : 'down') : '';
+      html += '<a class="mt-trending-item" onclick="window.location.href=\'/tv?symbol=BINANCE:'+esc(sym)+'\';">' +
+                '<div class="mt-trending-icon">' + icon + '</div>' +
+                '<div class="mt-trending-info">' +
+                  '<span class="mt-trending-sym">' + esc(short) + '</span>' +
+                  '<span class="mt-trending-price">' + price + '</span>' +
+                '</div>' +
+                '<span class="mt-trending-chg ' + cls + '">' + chgStr + '</span>' +
+              '</a>';
+    });
+    container.innerHTML = html;
+  }
+  renderTrending(TRENDING_FALLBACK);
+  // Re-render trending after WS data arrives
+  var _origOnWT = onWatchlistTickers;
+  onWatchlistTickers = function(tickers) { _origOnWT(tickers); renderTrending(TRENDING_FALLBACK); };
+
+  /* ═══════════════════════════════════════════════════════
+     FEATURED OPPORTUNITIES — compact list
+     ═══════════════════════════════════════════════════════ */
+  var OPPS_FALLBACK = [
+    {symbol:'SOL',description:'Breakout potansiyeli — güçlü hacim',direction:'bullish',confidence:82},
+    {symbol:'ETH',description:'Hacim artışı ile yukarı destek',direction:'bullish',confidence:76},
+    {symbol:'BNB',description:'Destek dönüşü bekleniyor',direction:'bullish',confidence:71}
+  ];
+
+  function renderFeaturedOpps(opps) {
+    var container = document.getElementById('featuredOpps');
+    if (!container) return;
+    if (!opps || !opps.length) opps = OPPS_FALLBACK;
+    var html = '';
+    opps.slice(0, 5).forEach(function(opp) {
+      var dir = (opp.direction || opp.label || '').toLowerCase().indexOf('bull') > -1 ? 'long' : 'short';
+      var dirColor = dir === 'long' ? 'var(--mt-positive)' : 'var(--mt-negative)';
+      var dirBg = dir === 'long' ? 'rgba(22,199,132,0.12)' : 'rgba(255,77,109,0.12)';
+      var confColor = (opp.confidence||0) >= 80 ? 'var(--mt-positive)' : (opp.confidence||0) >= 60 ? 'var(--mt-warning)' : 'var(--mt-text-dim)';
+      html += '<div class="mt-row" style="cursor:pointer;" onclick="window.location.href=\'/opportunities\';">' +
+                '<div class="mt-icon" style="background:' + dirBg + ';font-size:14px;">' + (opp.icon||'🎯') + '</div>' +
+                '<div class="mt-row-info">' +
+                  '<div class="mt-row-name">' + esc(opp.symbol || opp.market || '') + '</div>' +
+                  '<div class="mt-row-sub" style="line-height:1.3;margin-top:2px;">' + esc(opp.description || '') + '</div>' +
+                '</div>' +
+                '<div class="mt-row-price">' +
+                  '<div style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;color:'+dirColor+';background:'+dirBg+';text-align:center;">' + dir + '</div>' +
+                  '<div style="font-size:11px;color:'+confColor+';margin-top:3px;text-align:right;">%' + (opp.confidence||0) + '</div>' +
+                '</div>' +
+              '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  fetch('/api/opportunities/trending?limit=5')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.ok && d.data && d.data.length) renderFeaturedOpps(d.data);
+      else renderFeaturedOpps(OPPS_FALLBACK);
+    }).catch(function(){ renderFeaturedOpps(OPPS_FALLBACK); });
+
+  /* ═══════════════════════════════════════════════════════
+     MARKET NEWS COMPACT — short headline list
+     ═══════════════════════════════════════════════════════ */
+  var NEWS_FALLBACK = [
+    {title:'ETF girişleri artıyor — kurumsal ilgi güçleniyor',source:'ZKR Analiz',sentiment:'bullish'},
+    {title:'Whale birikimi tespit edildi — BTC ve ETH',source:'On-chain',sentiment:'bullish'},
+    {title:'Altcoin piyasası ısınıyor — hacim yükselişte',source:'Market',sentiment:'bullish'}
+  ];
+
+  function renderMarketNewsCompact(articles) {
+    var container = document.getElementById('marketNewsCompact');
+    if (!container) return;
+    if (!articles || !articles.length) articles = NEWS_FALLBACK;
+    var html = '';
+    articles.slice(0, 5).forEach(function(a) {
+      var sentBadge = '';
+      if (a.sentiment === 'bullish' || a.sentiment === 'positive') sentBadge = '<span class="dsc-badge bullish" style="margin-left:6px;">↑</span>';
+      else if (a.sentiment === 'bearish' || a.sentiment === 'negative') sentBadge = '<span class="dsc-badge bearish" style="margin-left:6px;">↓</span>';
+      html += '<div class="mt-news-row-compact">' +
+                '<span class="mt-news-dot"></span>' +
+                '<div style="flex:1;min-width:0;">' +
+                  '<div class="mt-news-title" style="-webkit-line-clamp:1;">' + esc(a.title) + sentBadge + '</div>' +
+                  '<div class="mt-news-src" style="margin-top:2px;">' + esc(a.source || '') + '</div>' +
+                '</div>' +
+              '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  fetch('/api/news?type=crypto&limit=5')
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      var articles = [];
+      if (d.ok && d.data) articles = d.data;
+      else if (d.ok && d.articles) articles = d.articles;
+      else if (Array.isArray(d)) articles = d;
+      if (articles.length) renderMarketNewsCompact(articles);
+      else renderMarketNewsCompact(NEWS_FALLBACK);
+    }).catch(function(){ renderMarketNewsCompact(NEWS_FALLBACK); });
+
+  /* ═══════════════════════════════════════════════════════
+     NEWS FEED
+     ═══════════════════════════════════════════════════════ */
+  var newsCache = {};
+
+  function loadNews(type) {
+    var container = document.getElementById('newsItems');
+    if (!container) return;
+
+    if (newsCache[type]) {
+      renderNews(newsCache[type], container);
+      return;
+    }
+
+    container.innerHTML = '<div class="mt-empty"><div class="mt-empty-icon">📰</div><div class="mt-empty-text">Yükleniyor...</div></div>';
+    fetch('/api/news?type=' + encodeURIComponent(type))
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var articles = [];
+        if (d.ok && d.data) articles = d.data;
+        else if (d.ok && d.articles) articles = d.articles;
+        else if (Array.isArray(d)) articles = d;
+        newsCache[type] = articles;
+        renderNews(articles, container);
+      }).catch(function(){
+        container.innerHTML = '<div class="mt-empty"><div class="mt-empty-icon">📰</div><div class="mt-empty-text">Haberler kullanılamıyor</div></div>';
+      });
+  }
+
+  function renderNews(articles, container) {
+    if (!articles || !articles.length) {
+      container.innerHTML = '<div class="mt-empty"><div class="mt-empty-icon">📰</div><div class="mt-empty-text">Haber bulunamadı</div></div>';
+      return;
+    }
+    var html = '';
+    articles.slice(0, 15).forEach(function(a) {
+      var sentBadge = '';
+      if (a.sentiment === 'bullish' || a.sentiment === 'positive') sentBadge = '<span class="dsc-badge bullish">↑</span>';
+      else if (a.sentiment === 'bearish' || a.sentiment === 'negative') sentBadge = '<span class="dsc-badge bearish">↓</span>';
+      var time = a.published_at || a.date || '';
+      if (time) { try { time = timeAgo(time); } catch(e) { time = ''; } }
+      html += '<div class="mt-news-row" data-article=\'' + encodeURIComponent(JSON.stringify(a)) + '\'>' +
+                '<div style="flex:1;min-width:0;">' +
+                  '<div class="mt-news-src">' + esc(a.source || '') + ' ' + sentBadge + '</div>' +
+                  '<div class="mt-news-title">' + esc(a.title) + '</div>' +
+                  '<div class="mt-news-time">' + time + '</div>' +
+                '</div>' +
+              '</div>';
+    });
+    container.innerHTML = html;
+
+    container.querySelectorAll('.mt-news-row').forEach(function(item) {
+      item.addEventListener('click', function() {
+        try {
+          var article = JSON.parse(decodeURIComponent(item.dataset.article));
+          openNewsDetail(article);
+        } catch(e) {}
+      });
+    });
+  }
+
+  function openNewsDetail(article) {
+    var modal = document.getElementById('news-detail-modal');
+    if (!modal) return;
+    document.getElementById('news-modal-title').textContent = article.title || '';
+    document.getElementById('news-modal-source').textContent = article.source || '';
+    document.getElementById('news-modal-summary').textContent = article.summary || article.description || '';
+    var ext = document.getElementById('news-modal-external');
+    var rm = document.getElementById('news-modal-readmore');
+    if (ext) ext.href = article.url || '#';
+    if (rm) rm.href = article.url || '#';
+    var sentEl = document.getElementById('news-modal-sentiment');
+    if (sentEl) {
+      sentEl.textContent = article.sentiment || 'neutral';
+      sentEl.className = 'dsc-badge ' + (article.sentiment === 'bullish' ? 'bullish' : article.sentiment === 'bearish' ? 'bearish' : '');
+    }
+    var metaEl = document.getElementById('news-modal-meta');
+    if (metaEl) metaEl.textContent = (article.published_at || article.date || '') + ' · ' + (article.source || '');
+    var symEl = document.getElementById('news-modal-symbols');
+    if (symEl) {
+      var syms = article.symbols || article.related_symbols || [];
+      symEl.innerHTML = syms.map(function(s){ return '<span style="font-size:10px;padding:2px 8px;background:var(--mt-surface-3);border-radius:4px;color:var(--mt-text-secondary);">' + esc(s) + '</span>'; }).join('');
+    }
+    var impactPanel = document.getElementById('news-modal-impact');
+    if (impactPanel) impactPanel.style.display = 'none';
+    if (article.id) {
+      fetch('/api/news/impact/' + article.id)
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (!d.ok || !d.impact) return;
+          var imp = d.impact;
+          if (impactPanel) impactPanel.style.display = 'block';
+          var confEl = document.getElementById('news-impact-confidence');
+          if (confEl) confEl.textContent = (imp.confidence || 0) + '% confidence';
+          var bsEl = document.getElementById('news-impact-bullish-sectors');
+          if (bsEl) bsEl.textContent = (imp.bullish_sectors || []).join(', ') || '—';
+          var baEl = document.getElementById('news-impact-bullish-assets');
+          if (baEl) baEl.textContent = (imp.bullish_assets || []).join(', ') || '—';
+          var bsEl2 = document.getElementById('news-impact-bearish-sectors');
+          if (bsEl2) bsEl2.textContent = (imp.bearish_sectors || []).join(', ') || '—';
+          var baEl2 = document.getElementById('news-impact-bearish-assets');
+          if (baEl2) baEl2.textContent = (imp.bearish_assets || []).join(', ') || '—';
+          var sumEl = document.getElementById('news-impact-summary');
+          if (sumEl) sumEl.textContent = imp.summary || '';
+          var horEl = document.getElementById('news-impact-horizon');
+          if (horEl) horEl.textContent = imp.time_horizon ? '⏱ ' + imp.time_horizon : '';
+        }).catch(function(){});
+    }
+    modal.style.display = 'flex';
+  }
+
+  // Modal close
+  var modalBack = document.getElementById('news-modal-back');
+  if (modalBack) {
+    modalBack.addEventListener('click', function() {
+      document.getElementById('news-detail-modal').style.display = 'none';
+    });
+  }
+  var modalOverlay = document.getElementById('news-detail-modal');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', function(e) {
+      if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+    });
+  }
+
+  // News chip tabs
+  document.querySelectorAll('#newsChips .mt-chip').forEach(function(chip) {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('#newsChips .mt-chip').forEach(function(c) { c.classList.remove('active'); });
+      chip.classList.add('active');
+      loadNews(chip.dataset.news);
+    });
+  });
+
+  loadNews('crypto');
+
+  /* ═══════════════════════════════════════════════════════
+     METRICS — Bottom stats data
+     ═══════════════════════════════════════════════════════ */
+  function loadMetrics() {
+    fetch('/api/metrics').then(function(r){
+      if (!r.ok) throw new Error('not found');
+      return r.json();
+    }).then(function(d){
+      if (!d.ok || !d.data) throw new Error('no data');
+      var m = d.data;
+      if (m.volume) document.getElementById('mc-volume').textContent = m.volume;
+      if (m.fng !== undefined) document.getElementById('mc-fng').textContent = m.fng;
+      if (m.funding) document.getElementById('mc-funding').textContent = m.funding;
+      if (m.dominance) document.getElementById('mc-dom').textContent = m.dominance;
+    }).catch(function(){ applyFallbackMetrics(); });
+  }
+  function applyFallbackMetrics() {
+    var fb = {'mc-volume':'$2.11B','mc-fng':'62','mc-funding':'0.012%','mc-dom':'51.2%','mc-ai-sent':'Pozitif'};
+    Object.keys(fb).forEach(function(id){
+      var el = document.getElementById(id);
+      if (el && (el.textContent === '—' || el.textContent === '')) el.textContent = fb[id];
+    });
+  }
+  loadMetrics();
+  setInterval(loadMetrics, 120000);
+
+  // AI Market Brief
+  var AI_FALLBACK_TEXT = 'BTC güçlü momentum gösteriyor. ETH hacim artışı ile destekleniyor. Piyasa sentiment: Pozitif. AI güven seviyesi: %78';
+  function renderAISummary(d) {
+    if (!d || !d.ok || !d.data) { showFallbackAI(); return; }
+    var data = d.data;
+    /* ── Sentiment badge (object → string) ── */
+    var sentEl = document.getElementById('mc-sentiment');
+    if (sentEl) {
+      var sentLabel = '';
+      if (data.sentiment && typeof data.sentiment === 'object') {
+        sentLabel = data.sentiment.label || data.sentiment.key || '';
+        var sentKey = (data.sentiment.key || '').toLowerCase();
+        sentEl.style.color = sentKey.indexOf('bull') > -1 || sentKey.indexOf('positive') > -1 ? 'var(--mt-positive)' : sentKey.indexOf('bear') > -1 || sentKey.indexOf('negative') > -1 ? 'var(--mt-negative)' : 'var(--mt-text-secondary)';
+      } else if (typeof data.sentiment === 'string') {
+        sentLabel = data.sentiment;
+        sentEl.style.color = data.sentiment.toLowerCase().indexOf('bull') > -1 ? 'var(--mt-positive)' : data.sentiment.toLowerCase().indexOf('bear') > -1 ? 'var(--mt-negative)' : 'var(--mt-text-secondary)';
+      }
+      sentEl.textContent = sentLabel || '—';
+    }
+    /* ── AI Sentiment metric ── */
+    var aiSentEl = document.getElementById('mc-ai-sent');
+    if (aiSentEl && data.sentiment) {
+      if (typeof data.sentiment === 'object') {
+        aiSentEl.textContent = data.sentiment.label || data.sentiment.key || '—';
+        var sk = (data.sentiment.key || '').toLowerCase();
+        aiSentEl.className = 'mt-stat-value ' + (sk.indexOf('bull') > -1 || sk.indexOf('positive') > -1 ? 'positive' : sk.indexOf('bear') > -1 || sk.indexOf('negative') > -1 ? 'negative' : '');
+      } else if (typeof data.sentiment === 'string') {
+        aiSentEl.textContent = data.sentiment;
+      }
+    }
+    /* ── Brief text from highlights array or summary string ── */
+    var briefEl = document.getElementById('aiBriefText');
+    if (briefEl) {
+      var txt = '';
+      if (typeof data.summary === 'string') txt = data.summary;
+      else if (typeof data.brief === 'string') txt = data.brief;
+      else if (typeof data.text === 'string') txt = data.text;
+      else if (typeof data.message === 'string') txt = data.message;
+      else if (typeof data.analysis === 'string') txt = data.analysis;
+      else if (Array.isArray(data.highlights) && data.highlights.length) txt = data.highlights.join(' ');
+      briefEl.textContent = txt || AI_FALLBACK_TEXT;
+    }
+    /* ── Fill metrics from AI data if main metrics failed ── */
+    if (data.market_data) {
+      var md = data.market_data;
+      var fngEl = document.getElementById('mc-fng');
+      if (fngEl && fngEl.textContent === '—' && md.fng_value != null) fngEl.textContent = md.fng_value;
+    }
+  }
+  function showFallbackAI() {
+    var briefEl = document.getElementById('aiBriefText');
+    if (briefEl) briefEl.textContent = AI_FALLBACK_TEXT;
+    var sentEl = document.getElementById('mc-sentiment');
+    if (sentEl) { sentEl.textContent = 'Pozitif'; sentEl.style.color = 'var(--mt-positive)'; }
+    var aiSentEl = document.getElementById('mc-ai-sent');
+    if (aiSentEl && aiSentEl.textContent === '—') { aiSentEl.textContent = 'Pozitif'; aiSentEl.className = 'mt-stat-value positive'; }
+  }
+  fetch('/api/ai/market-summary').then(function(r){return r.json();}).then(renderAISummary).catch(showFallbackAI);
+
+  // Boot WebSocket connections
+  connectMarketWS();
+  connectActivityWS();
+
+  // Add flash keyframe for activity
+  var styleSheet = document.createElement('style');
+  styleSheet.textContent = '@keyframes actFlash { 0%{background:rgba(59,130,246,.18)} 100%{background:transparent} }';
+  document.head.appendChild(styleSheet);
+
+})();
+</script>
+{% endblock %}

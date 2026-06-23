@@ -1,0 +1,134 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Yakında — ZKR Analiz{% endblock %}
+{% block topbar_title %}Yakında{% endblock %}
+
+{% block page_title %}Yakında{% endblock %}
+
+{% block extra_head %}
+<meta name="course-slug" content="{{ course_slug }}">
+<style>
+/* ── Course Detail Styles ────────────────────────── */
+.cd-header{padding:20px 16px;background:linear-gradient(180deg,#061a12 0%,#0a0a0a 100%);border-bottom:1px solid #1e1e1e;}
+.cd-top{display:flex;align-items:flex-start;gap:16px;margin-bottom:16px;}
+.cd-thumb{width:80px;height:80px;border-radius:16px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;}
+.cd-title-area{flex:1;min-width:0;}
+.cd-title{font-size:20px;font-weight:700;color:#f5f5f5;margin-bottom:4px;}
+.cd-mentor{font-size:13px;color:#888;display:flex;align-items:center;gap:6px;}
+.cd-mentor a{color:#10b981;text-decoration:none;}
+.cd-mentor a:hover{text-decoration:underline;}
+.cd-desc{font-size:13px;color:#bbb;line-height:1.6;padding:0 16px 16px;white-space:pre-wrap;}
+
+.cd-stats-row{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+.cd-stat{text-align:center;min-width:60px;}
+.cd-stat-val{font-size:18px;font-weight:700;color:#f5f5f5;}
+.cd-stat-label{font-size:11px;color:#888;}
+
+.cd-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.cd-badge{font-size:11px;padding:3px 10px;border-radius:10px;background:#1a1a1a;border:1px solid #272727;}
+.cd-badge.level-beginner{color:#4ade80;border-color:#4ade8033;}
+.cd-badge.level-intermediate{color:#fbbf24;border-color:#fbbf2433;}
+.cd-badge.level-advanced{color:#f97316;border-color:#f9731633;}
+.cd-badge.market{color:#60a5fa;border-color:#60a5fa33;}
+.cd-badge.free{color:#4ade80;border-color:#4ade8033;}
+.cd-badge.paid{color:#fbbf24;border-color:#fbbf2433;}
+.cd-badge.subscription{color:#f97316;border-color:#f9731633;}
+
+.cd-actions{display:flex;gap:10px;padding:0 16px 16px;}
+.cd-btn{padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .2s;flex:1;text-align:center;}
+.cd-btn-enroll{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}
+.cd-btn-enroll:hover{filter:brightness(1.1);}
+.cd-btn-enrolled{background:#333;color:#34d399;cursor:default;}
+.cd-btn-manage{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;}
+
+/* ── Lessons Section ─────────────────────────────── */
+.cd-section{padding:16px;}
+.cd-section-title{font-size:14px;font-weight:600;color:#e5e5e5;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+.cd-lesson{background:#111;border:1px solid #1e1e1e;border-radius:10px;padding:12px;margin-bottom:8px;transition:border-color .2s;}
+.cd-lesson:hover{border-color:#10b98133;}
+.cd-lesson-header{display:flex;align-items:center;gap:10px;}
+.cd-lesson-num{width:28px;height:28px;border-radius:50%;background:#1a1a1a;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#888;flex-shrink:0;}
+.cd-lesson-info{flex:1;min-width:0;}
+.cd-lesson-title{font-size:13px;font-weight:600;color:#e5e5e5;}
+.cd-lesson-meta{font-size:11px;color:#666;margin-top:2px;display:flex;gap:8px;}
+.cd-lesson-preview{font-size:10px;padding:2px 6px;border-radius:6px;background:#10b98118;color:#34d399;border:1px solid #10b98133;}
+.cd-lesson-locked{font-size:10px;padding:2px 6px;border-radius:6px;background:#ef444418;color:#f87171;border:1px solid #ef444433;}
+.cd-lesson-content{margin-top:10px;padding-top:10px;border-top:1px solid #1e1e1e;font-size:13px;color:#ccc;line-height:1.6;white-space:pre-wrap;}
+.cd-lesson-video{margin-top:10px;padding-top:10px;border-top:1px solid #1e1e1e;}
+.cd-lesson-video a{color:#10b981;font-size:13px;text-decoration:none;}
+.cd-lesson-video a:hover{text-decoration:underline;}
+
+.cd-empty{text-align:center;padding:20px;color:#666;font-size:13px;}
+.cd-loading{text-align:center;padding:40px;color:#666;font-size:14px;}
+
+/* ── Add Lesson Modal ──────────────────────────────── */
+.cd-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.cd-modal-overlay.open{opacity:1;pointer-events:auto;}
+.cd-modal{background:#111;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px;border:1px solid #222;border-bottom:none;}
+.cd-modal h3{font-size:16px;font-weight:700;color:#f5f5f5;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.cd-modal label{display:block;font-size:12px;color:#888;margin-bottom:4px;margin-top:12px;}
+.cd-modal input,.cd-modal textarea,.cd-modal select{width:100%;padding:10px 12px;background:#0a0a0a;border:1px solid #272727;border-radius:10px;color:#e5e5e5;font-size:13px;outline:none;}
+.cd-modal input:focus,.cd-modal textarea:focus,.cd-modal select:focus{border-color:#10b98166;}
+.cd-modal textarea{resize:vertical;min-height:100px;}
+.cd-modal-actions{display:flex;gap:10px;margin-top:20px;}
+.cd-check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#ccc;cursor:pointer;}
+.cd-check input{width:14px;height:14px;accent-color:#10b981;}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if coming_soon %}
+<div class="coming-soon-page">
+  <div class="cs-icon">🔒</div>
+  <h2 class="cs-title">Yeni Özellik Yakında</h2>
+  <p class="cs-subtitle">Bu bölüm şu anda geliştirme aşamasındadır. Çok yakında sizlerle buluşacak!</p>
+  <div class="cs-shimmer"></div>
+  <button class="cs-btn" onclick="if(window.BW&&BW.i18n)BW.i18n.toast('Haberdar edileceksiniz!','info');else alert('Haberdar edileceksiniz!')">🔔 Haberdar Et</button>
+</div>
+{% else %}
+<div id="cdContent">
+  <div class="cd-loading">Yükleniyor…</div>
+</div>
+
+<!-- Add Lesson Modal -->
+<div class="cd-modal-overlay" id="cdLessonModal">
+  <div class="cd-modal">
+    <h3>📝 Yeni Ders Ekle</h3>
+
+    <label>Ders Başlığı *</label>
+    <input id="cdLessonTitle" placeholder="Ör: Teknik Analiz'e Giriş" maxlength="200" />
+
+    <label>İçerik Tipi</label>
+    <select id="cdLessonType">
+      <option value="article">Makale</option>
+      <option value="video">Video</option>
+      <option value="chart_case">Grafik Analiz</option>
+      <option value="mixed">Karışık</option>
+    </select>
+
+    <label>Video URL <span style="color:#666">(video ise)</span></label>
+    <input id="cdLessonVideo" placeholder="https://youtube.com/..." />
+
+    <label>İçerik</label>
+    <textarea id="cdLessonContent" placeholder="Ders içeriği…" maxlength="10000"></textarea>
+
+    <label>Süre (dakika)</label>
+    <input id="cdLessonDuration" type="number" value="0" min="0" />
+
+    <label class="cd-check">
+      <input type="checkbox" id="cdLessonPreview"> Önizleme dersi (kayıtsız görülebilir)
+    </label>
+
+    <div class="cd-modal-actions">
+      <button class="cd-btn cd-btn-enroll" style="flex:1" onclick="CD.submitLesson()">Ekle</button>
+      <button class="cd-btn" style="background:#333;color:#ccc" onclick="CD.closeLessonModal()">İptal</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/course_detail.js"></script>
+{% endblock %}

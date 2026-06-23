@@ -1,0 +1,31 @@
+from __future__ import annotations
+
+from flask import Blueprint, current_app, jsonify
+
+
+bp = Blueprint("liquidation", __name__, url_prefix="/api/liquidation")
+
+
+def _svc():
+    return current_app.extensions["market_data"]
+
+
+@bp.get("/symbols")
+def symbols():
+    tickers = _svc().get_ticker_24h()
+    items = []
+    for t in tickers:
+        sym = t.get("symbol")
+        if not sym or not sym.endswith("USDT"):
+            continue
+        try:
+            quote_vol = float(t.get("quoteVolume", 0) or 0)
+            pct = float(t.get("priceChangePercent", 0) or 0)
+        except Exception:
+            continue
+
+        base = sym[:-4]
+        items.append({"symbol": sym, "base": base, "pct": pct, "quoteVolume": quote_vol})
+
+    items.sort(key=lambda x: x.get("quoteVolume", 0), reverse=True)
+    return jsonify({"ok": True, "count": len(items), "items": items})

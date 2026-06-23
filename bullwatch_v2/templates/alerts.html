@@ -1,0 +1,121 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Alarmlar • ZKR Analiz Pro{% endblock %}
+{% block page_title %}Alarmlar{% endblock %}
+{% block topbar_title %}Alerts{% endblock %}
+
+{% block header_actions %}
+<button class="alerts-btn-create" id="btnCreateAlert">
+  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+</button>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/alerts.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="alerts-page">
+  <!-- Header info -->
+  <div class="px-4 pt-3 pb-1 flex items-center gap-2">
+    <span class="text-xs text-neutral-500" id="alertCount">0 alarm</span>
+  </div>
+
+  <!-- Create Alert Form (hidden by default) -->
+  <div id="alertFormWrap" class="alert-form-wrap hidden">
+    <div class="alert-form">
+      <h3 class="alert-form-title">Yeni Alarm Oluştur</h3>
+      <div class="alert-form-grid">
+        <div class="alert-field">
+          <label>Sembol</label>
+          <input id="alertSymbol" type="text" placeholder="BTCUSDT" class="alert-input" />
+        </div>
+        <div class="alert-field">
+          <label>Piyasa</label>
+          <select id="alertMarket" class="alert-input">
+            <option value="crypto">Kripto</option>
+            <option value="bist">BIST</option>
+            <option value="stocks">ABD Hisse</option>
+            <option value="forex">Forex</option>
+            <option value="commodities">Emtia</option>
+          </select>
+        </div>
+        <div class="alert-field">
+          <label>Koşul</label>
+          <select id="alertCondition" class="alert-input">
+            <option value="price_above">Fiyat Üstüne Çıkarsa</option>
+            <option value="price_below">Fiyat Altına Düşerse</option>
+            <option value="rsi_above">RSI Üstüne Çıkarsa</option>
+            <option value="rsi_below">RSI Altına Düşerse</option>
+            <option value="ema_cross">EMA Kesişimi</option>
+            <option value="breakout">Kırılım (Breakout)</option>
+            <option value="volume_spike">Hacim Patlaması</option>
+          </select>
+        </div>
+        <div class="alert-field">
+          <label>Değer</label>
+          <input id="alertValue" type="number" step="any" placeholder="70000" class="alert-input" />
+        </div>
+      </div>
+      <div class="alert-form-actions">
+        <button class="alert-btn-cancel" id="btnCancelAlert">İptal</button>
+        <button class="alert-btn-save" id="btnSaveAlert">Alarm Oluştur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="alerts-tabs px-4">
+    <button class="alerts-tab active" data-tab="active">Aktif Alarmlar</button>
+    <button class="alerts-tab" data-tab="triggered">Tetiklenenler</button>
+  </div>
+
+  <!-- Active Alerts Table -->
+  <div class="alerts-table-wrap px-4" id="activeAlertsWrap">
+    <table class="alerts-table" id="alertsTable">
+      <thead>
+        <tr>
+          <th>Sembol</th>
+          <th>Piyasa</th>
+          <th>Koşul</th>
+          <th>Değer</th>
+          <th>Durum</th>
+          <th>Oluşturulma</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+      <tbody id="alertsBody">
+        <tr class="alert-empty-row">
+          <td colspan="7">Henüz alarm yok. Yeni bir alarm oluşturun.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Triggered Alerts Table -->
+  <div class="alerts-table-wrap hidden px-4" id="triggeredAlertsWrap">
+    <table class="alerts-table">
+      <thead>
+        <tr>
+          <th>Sembol</th>
+          <th>Koşul</th>
+          <th>Hedef</th>
+          <th>Tetiklenme Fiyatı</th>
+          <th>Tetiklenme Zamanı</th>
+        </tr>
+      </thead>
+      <tbody id="triggeredBody">
+        <tr class="alert-empty-row">
+          <td colspan="5">Henüz tetiklenen alarm yok.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Toast notification container -->
+<div id="alertToastContainer" class="alert-toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+{% endblock %}

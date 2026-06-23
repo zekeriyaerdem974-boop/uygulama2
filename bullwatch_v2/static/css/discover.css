@@ -1,0 +1,722 @@
+/* ═══════════════════════════════════════════════════════════════════
+   discover.css — ZKR Analiz v2 Keşfet (Discover) Page
+   Mobile-first premium dark finance app styling
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*,*::before,*::after { box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none;
+}
+
+/* Hide scrollbar but keep functionality */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* ── Quick Action Cards ────────────────────────────────────────────── */
+.disc-action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 8px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+.disc-action-card:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
+  transform: translateY(-1px);
+}
+.disc-action-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+/* ── Category Chips ────────────────────────────────────────────────── */
+.disc-chip {
+  flex-shrink: 0;
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.disc-chip:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
+.disc-chip.active {
+  background: #2979FF;
+  color: #fff;
+  border-color: #2979FF;
+  box-shadow: 0 0 16px rgba(41,121,255,0.25);
+}
+
+/* ── Mini Chips (news filter) ──────────────────────────────────────── */
+.disc-mini-chip {
+  padding: 4px 12px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.disc-mini-chip.active {
+  background: rgba(41,121,255,0.15);
+  color: #2979FF;
+  border-color: rgba(41,121,255,0.3);
+}
+
+/* ── Toggle Buttons (Artanlar/Azalanlar) ───────────────────────────── */
+.disc-toggle-btn {
+  padding: 5px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+}
+.disc-toggle-btn.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+}
+
+/* ── Featured Market Cards (2-col grid) ────────────────────────────── */
+.disc-market-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: 14px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.disc-market-card:hover {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.1);
+}
+.disc-market-card .symbol-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 1.2;
+}
+.disc-market-card .symbol-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+.disc-market-card .price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 8px;
+  font-variant-numeric: tabular-nums;
+}
+.disc-market-card .change {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.disc-market-card .change.up { color: #00C853; }
+.disc-market-card .change.down { color: #FF1744; }
+.disc-market-card .sparkline-wrap {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 55%;
+  height: 50%;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.disc-market-card .sparkline-wrap canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── Market List Rows ──────────────────────────────────────────────── */
+.disc-market-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.disc-market-row:hover { background: rgba(255,255,255,0.02); }
+.disc-market-row:last-child { border-bottom: none; }
+
+.disc-market-row .row-rank {
+  width: 24px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+  flex-shrink: 0;
+}
+.disc-market-row .row-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.6);
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+.disc-market-row .row-info {
+  flex: 1;
+  min-width: 0;
+}
+.disc-market-row .row-symbol {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.disc-market-row .row-name {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.disc-market-row .row-sparkline {
+  width: 60px;
+  height: 28px;
+  margin: 0 12px;
+  flex-shrink: 0;
+}
+.disc-market-row .row-sparkline canvas {
+  width: 100%;
+  height: 100%;
+}
+.disc-market-row .row-price-col {
+  text-align: right;
+  flex-shrink: 0;
+  min-width: 85px;
+}
+.disc-market-row .row-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.disc-market-row .row-change {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.row-change.up { background: rgba(0,200,83,0.12); color: #00C853; }
+.row-change.down { background: rgba(255,23,68,0.12); color: #FF1744; }
+
+/* ── Top Mover Cards (horizontal scroll) ───────────────────────────── */
+.disc-mover-card {
+  flex-shrink: 0;
+  width: 140px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.disc-mover-card:hover {
+  background: rgba(255,255,255,0.06);
+}
+.disc-mover-card .mv-symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+.disc-mover-card .mv-price {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.disc-mover-card .mv-change {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.disc-mover-card .mv-change.up { color: #00C853; }
+.disc-mover-card .mv-change.down { color: #FF1744; }
+.disc-mover-card .mv-spark {
+  width: 100%;
+  height: 30px;
+  margin-top: 8px;
+}
+.disc-mover-card .mv-spark canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* ── News Feed ─────────────────────────────────────────────────────── */
+.disc-news-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.disc-news-item:hover { background: rgba(255,255,255,0.02); }
+.disc-news-item:last-child { border-bottom: none; }
+
+.disc-news-item .news-content { flex: 1; min-width: 0; }
+.disc-news-item .news-source {
+  font-size: 11px;
+  font-weight: 600;
+  color: #2979FF;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.disc-news-item .news-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.4;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.disc-news-item .news-meta {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.disc-news-item .news-sentiment {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.news-sentiment.bullish { background: rgba(0,200,83,0.1); color: #00C853; }
+.news-sentiment.bearish { background: rgba(255,23,68,0.1); color: #FF1744; }
+.news-sentiment.neutral { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); }
+
+.disc-news-item .news-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+}
+
+/* ── News Category Badge ───────────────────────────────────────────── */
+.news-cat-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(41,121,255,0.15);
+  color: #64B5F6;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
+
+/* ── News Detail Modal ─────────────────────────────────────────────── */
+.news-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.news-modal-container {
+  width: 100%;
+  max-width: 480px;
+  max-height: 92vh;
+  background: #111111;
+  border-radius: 20px 20px 0 0;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease-out;
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+.news-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  background: #111111;
+  z-index: 2;
+}
+.news-modal-back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.news-modal-back-btn:hover { background: rgba(255,255,255,0.12); }
+.news-modal-source {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2979FF;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.news-modal-ext-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.6);
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.news-modal-ext-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.news-modal-body {
+  padding: 24px 20px 40px;
+}
+.news-modal-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+}
+.news-modal-badge.bullish { background: rgba(0,200,83,0.12); color: #00C853; }
+.news-modal-badge.bearish { background: rgba(255,23,68,0.12); color: #FF1744; }
+.news-modal-badge.neutral { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); }
+.news-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.4;
+  margin-bottom: 12px;
+}
+.news-modal-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.35);
+  margin-bottom: 16px;
+  letter-spacing: 0.3px;
+}
+.news-modal-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.news-symbol-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(41,121,255,0.12);
+  color: #64B5F6;
+  letter-spacing: 0.5px;
+}
+.news-modal-image-wrap {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.news-modal-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+.news-modal-summary {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 24px;
+}
+.news-modal-readmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2979FF;
+  text-decoration: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: rgba(41,121,255,0.08);
+  border: 1px solid rgba(41,121,255,0.2);
+  transition: all 0.15s;
+}
+.news-modal-readmore:hover {
+  background: rgba(41,121,255,0.15);
+  border-color: rgba(41,121,255,0.3);
+}
+
+/* ── Economic Calendar ─────────────────────────────────────────────── */
+.disc-cal-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.disc-cal-item .cal-time {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  width: 44px;
+  flex-shrink: 0;
+  text-align: center;
+}
+.disc-cal-item .cal-flag {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.disc-cal-item .cal-info { flex: 1; min-width: 0; }
+.disc-cal-item .cal-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.disc-cal-item .cal-vals {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+  display: flex;
+  gap: 8px;
+}
+.disc-cal-item .cal-impact {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  align-self: center;
+}
+.cal-impact.high { background: #FF1744; box-shadow: 0 0 6px rgba(255,23,68,0.4); }
+.cal-impact.medium { background: #FFD600; }
+.cal-impact.low { background: rgba(255,255,255,0.2); }
+
+/* ── Bottom Tab Bar ────────────────────────────────────────────────── */
+.disc-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  color: rgba(255,255,255,0.35);
+  text-decoration: none;
+  transition: color 0.2s;
+  font-size: 10px;
+  font-weight: 500;
+  -webkit-tap-highlight-color: transparent;
+}
+.disc-tab:hover { color: rgba(255,255,255,0.6); }
+.disc-tab.active {
+  color: #2979FF;
+}
+.disc-tab svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* ── Skeletons (loading placeholders) ──────────────────────────────── */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.disc-skeleton-card,
+.disc-skeleton-row,
+.disc-skeleton-mover,
+.disc-skeleton-news,
+.disc-skeleton-cal {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 14px;
+}
+.disc-skeleton-card { height: 140px; }
+.disc-skeleton-row { height: 60px; margin-bottom: 4px; border-radius: 8px; }
+.disc-skeleton-mover { width: 140px; height: 120px; flex-shrink: 0; }
+.disc-skeleton-news { height: 80px; }
+.disc-skeleton-cal { height: 56px; }
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  #disc-main { max-width: 480px; margin: 0 auto; }
+  #disc-header > div { max-width: 480px; margin: 0 auto; }
+}
+
+/* ── Utility ───────────────────────────────────────────────────────── */
+.text-up { color: #00C853 !important; }
+.text-down { color: #FF1744 !important; }
+.bg-up { background: rgba(0,200,83,0.12) !important; }
+.bg-down { background: rgba(255,23,68,0.12) !important; }
+
+/* Smooth page transition */
+#disc-main { animation: fadeUp 0.3s ease-out; }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Pulse for live indicator */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00C853;
+  animation: pulse-dot 2s infinite;
+  display: inline-block;
+}
+
+/* Search results */
+#search-results .search-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#search-results .search-item:hover { background: rgba(255,255,255,0.03); }
+#search-results .search-item .si-icon {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  flex-shrink: 0;
+}
+#search-results .search-item .si-name {
+  font-size: 14px; font-weight: 600; color: #fff;
+}
+#search-results .search-item .si-market {
+  font-size: 11px; color: rgba(255,255,255,0.35);
+}
+
+/* ── Simulator Card (FAZ 22) ────────────────────────────────────── */
+.discover-sim-card {
+  display: block;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(41,121,255,0.06), rgba(0,200,83,0.04));
+  border: 1px solid rgba(41,121,255,0.12);
+  border-radius: 16px;
+  padding: 16px;
+  transition: all 0.2s;
+}
+.discover-sim-card:hover {
+  background: linear-gradient(135deg, rgba(41,121,255,0.1), rgba(0,200,83,0.06));
+  border-color: rgba(41,121,255,0.2);
+  transform: translateY(-1px);
+}
+
+.discover-sim-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.discover-sim-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(41,121,255,0.12);
+  color: #2979FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.discover-sim-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.discover-sim-subtitle {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+}
+
+.discover-sim-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.discover-sim-stat {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}

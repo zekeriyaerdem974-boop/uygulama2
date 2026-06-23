@@ -1,0 +1,10 @@
+[
+  {
+    "id": "88bee6d9b768",
+    "name": "TestStrategy",
+    "code": "RSI < 30",
+    "user_id": "47bf3bfa-92e",
+    "created_at": 1773639453,
+    "updated_at": 1773639453
+  }
+]

@@ -1,0 +1,116 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Yakında — ZKR Analiz{% endblock %}
+{% block topbar_title %}Yakında{% endblock %}
+{% block extra_head %}
+<style>
+.lr-page{max-width:960px;margin:0 auto;padding:1rem;}
+.lr-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem;}
+.lr-header h1{font-size:1.5rem;font-weight:700;color:#e2e8f0;}
+.lr-btn-create{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;padding:.55rem 1.2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.88rem;}
+.lr-btn-create:hover{opacity:.9;}
+.lr-tabs{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.lr-tab{padding:.4rem .9rem;border-radius:9999px;background:#1e293b;color:#94a3b8;border:1px solid #334155;cursor:pointer;font-size:.82rem;font-weight:500;transition:all .15s;}
+.lr-tab.active{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border-color:transparent;}
+.lr-filters{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.lr-filter{padding:.3rem .7rem;border-radius:9999px;background:#0f172a;color:#64748b;border:1px solid #1e293b;cursor:pointer;font-size:.78rem;transition:all .15s;}
+.lr-filter.active{background:#1e293b;color:#e2e8f0;border-color:#475569;}
+.lr-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));}
+.lr-card{background:#1e293b;border:1px solid #334155;border-radius:.75rem;padding:1rem;cursor:pointer;transition:border-color .2s,transform .15s;text-decoration:none;color:inherit;display:block;}
+.lr-card:hover{border-color:#ef4444;transform:translateY(-1px);}
+.lr-card-top{display:flex;align-items:center;gap:.7rem;margin-bottom:.6rem;}
+.lr-card-avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#f97316);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:.9rem;flex-shrink:0;}
+.lr-card-info{flex:1;min-width:0;}
+.lr-card-title{font-weight:600;color:#f1f5f9;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lr-card-mentor{color:#94a3b8;font-size:.78rem;}
+.lr-card-badges{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.5rem;}
+.lr-badge{padding:.15rem .5rem;border-radius:9999px;font-size:.7rem;font-weight:600;}
+.lr-badge.active{background:#16a34a22;color:#4ade80;border:1px solid #16a34a44;}
+.lr-badge.inactive{background:#64748b22;color:#94a3b8;border:1px solid #64748b44;}
+.lr-badge.market{background:#3b82f622;color:#60a5fa;border:1px solid #3b82f644;}
+.lr-badge.vis{background:#a78bfa22;color:#a78bfa;border:1px solid #a78bfa44;}
+.lr-card-stats{display:flex;gap:1rem;color:#64748b;font-size:.78rem;}
+.lr-card-stats .val{color:#e2e8f0;font-weight:600;}
+.lr-card-desc{color:#94a3b8;font-size:.8rem;margin-bottom:.5rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.lr-empty{text-align:center;color:#64748b;padding:3rem 1rem;font-size:.95rem;}
+/* Modal */
+.lr-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;display:none;align-items:center;justify-content:center;}
+.lr-modal-overlay.open{display:flex;}
+.lr-modal{background:#1e293b;border:1px solid #334155;border-radius:.75rem;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto;}
+.lr-modal h2{font-size:1.15rem;font-weight:700;color:#f1f5f9;margin-bottom:1rem;}
+.lr-modal label{display:block;color:#94a3b8;font-size:.82rem;margin-bottom:.3rem;margin-top:.7rem;}
+.lr-modal input,.lr-modal select,.lr-modal textarea{width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:.5rem;border-radius:.5rem;font-size:.88rem;}
+.lr-modal textarea{min-height:80px;resize:vertical;}
+.lr-modal-actions{display:flex;gap:.5rem;margin-top:1.2rem;justify-content:flex-end;}
+.lr-modal-actions button{padding:.5rem 1.2rem;border-radius:.5rem;font-weight:600;cursor:pointer;font-size:.85rem;border:none;}
+.lr-modal-actions .btn-save{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
+.lr-modal-actions .btn-cancel{background:#334155;color:#94a3b8;}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if coming_soon %}
+<div class="coming-soon-page">
+  <div class="cs-icon">🔒</div>
+  <h2 class="cs-title">Yeni Özellik Yakında</h2>
+  <p class="cs-subtitle">Bu bölüm şu anda geliştirme aşamasındadır. Çok yakında sizlerle buluşacak!</p>
+  <div class="cs-shimmer"></div>
+  <button class="cs-btn" onclick="if(window.BW&&BW.i18n)BW.i18n.toast('Haberdar edileceksiniz!','info');else alert('Haberdar edileceksiniz!')">🔔 Haberdar Et</button>
+</div>
+{% else %}
+<div class="lr-page">
+  <div class="lr-header">
+    <h1>🔴 Canlı Analiz Odaları</h1>
+    <button class="lr-btn-create" onclick="LR.openCreateModal()">+ Oda Oluştur</button>
+  </div>
+
+  <div class="lr-tabs" id="lrTabs">
+    <div class="lr-tab active" onclick="LR.switchTab(this,'all')">Tümü</div>
+    <div class="lr-tab" onclick="LR.switchTab(this,'active')">🔴 Canlı</div>
+    <div class="lr-tab" onclick="LR.switchTab(this,'crypto')">Kripto</div>
+    <div class="lr-tab" onclick="LR.switchTab(this,'bist')">BIST</div>
+    <div class="lr-tab" onclick="LR.switchTab(this,'stocks')">Hisse</div>
+    <div class="lr-tab" onclick="LR.switchTab(this,'forex')">Forex</div>
+  </div>
+
+  <div class="lr-filters" id="lrFilters">
+    <div class="lr-filter active" onclick="LR.setSort(this,'active')">Aktif</div>
+    <div class="lr-filter" onclick="LR.setSort(this,'newest')">Yeni</div>
+    <div class="lr-filter" onclick="LR.setSort(this,'popular')">Popüler</div>
+  </div>
+
+  <div class="lr-grid" id="lrGrid"></div>
+</div>
+
+<!-- Create Room Modal -->
+<div class="lr-modal-overlay" id="lrCreateModal">
+  <div class="lr-modal">
+    <h2>Yeni Canlı Oda Oluştur</h2>
+    <label>Oda Başlığı *</label>
+    <input type="text" id="lrTitle" placeholder="Kripto Canlı Analiz">
+    <label>Açıklama</label>
+    <textarea id="lrDesc" placeholder="Bu odada neler yapılacak?"></textarea>
+    <label>Market</label>
+    <select id="lrMarket">
+      <option value="">Genel</option>
+      <option value="crypto">Kripto</option>
+      <option value="bist">BIST</option>
+      <option value="stocks">Hisse</option>
+      <option value="forex">Forex</option>
+      <option value="commodities">Emtia</option>
+    </select>
+    <label>Görünürlük</label>
+    <select id="lrVisibility">
+      <option value="public">Herkese Açık</option>
+      <option value="followers_only">Takipçilere Özel</option>
+      <option value="subscribers_only">Abonelere Özel</option>
+    </select>
+    <div class="lr-modal-actions">
+      <button class="btn-cancel" onclick="LR.closeCreateModal()">İptal</button>
+      <button class="btn-save" onclick="LR.submitRoom()">Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/js/rooms.js"></script>
+{% endif %}
+{% endblock %}

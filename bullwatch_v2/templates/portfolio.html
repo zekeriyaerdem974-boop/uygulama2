@@ -1,0 +1,194 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}{{ t('sidebar.portfolio', 'Portföy') }} • ZKR Analiz Pro{% endblock %}
+{% block page_title %}{{ t('sidebar.portfolio', 'Portföy') }}{% endblock %}
+{% block topbar_title %}<span data-i18n="sidebar.portfolio">Portfolio</span>{% endblock %}
+{% block body_class %}portfolio-page-body{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/portfolio.css') }}">
+{% endblock %}
+
+{% block header_actions %}
+<button id="pf-refresh-btn" class="pro-btn-ghost pro-btn-icon" aria-label="Yenile" title="Portföyü güncelle">
+  <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="pf-container">
+
+  <!-- ═══════════ AUTH GATE ═══════════ -->
+  <div id="pf-auth-gate" class="pf-auth-gate" style="display:none;">
+    <div class="pf-auth-card">
+      <svg class="w-12 h-12 text-neutral-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>
+      <h3>Giriş Yapın</h3>
+      <p>Portföy yönetimi için giriş yapmanız gerekiyor.</p>
+      <a href="/login" class="pf-btn pf-btn-primary">Giriş Yap</a>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <div id="pf-main" style="display:">
+
+    <!-- DISCLAIMER -->
+    <div class="pf-disclaimer">
+      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>Bu portföy takip aracıdır. Yatırım tavsiyesi değildir. Tüm veriler bilgilendirme amaçlıdır.</span>
+    </div>
+
+    <!-- ═══════════ SUMMARY CARDS ═══════════ -->
+    <section class="pf-summary-grid">
+      <div class="pf-card pf-card-value">
+        <div class="pf-card-label">Toplam Değer</div>
+        <div class="pf-card-value-text" id="pf-total-value">$0.00</div>
+        <div class="pf-card-sub" id="pf-total-cost">Maliyet: $0.00</div>
+      </div>
+      <div class="pf-card pf-card-pnl">
+        <div class="pf-card-label" data-i18n="portfolio.total_pnl">Toplam PnL</div>
+        <div class="pf-card-value-text" id="pf-total-pnl">$0.00</div>
+        <div class="pf-card-sub" id="pf-total-pnl-pct">0.00%</div>
+      </div>
+      <div class="pf-card">
+        <div class="pf-card-label" data-i18n="portfolio.asset_count">Varlık Sayısı</div>
+        <div class="pf-card-value-text" id="pf-asset-count">0</div>
+        <div class="pf-card-sub" id="pf-market-info">—</div>
+      </div>
+      <div class="pf-card pf-card-risk">
+        <div class="pf-card-label" data-i18n="portfolio.risk_score">Risk Skoru</div>
+        <div class="pf-card-value-text" id="pf-risk-score">—</div>
+        <div class="pf-card-sub" id="pf-risk-label">—</div>
+      </div>
+    </section>
+
+    <!-- ═══════════ CHARTS ROW ═══════════ -->
+    <section class="pf-charts-row">
+      <!-- Allocation Pie Chart -->
+      <div class="pf-panel pf-panel-chart">
+        <h3 class="pf-panel-title">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z"/></svg>
+          <span data-i18n="portfolio.allocation">Dağılım</span>
+        </h3>
+        <div class="pf-chart-wrap">
+          <canvas id="pf-alloc-chart" width="280" height="280"></canvas>
+        </div>
+        <div id="pf-alloc-legend" class="pf-alloc-legend"></div>
+      </div>
+
+      <!-- Risk Gauge -->
+      <div class="pf-panel pf-panel-chart">
+        <h3 class="pf-panel-title">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"/></svg>
+          <span data-i18n="portfolio.risk_indicator">Risk Göstergesi</span>
+        </h3>
+        <div class="pf-gauge-wrap">
+          <canvas id="pf-risk-gauge" width="260" height="160"></canvas>
+          <div class="pf-gauge-value" id="pf-gauge-label">—</div>
+        </div>
+        <div class="pf-risk-details" id="pf-risk-details">
+          <div class="pf-risk-row"><span>Volatilite</span><span id="pf-risk-vol">—</span></div>
+          <div class="pf-risk-row"><span>Konsantrasyon</span><span id="pf-risk-conc">—</span></div>
+          <div class="pf-risk-row"><span>Drawdown</span><span id="pf-risk-dd">—</span></div>
+          <div class="pf-risk-row"><span>Çeşitlendirme</span><span id="pf-risk-div">—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════ ADD ASSET FORM ═══════════ -->
+    <section class="pf-panel">
+      <h3 class="pf-panel-title">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        Varlık Ekle
+      </h3>
+      <div class="pf-add-form">
+        <div class="pf-form-row">
+          <div class="pf-form-group">
+            <label>Piyasa</label>
+            <select id="pf-add-market" class="pf-input">
+              <option value="crypto">Kripto</option>
+              <option value="stocks">Hisse (US)</option>
+              <option value="bist">BIST</option>
+              <option value="forex">Forex</option>
+              <option value="commodities">Emtia</option>
+            </select>
+          </div>
+          <div class="pf-form-group pf-form-grow">
+            <label>Sembol</label>
+            <input type="text" id="pf-add-symbol" class="pf-input" placeholder="BTCUSDT" autocomplete="off">
+          </div>
+          <div class="pf-form-group">
+            <label>Miktar</label>
+            <input type="number" id="pf-add-amount" class="pf-input" placeholder="0.5" step="any" min="0">
+          </div>
+          <div class="pf-form-group">
+            <label>Giriş Fiyatı ($)</label>
+            <input type="number" id="pf-add-price" class="pf-input" placeholder="50000" step="any" min="0">
+          </div>
+        </div>
+        <button id="pf-add-btn" class="pf-btn pf-btn-primary">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Ekle
+        </button>
+      </div>
+    </section>
+
+    <!-- ═══════════ ASSET TABLE ═══════════ -->
+    <section class="pf-panel">
+      <h3 class="pf-panel-title">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z"/></svg>
+        <span data-i18n="portfolio.assets">Varlıklar</span>
+      </h3>
+      <div class="pf-table-wrap">
+        <table class="pf-table" id="pf-asset-table">
+          <thead>
+            <tr>
+              <th data-i18n="portfolio.symbol">Sembol</th>
+              <th data-i18n="portfolio.market">Piyasa</th>
+              <th class="text-right" data-i18n="portfolio.amount">Miktar</th>
+              <th class="text-right" data-i18n="portfolio.entry_price">Giriş Fiyatı</th>
+              <th class="text-right">Güncel Fiyat</th>
+              <th class="text-right">Değer</th>
+              <th class="text-right">PnL</th>
+              <th class="text-right">%</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="pf-asset-tbody">
+            <tr class="pf-empty-row">
+              <td colspan="9">Portföyünüzde henüz varlık bulunmuyor.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══════════ AI INSIGHT PANEL ═══════════ -->
+    <section class="pf-panel pf-ai-panel">
+      <h3 class="pf-panel-title">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+        <span data-i18n="portfolio.ai_analysis">AI Portföy Analizi</span>
+      </h3>
+      <div class="pf-ai-content" id="pf-ai-content">
+        <div class="pf-ai-placeholder">
+          <p>Portföyünüze varlık ekledikten sonra AI analizi kullanılabilir.</p>
+        </div>
+      </div>
+      <div class="pf-ai-actions">
+        <button id="pf-ai-btn" class="pf-btn pf-btn-accent" disabled>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+          AI Analiz Başlat
+        </button>
+        <div class="pf-ai-ask-row" id="pf-ai-ask-row" style="display:none;">
+          <input type="text" id="pf-ai-question" class="pf-input pf-ai-input" placeholder="Portföyüm hakkında bir soru sorun...">
+          <button id="pf-ai-ask-btn" class="pf-btn pf-btn-accent">Sor</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /pf-main -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/portfolio.js') }}?v=68"></script>
+{% endblock %}

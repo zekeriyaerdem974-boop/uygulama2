@@ -1,0 +1,16 @@
+{
+  "bist": {
+    "total": 499,
+    "working": 498,
+    "broken": 1,
+    "broken_list": [
+      "NTGAZ.IS"
+    ]
+  },
+  "stocks": {
+    "total": 552,
+    "working": 552,
+    "broken": 0,
+    "broken_list": []
+  }
+}

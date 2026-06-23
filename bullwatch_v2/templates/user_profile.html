@@ -1,0 +1,67 @@
+{% extends "layout_terminal.html" %}
+{% block title %}{{ profile_username }} — ZKR Analiz{% endblock %}
+{% block page_title %}Profil{% endblock %}
+{% block topbar_title %}Profile{% endblock %}
+
+{% block extra_head %}
+<meta name="profile-username" content="{{ profile_username }}" />
+<style>
+/* ── User Profile Styles ───────────────────────────────── */
+.up-header {
+  padding: 24px 16px 16px; text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.up-avatar {
+  width: 64px; height: 64px; border-radius: 50%; margin: 0 auto 10px;
+  background: linear-gradient(135deg, #2979FF, #7c4dff);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 700; color: #fff;
+}
+.up-username { font-size: 20px; font-weight: 700; color: #e8edf5; }
+.up-stats { display: flex; justify-content: center; gap: 24px; margin-top: 12px; }
+.up-stat { text-align: center; }
+.up-stat-num { font-size: 18px; font-weight: 700; color: #e8edf5; }
+.up-stat-label { font-size: 11px; color: #888; }
+.up-follow-btn {
+  margin-top: 14px; padding: 8px 28px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  background: #2979FF; color: #fff; border: none; cursor: pointer; transition: all .2s;
+}
+.up-follow-btn.following {
+  background: transparent; border: 1px solid #2979FF; color: #2979FF;
+}
+.up-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 16px; }
+.up-tab {
+  padding: 10px 16px; font-size: 13px; font-weight: 500; color: #888;
+  border-bottom: 2px solid transparent; cursor: pointer; transition: all .2s;
+}
+.up-tab.active { color: #2979FF; border-bottom-color: #2979FF; }
+.up-posts { min-height: 200px; }
+
+/* Reuse feed card styles */
+.sf-card { background: #111; border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin: 12px 16px; }
+.sf-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sf-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#2979FF,#7c4dff); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.sf-user-info { flex: 1; min-width: 0; }
+.sf-username { font-size: 14px; font-weight: 600; color: #e8edf5; cursor: pointer; text-decoration: none; }
+.sf-time { font-size: 11px; color: #666; }
+.sf-symbol-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; background: rgba(41,121,255,0.12); color: #2979FF; }
+.sf-content { font-size: 14px; line-height: 1.6; color: #ccc; margin-bottom: 12px; white-space: pre-wrap; word-break: break-word; }
+.sf-chart-img { width: 100%; border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06); max-height: 300px; object-fit: contain; background: #0a0a0a; }
+.sf-actions { display: flex; align-items: center; gap: 20px; }
+.sf-action { display: flex; align-items: center; gap: 5px; font-size: 13px; color: #888; cursor: pointer; transition: color .2s; border: none; background: none; padding: 0; }
+.sf-action:hover { color: #e8edf5; }
+.sf-action.liked { color: #FF1744; }
+.sf-action.liked svg { fill: #FF1744; }
+.sf-loading, .sf-empty { text-align: center; padding: 40px 16px; color: #555; font-size: 14px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="upProfile">
+  <div class="sf-loading">Yükleniyor…</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/user_profile.js') }}"></script>
+{% endblock %}

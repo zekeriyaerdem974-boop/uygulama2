@@ -1,0 +1,9 @@
+import os
+
+# Flutter Analysis Tool Configuration
+exclude_patterns = [
+    "build/",
+    ".dart_tool/",
+    ".flutter-plugins",
+    ".pub-cache/",
+]

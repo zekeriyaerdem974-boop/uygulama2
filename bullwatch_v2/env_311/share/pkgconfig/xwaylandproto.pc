@@ -1,0 +1,7 @@
+prefix=/home/zkr-kripto2/Masaüstü/uygulama/bullwatch_v2/env_311
+includedir=${prefix}/include
+
+Name: XwaylandProto
+Description: Xwayland extension headers
+Version: 1.0
+Cflags: -I${includedir}

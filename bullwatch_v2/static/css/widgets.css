@@ -1,0 +1,260 @@
+/* ═══════════════════════════════════════════════════════════════════
+   widgets.css — Market Data Widgets (FAZ 41)
+   Heatmaps, opportunity feeds, volume spikes, volatility alerts
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Market Heatmap ───────────────────────────────────────────── */
+.pro-heatmap {
+  display: grid;
+  gap: 2px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.pro-heatmap-cell {
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  min-height: 56px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.pro-heatmap-cell:hover {
+  filter: brightness(1.2);
+  z-index: 1;
+}
+.pro-heatmap-symbol {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+}
+.pro-heatmap-change {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+}
+
+/* Heatmap color classes */
+.hm-strong-up   { background: rgba(16,185,129,0.45); }
+.hm-up          { background: rgba(16,185,129,0.25); }
+.hm-slight-up   { background: rgba(16,185,129,0.12); }
+.hm-neutral     { background: rgba(255,255,255,0.04); }
+.hm-slight-down { background: rgba(239,68,68,0.12); }
+.hm-down        { background: rgba(239,68,68,0.25); }
+.hm-strong-down { background: rgba(239,68,68,0.45); }
+
+/* ── Sector Heatmap ───────────────────────────────────────────── */
+.pro-sector-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 3px;
+}
+.pro-sector-cell {
+  padding: 14px 10px;
+  text-align: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.pro-sector-cell:hover {
+  transform: scale(1.03);
+}
+.pro-sector-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  margin-bottom: 4px;
+}
+.pro-sector-change {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+}
+
+/* ── Opportunity Feed Widget ──────────────────────────────────── */
+.pro-opp-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pro-opp-feed-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.pro-opp-feed-item:hover {
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+}
+.pro-opp-feed-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+.pro-opp-feed-body {
+  flex: 1;
+  min-width: 0;
+}
+.pro-opp-feed-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pro-opp-feed-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.pro-opp-feed-badge {
+  flex-shrink: 0;
+}
+
+/* ── Volume Spike Widget ──────────────────────────────────────── */
+.pro-vol-spike {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: 6px;
+}
+.pro-vol-bar {
+  width: 48px;
+  height: 24px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.pro-vol-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width var(--transition-normal);
+}
+.pro-vol-symbol {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 80px;
+}
+.pro-vol-ratio {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Volatility Alert Widget ──────────────────────────────────── */
+.pro-alert-widget {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--warning);
+  background: var(--warning-bg);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.pro-alert-widget.alert-danger {
+  border-left-color: var(--danger);
+  background: var(--danger-bg);
+}
+.pro-alert-widget.alert-success {
+  border-left-color: var(--success);
+  background: var(--success-bg);
+}
+
+/* ── Mini Chart (sparkline placeholder) ───────────────────────── */
+.pro-mini-chart {
+  height: 40px;
+  width: 100%;
+  opacity: 0.5;
+}
+
+/* ── KPI Row ──────────────────────────────────────────────────── */
+.pro-kpi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.pro-kpi-row:last-child {
+  border-bottom: none;
+}
+.pro-kpi-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pro-kpi-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Risk Meter ───────────────────────────────────────────────── */
+.pro-risk-meter {
+  position: relative;
+  width: 120px;
+  height: 60px;
+  margin: 0 auto;
+}
+.pro-risk-arc {
+  width: 120px;
+  height: 60px;
+}
+.pro-risk-label {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  margin-top: -4px;
+}
+.pro-risk-text {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ── Live Indicator ───────────────────────────────────────────── */
+.pro-live-dot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
+}
+.pro-live-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(16,185,129,0.5);
+  animation: ds-pulse 2s infinite;
+}

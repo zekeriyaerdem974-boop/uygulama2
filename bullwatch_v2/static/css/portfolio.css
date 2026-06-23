@@ -1,0 +1,418 @@
+/* ═══════════════════════════════════════════════════════════
+   Portfolio Page Styles — FAZ 54B
+   ═══════════════════════════════════════════════════════════ */
+
+.pf-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+}
+
+/* ── Auth Gate ─────────────────────────────────────────── */
+.pf-auth-gate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+.pf-auth-card {
+  text-align: center;
+  padding: 40px;
+  background: var(--mt-surface, #0B0B0F);
+  border: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+  border-radius: 16px;
+}
+.pf-auth-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--mt-text, #fff);
+  margin-bottom: 8px;
+}
+.pf-auth-card p {
+  font-size: 14px;
+  color: var(--mt-text-secondary, #8B8B95);
+  margin-bottom: 20px;
+}
+
+/* ── Disclaimer ────────────────────────────────────────── */
+.pf-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  background: rgba(245,158,11,0.06);
+  border: 1px solid rgba(245,158,11,0.12);
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--mt-warning, #F59E0B);
+}
+
+/* ── Summary Cards ─────────────────────────────────────── */
+.pf-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.pf-card {
+  background: var(--mt-surface, #0B0B0F);
+  border: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+  border-radius: 14px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.pf-card-label {
+  font-size: 12px;
+  color: var(--mt-text-secondary, #8B8B95);
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pf-card-value-text {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--mt-text, #fff);
+  font-variant-numeric: tabular-nums;
+}
+.pf-card-sub {
+  font-size: 12px;
+  color: var(--mt-text-dim, #55555E);
+  margin-top: 4px;
+}
+
+/* PnL card coloring */
+.pf-card.pf-positive .pf-card-value-text { color: var(--mt-positive, #16C784); }
+.pf-card.pf-positive .pf-card-sub { color: var(--mt-positive, #16C784); }
+.pf-card.pf-negative .pf-card-value-text { color: var(--mt-negative, #FF4D6D); }
+.pf-card.pf-negative .pf-card-sub { color: var(--mt-negative, #FF4D6D); }
+
+/* Risk card coloring */
+.pf-card.pf-risk-low .pf-card-value-text { color: var(--mt-positive, #16C784); }
+.pf-card.pf-risk-mid .pf-card-value-text { color: var(--mt-warning, #F59E0B); }
+.pf-card.pf-risk-high .pf-card-value-text { color: #f97316; }
+.pf-card.pf-risk-extreme .pf-card-value-text { color: var(--mt-negative, #FF4D6D); }
+
+/* ── Charts Row ────────────────────────────────────────── */
+.pf-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+/* ── Panel ─────────────────────────────────────────────── */
+.pf-panel {
+  background: var(--mt-surface, #0B0B0F);
+  border: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.pf-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mt-text, #fff);
+  margin-bottom: 16px;
+}
+
+/* Chart panel internals */
+.pf-chart-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+/* ── Allocation Legend ─────────────────────────────────── */
+.pf-alloc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.pf-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--mt-text, #fff);
+}
+.pf-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.pf-legend-sym { font-weight: 500; }
+.pf-legend-pct { color: var(--mt-text-secondary, #8B8B95); }
+
+/* ── Risk Gauge ────────────────────────────────────────── */
+.pf-gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.pf-gauge-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--mt-text, #fff);
+  margin-top: -10px;
+}
+.pf-risk-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pf-risk-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--mt-text, #fff);
+  padding: 4px 0;
+  border-bottom: 1px solid var(--mt-border-light, rgba(255,255,255,0.04));
+}
+.pf-risk-row span:last-child {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Add Form ──────────────────────────────────────────── */
+.pf-add-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.pf-form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pf-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+}
+.pf-form-group label {
+  font-size: 12px;
+  color: var(--mt-text-secondary, #8B8B95);
+  font-weight: 500;
+}
+.pf-form-grow { flex: 1; }
+.pf-input {
+  background: var(--mt-surface-2, #111116);
+  border: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--mt-text, #fff);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.pf-input:focus {
+  border-color: var(--mt-accent, #3B82F6);
+}
+.pf-input option {
+  background: var(--mt-surface, #0B0B0F);
+  color: var(--mt-text, #fff);
+}
+
+/* ── Buttons ───────────────────────────────────────────── */
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pf-btn-primary {
+  background: var(--mt-accent, #3B82F6);
+  color: #fff;
+}
+.pf-btn-primary:hover { background: #2563eb; }
+.pf-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pf-btn-accent {
+  background: rgba(59,130,246,0.12);
+  color: var(--mt-accent, #3B82F6);
+  border: 1px solid rgba(59,130,246,0.2);
+}
+.pf-btn-accent:hover { background: rgba(59,130,246,0.2); }
+.pf-btn-accent:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pf-btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--mt-text-secondary, #8B8B95);
+  transition: all 0.2s;
+}
+.pf-btn-icon:hover { color: var(--mt-negative, #FF4D6D); background: rgba(255,77,109,0.1); }
+
+/* ── Asset Table ───────────────────────────────────────── */
+.pf-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.pf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.pf-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mt-text-dim, #55555E);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mt-border, rgba(255,255,255,0.08));
+}
+.pf-table td {
+  padding: 12px;
+  color: var(--mt-text, #fff);
+  border-bottom: 1px solid var(--mt-border-light, rgba(255,255,255,0.04));
+  white-space: nowrap;
+}
+.pf-table tbody tr:hover { background: var(--mt-surface-2, #111116); }
+.pf-empty-row td {
+  text-align: center;
+  color: var(--mt-text-dim, #55555E);
+  padding: 40px;
+  font-size: 14px;
+}
+.text-right { text-align: right !important; }
+.pf-text-green { color: var(--mt-positive, #16C784) !important; }
+.pf-text-red { color: var(--mt-negative, #FF4D6D) !important; }
+.pf-sym-cell strong {
+  color: var(--mt-text, #fff);
+  font-size: 14px;
+}
+
+/* ── AI Panel ──────────────────────────────────────────── */
+.pf-ai-panel .pf-panel-title { color: var(--mt-accent, #3B82F6); }
+.pf-ai-content {
+  min-height: 80px;
+  margin-bottom: 16px;
+}
+.pf-ai-placeholder {
+  text-align: center;
+  color: var(--mt-text-dim, #55555E);
+  padding: 30px;
+  font-size: 14px;
+}
+.pf-ai-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  color: var(--mt-text-secondary, #8B8B95);
+  padding: 30px;
+  font-size: 14px;
+}
+.pf-ai-error {
+  text-align: center;
+  color: var(--mt-negative, #FF4D6D);
+  padding: 20px;
+  font-size: 14px;
+}
+.pf-ai-section {
+  background: var(--mt-surface-2, #111116);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.pf-ai-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--mt-text, #fff);
+  margin-bottom: 8px;
+}
+.pf-ai-section p {
+  font-size: 13px;
+  color: var(--mt-text-secondary, #8B8B95);
+  line-height: 1.6;
+  margin: 0;
+}
+.pf-ai-warning {
+  border-left: 3px solid #f97316;
+}
+.pf-ai-disclaimer {
+  font-size: 12px;
+  color: var(--mt-warning, #F59E0B);
+  text-align: center;
+  margin-top: 12px;
+  opacity: 0.7;
+}
+.pf-ai-note {
+  font-size: 12px;
+  color: var(--mt-text-dim, #55555E);
+  text-align: center;
+  margin-top: 6px;
+}
+.pf-ai-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.pf-ai-ask-row {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+.pf-ai-input {
+  flex: 1;
+}
+
+/* ── Spinner ───────────────────────────────────────────── */
+.pf-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--mt-border, rgba(255,255,255,0.08));
+  border-top-color: var(--mt-accent, #3B82F6);
+  border-radius: 50%;
+  animation: pf-spin 0.8s linear infinite;
+}
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .pf-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .pf-charts-row {
+    grid-template-columns: 1fr;
+  }
+  .pf-form-row {
+    flex-direction: column;
+  }
+  .pf-form-group {
+    min-width: 100%;
+  }
+  .pf-card-value-text {
+    font-size: 20px;
+  }
+}
+@media (max-width: 480px) {
+  .pf-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

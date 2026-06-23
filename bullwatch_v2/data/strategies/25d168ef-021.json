@@ -1,0 +1,10 @@
+[
+  {
+    "id": "fda57ce52545",
+    "name": "TestStrategy",
+    "code": "RSI < 30",
+    "user_id": "25d168ef-021",
+    "created_at": 1773720529,
+    "updated_at": 1773720529
+  }
+]

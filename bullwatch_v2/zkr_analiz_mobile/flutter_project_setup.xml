@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project version="4">
+    <component name="FlutterSettings">
+        <option name="flutterSdkPath" value="/opt/flutter" />
+        <option name="flutterSdkVersion" value="3.19.0" />
+    </component>
+</Project>

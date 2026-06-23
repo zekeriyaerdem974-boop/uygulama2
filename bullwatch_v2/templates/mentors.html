@@ -1,0 +1,162 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Yakında — ZKR Analiz{% endblock %}
+{% block topbar_title %}Yakında{% endblock %}
+
+{% block page_title %}Yakında{% endblock %}
+
+{% block header_actions %}
+{% if not coming_soon %}
+<button onclick="MT.openCreateModal()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors">
+  + Mentor Ol
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Mentor Page Styles ─────────────────────────────── */
+.mt-tabs{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.mt-tab{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;background:#1a1a1a;color:#999;border:1px solid #222;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.mt-tab.active{background:linear-gradient(135deg,#f59e0b22,#d9770622);color:#fbbf24;border-color:#f59e0b44;}
+
+.mt-section-title{font-size:14px;font-weight:600;color:#e5e5e5;padding:16px 16px 8px;display:flex;align-items:center;gap:8px;}
+
+.mt-card{background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:16px;margin:0 16px 12px;transition:border-color .2s;}
+.mt-card:hover{border-color:#f59e0b33;}
+.mt-card-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.mt-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#f59e0b,#d97706);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#000;flex-shrink:0;}
+.mt-name{font-size:15px;font-weight:600;color:#f5f5f5;}
+.mt-headline{font-size:12px;color:#888;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+.mt-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.mt-badge{font-size:11px;padding:3px 8px;border-radius:10px;background:#1a1a1a;border:1px solid #272727;}
+.mt-badge.market{color:#60a5fa;border-color:#60a5fa33;}
+.mt-badge.specialty{color:#a78bfa;border-color:#a78bfa33;}
+.mt-badge.verified{color:#34d399;border-color:#34d39933;background:#34d39911;}
+.mt-badge.free{color:#4ade80;border-color:#4ade8033;}
+.mt-badge.paid{color:#fbbf24;border-color:#fbbf2433;}
+.mt-badge.subscription{color:#f97316;border-color:#f9731633;}
+
+.mt-stats{display:flex;gap:16px;font-size:12px;color:#888;}
+.mt-stat-val{font-weight:600;color:#e5e5e5;}
+
+.mt-card-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a1a;}
+.mt-btn{padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.mt-btn-primary{background:linear-gradient(135deg,#f59e0b,#d97706);color:#000;}
+.mt-btn-primary:hover{filter:brightness(1.1);}
+.mt-btn-outline{background:transparent;color:#f59e0b;border:1px solid #f59e0b44;}
+.mt-btn-outline:hover{background:#f59e0b11;}
+
+.mt-empty{text-align:center;padding:40px 16px;color:#666;font-size:14px;}
+.mt-loading{text-align:center;padding:20px;color:#666;font-size:13px;}
+
+/* ── Filter Bar ─────────────────────────────────────── */
+.mt-filter-bar{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;}
+.mt-filter{padding:5px 12px;border-radius:16px;font-size:11px;background:#1a1a1a;color:#888;border:1px solid #222;cursor:pointer;white-space:nowrap;}
+.mt-filter.active{color:#60a5fa;border-color:#60a5fa44;background:#60a5fa11;}
+
+/* ── Create Mentor Modal ────────────────────────────── */
+.mt-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.mt-modal-overlay.open{opacity:1;pointer-events:auto;}
+.mt-modal{background:#111;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px;border:1px solid #222;border-bottom:none;}
+.mt-modal h3{font-size:16px;font-weight:700;color:#f5f5f5;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.mt-modal label{display:block;font-size:12px;color:#888;margin-bottom:4px;margin-top:12px;}
+.mt-modal input,.mt-modal textarea,.mt-modal select{width:100%;padding:10px 12px;background:#0a0a0a;border:1px solid #272727;border-radius:10px;color:#e5e5e5;font-size:13px;outline:none;}
+.mt-modal input:focus,.mt-modal textarea:focus,.mt-modal select:focus{border-color:#f59e0b66;}
+.mt-modal textarea{resize:vertical;min-height:80px;}
+.mt-modal-actions{display:flex;gap:10px;margin-top:20px;}
+
+/* ── Market Checkbox Group ──────────────────────────── */
+.mt-market-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;}
+.mt-market-check{display:flex;align-items:center;gap:4px;font-size:12px;color:#ccc;cursor:pointer;}
+.mt-market-check input{width:14px;height:14px;accent-color:#f59e0b;}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if coming_soon %}
+<div class="coming-soon-page">
+  <div class="cs-icon">🔒</div>
+  <h2 class="cs-title">Yeni Özellik Yakında</h2>
+  <p class="cs-subtitle">Bu bölüm şu anda geliştirme aşamasındadır. Çok yakında sizlerle buluşacak!</p>
+  <div class="cs-shimmer"></div>
+  <button class="cs-btn" onclick="if(window.BW&&BW.i18n)BW.i18n.toast('Haberdar edileceksiniz!','info');else alert('Haberdar edileceksiniz!')">🔔 Haberdar Et</button>
+</div>
+{% else %}
+<!-- Tabs -->
+<div class="mt-tabs">
+  <button class="mt-tab active" data-tab="featured" onclick="MT.switchTab('featured')">⭐ Öne Çıkan</button>
+  <button class="mt-tab" data-tab="all" onclick="MT.switchTab('all')">Tümü</button>
+  <button class="mt-tab" data-tab="crypto" onclick="MT.switchTab('crypto')">Kripto</button>
+  <button class="mt-tab" data-tab="bist" onclick="MT.switchTab('bist')">BIST</button>
+  <button class="mt-tab" data-tab="stocks" onclick="MT.switchTab('stocks')">Hisse</button>
+  <button class="mt-tab" data-tab="forex" onclick="MT.switchTab('forex')">Forex</button>
+</div>
+
+<!-- Sort Filters -->
+<div class="mt-filter-bar">
+  <button class="mt-filter active" data-sort="followers" onclick="MT.setSort('followers')">👥 Takipçi</button>
+  <button class="mt-filter" data-sort="rating" onclick="MT.setSort('rating')">⭐ Puan</button>
+  <button class="mt-filter" data-sort="experience" onclick="MT.setSort('experience')">📈 Deneyim</button>
+  <button class="mt-filter" data-sort="newest" onclick="MT.setSort('newest')">🆕 Yeni</button>
+</div>
+
+<!-- Mentor List -->
+<div id="mtList"></div>
+
+<!-- Create Mentor Modal -->
+<div class="mt-modal-overlay" id="mtCreateModal">
+  <div class="mt-modal">
+    <h3>🎓 Mentor Profili Oluştur</h3>
+
+    <label>Görünen Ad *</label>
+    <input id="mtDisplayName" placeholder="Ör: CryptoMaster" maxlength="60" />
+
+    <label>Başlık (Headline)</label>
+    <input id="mtHeadline" placeholder="Ör: 5 Yıllık Kripto Analizci" maxlength="120" />
+
+    <label>Hakkında (Bio)</label>
+    <textarea id="mtBio" placeholder="Kendinizi tanıtın…" maxlength="1000"></textarea>
+
+    <label>Deneyim (Yıl)</label>
+    <input id="mtExpYears" type="number" value="0" min="0" max="50" />
+
+    <label>Marketler</label>
+    <div class="mt-market-group">
+      <label class="mt-market-check"><input type="checkbox" name="mt-market" value="crypto"> Kripto</label>
+      <label class="mt-market-check"><input type="checkbox" name="mt-market" value="bist"> BIST</label>
+      <label class="mt-market-check"><input type="checkbox" name="mt-market" value="stocks"> Hisse</label>
+      <label class="mt-market-check"><input type="checkbox" name="mt-market" value="forex"> Forex</label>
+      <label class="mt-market-check"><input type="checkbox" name="mt-market" value="commodities"> Emtia</label>
+    </div>
+
+    <label>Uzmanlık Alanları</label>
+    <input id="mtSpecialties" placeholder="Ör: Teknik Analiz, DeFi, Vadeli İşlemler" />
+
+    <label>Diller</label>
+    <input id="mtLanguages" value="Türkçe" placeholder="Ör: Türkçe, İngilizce" />
+
+    <label>Fiyat Modeli</label>
+    <select id="mtPricing">
+      <option value="free">Ücretsiz</option>
+      <option value="paid">Ücretli</option>
+      <option value="subscription">Abonelik</option>
+    </select>
+
+    <label>Aylık Ücret (₺) <span style="color:#666">(ücretli ise)</span></label>
+    <input id="mtPrice" type="number" value="0" min="0" step="10" />
+
+    <div class="mt-modal-actions">
+      <button class="mt-btn mt-btn-primary" style="flex:1" onclick="MT.submitProfile()">Kaydet</button>
+      <button class="mt-btn mt-btn-outline" onclick="MT.closeCreateModal()">İptal</button>
+    </div>
+  </div>
+</div>
+{% include "legal_disclaimer.html" %}
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not coming_soon %}<script src="/static/js/mentors.js"></script>{% endif %}
+{% endblock %}

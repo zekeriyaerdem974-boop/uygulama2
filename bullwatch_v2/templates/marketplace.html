@@ -1,0 +1,174 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Marketplace — ZKR Analiz{% endblock %}
+{% block page_title %}Marketplace{% endblock %}
+{% block topbar_title %}Marketplace{% endblock %}
+
+{% block extra_head %}
+<meta name="user-id" content="{{ current_user.id if current_user else '' }}">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MARKETPLACE — FAZ 29
+   ═══════════════════════════════════════════════════════════════ */
+.mp-container { max-width:960px; margin:0 auto; padding:16px 12px 100px; }
+
+/* ── Tabs ─────────────────────── */
+.mp-tabs { display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; scrollbar-width:none; }
+.mp-tabs::-webkit-scrollbar { display:none; }
+.mp-tab { padding:8px 16px; border-radius:20px; background:#111; border:1px solid #222;
+           color:#888; font-size:13px; white-space:nowrap; cursor:pointer; transition:all .2s; }
+.mp-tab.active { background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; border-color:transparent; font-weight:600; }
+.mp-tab:hover:not(.active) { border-color:#444; color:#ccc; }
+
+/* ── Search ───────────────────── */
+.mp-search { position:relative; margin-bottom:16px; }
+.mp-search input { width:100%; padding:10px 14px 10px 38px; border-radius:10px; background:#111;
+                    border:1px solid #222; color:#eee; font-size:14px; outline:none; }
+.mp-search input:focus { border-color:#f59e0b; }
+.mp-search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:#555; }
+
+/* ── Section Headers ──────────── */
+.mp-section-title { font-size:16px; font-weight:600; color:#eee; margin:20px 0 12px;
+                     display:flex; align-items:center; gap:8px; }
+.mp-section-title .badge { font-size:11px; padding:2px 8px; border-radius:10px;
+                            background:#f59e0b22; color:#f59e0b; }
+
+/* ── Strategy Cards Grid ──────── */
+.mp-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:12px; margin-bottom:24px; }
+
+.mp-card { background:#0d0d12; border:1px solid #1a1a2e; border-radius:12px; padding:14px;
+            cursor:pointer; transition:all .2s; position:relative; }
+.mp-card:hover { border-color:#f59e0b66; transform:translateY(-1px); box-shadow:0 4px 20px rgba(245,158,11,.08); }
+.mp-card-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; }
+.mp-card-title { font-size:15px; font-weight:600; color:#eee; line-height:1.3; }
+.mp-card-creator { font-size:12px; color:#666; margin-top:2px; }
+.mp-card-desc { font-size:12px; color:#777; line-height:1.4; margin-bottom:10px;
+                 display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.mp-card-tags { display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px; }
+.mp-card-tag { font-size:10px; padding:2px 8px; border-radius:10px; background:#1a1a2e; color:#888; }
+.mp-card-tag.market { background:#0d4f3c22; color:#10b981; }
+
+.mp-card-stats { display:flex; gap:12px; font-size:12px; color:#888; flex-wrap:wrap; }
+.mp-card-stat { display:flex; align-items:center; gap:4px; }
+.mp-card-stat.green { color:#10b981; }
+.mp-card-stat.red { color:#ef4444; }
+.mp-card-stat.amber { color:#f59e0b; }
+
+.mp-live-badge { position:absolute; top:12px; right:12px; font-size:10px; padding:2px 8px;
+                  border-radius:10px; background:#10b98122; color:#10b981; display:flex; align-items:center; gap:4px; }
+.mp-live-dot { width:6px; height:6px; border-radius:50%; background:#10b981;
+                animation:mp-pulse 2s infinite; }
+@keyframes mp-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── Empty State ──────────────── */
+.mp-empty { text-align:center; padding:40px 20px; color:#555; }
+.mp-empty-icon { font-size:40px; margin-bottom:12px; }
+.mp-empty-text { font-size:14px; margin-bottom:8px; }
+.mp-empty-link { color:#f59e0b; font-size:13px; text-decoration:none; }
+
+/* ── Filter Bar ───────────────── */
+.mp-filters { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.mp-filter-select { padding:6px 12px; border-radius:8px; background:#111; border:1px solid #222;
+                     color:#ccc; font-size:12px; outline:none; cursor:pointer; }
+.mp-filter-select:focus { border-color:#f59e0b; }
+
+/* ── Loading ──────────────────── */
+.mp-loading { text-align:center; padding:40px; color:#555; }
+.mp-loading-spinner { width:30px; height:30px; border:3px solid #222; border-top-color:#f59e0b;
+                       border-radius:50%; animation:mp-spin 1s linear infinite; margin:0 auto 12px; }
+@keyframes mp-spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 16px;margin:12px 16px 0;font-size:12px;color:#d4a017;display:flex;align-items:center;gap:8px;">
+  <span>ℹ️</span>
+  <span>Strateji analiz aracı — yatırım tavsiyesi değildir. / Strategy analysis tool — not financial advice.</span>
+</div>
+<div class="mp-container">
+
+  <!-- ══════════ SEARCH ══════════ -->
+  <div class="mp-search">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    <input type="text" id="mp-search-input" placeholder="Strateji ara..." oninput="MP.search(this.value)">
+  </div>
+
+  <!-- ══════════ TABS ══════════ -->
+  <div class="mp-tabs" id="mp-tabs">
+    <button class="mp-tab active" data-tab="discover" onclick="MP.switchTab('discover')">🔥 Keşfet</button>
+    <button class="mp-tab" data-tab="top" onclick="MP.switchTab('top')">🏆 En İyi</button>
+    <button class="mp-tab" data-tab="popular" onclick="MP.switchTab('popular')">👥 Popüler</button>
+    <button class="mp-tab" data-tab="newest" onclick="MP.switchTab('newest')">🆕 En Yeni</button>
+    <button class="mp-tab" data-tab="following" onclick="MP.switchTab('following')">⭐ Takip</button>
+    <button class="mp-tab" data-tab="published" onclick="MP.switchTab('published')">📤 Yayınlarım</button>
+  </div>
+
+  <!-- ══════════ SUB-TABS (Akademi Pills) ══════════ -->
+  <div class="mp-pills" id="mp-pills" style="display:none; gap:8px; margin-bottom:16px; display:flex;">
+    <button class="mp-pill active" data-pill="strategies" onclick="MP.switchPill('strategies')">⚡ Algoritmik Stratejiler</button>
+    <button class="mp-pill" data-pill="courses" onclick="MP.switchPill('courses')">📚 Akademi & Masterclass</button>
+  </div>
+
+  <style id="mp-pills-style">
+  .mp-pills { display: flex !important; gap: 8px; margin-bottom: 16px; }
+  .mp-pill { padding: 8px 16px; border-radius: 20px; background: #111; border: 1px solid #222;
+             color: #888; font-size: 13px; white-space: nowrap; cursor: pointer; transition: all .2s; }
+  .mp-pill.active { background: linear-gradient(135deg, #3b82f6, #1e40af); color: #fff; border-color: transparent; font-weight: 600; }
+  .mp-pill:hover:not(.active) { border-color: #444; color: #ccc; }
+  </style>
+
+  <!-- ══════════ FILTERS ══════════ -->
+  <div class="mp-filters" id="mp-filters">
+    <select class="mp-filter-select" id="mp-market-filter" onchange="MP.applyFilters()">
+      <option value="">Tüm Marketler</option>
+      <option value="crypto">Kripto</option>
+      <option value="bist">BIST</option>
+      <option value="forex">Forex</option>
+      <option value="stocks">Hisse</option>
+    </select>
+    <select class="mp-filter-select" id="mp-sort-filter" onchange="MP.applyFilters()">
+      <option value="newest">En Yeni</option>
+      <option value="performance">En İyi Performans</option>
+      <option value="popular">En Popüler</option>
+      <option value="signals">En Çok Sinyal</option>
+    </select>
+  </div>
+
+  <!-- ══════════ CONTENT ══════════ -->
+  <div id="mp-content">
+    <div class="mp-loading">
+      <div class="mp-loading-spinner"></div>
+      Stratejiler yükleniyor...
+    </div>
+  </div>
+
+</div>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section class="px-4 pb-4">
+  {% include "legal_disclaimer.html" %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/marketplace.js') }}"></script>
+<script>
+// Akademi Pills kontrolü
+const originalSwitchTab = window.MP.switchTab;
+window.MP.switchTab = function(tab) {
+  const pills = document.getElementById("mp-pills");
+  if (pills) {
+    // Pills sadece discover, top, popular, newest tablarında görülsün
+    pills.style.display = (["discover", "top", "popular", "newest"].includes(tab)) ? "flex" : "none";
+    if (["following", "published"].includes(tab)) {
+      // Geri stratejilere dön
+      document.querySelectorAll(".mp-pill").forEach((p) => {
+        p.classList.remove("active");
+      });
+      document.querySelector('[data-pill="strategies"]').classList.add("active");
+    }
+  }
+  originalSwitchTab(tab);
+};
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+[
+  {
+    "id": "c8a8ffb912b7",
+    "name": "LiveTestStrategy",
+    "code": "RSI(14) < 30",
+    "user_id": "0a30aaaf-a47",
+    "created_at": 1773445117,
+    "updated_at": 1773445117
+  }
+]

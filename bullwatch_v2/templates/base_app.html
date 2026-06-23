@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#0B0F17" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>{% block title %}ZKR Analiz v2{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/discover.css') }}">
+  {% block extra_head %}{% endblock %}
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="terminal-body {% block body_class %}{% endblock %}">
+
+<div class="t-layout">
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- DESKTOP SIDEBAR                                             -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <aside class="t-sidebar" id="t-sidebar">
+    <div class="t-sidebar-logo">
+      <div class="t-sidebar-logo-icon">B</div>
+      <div>
+        <div class="t-sidebar-logo-text">ZKR Analiz</div>
+        <div class="t-sidebar-logo-sub">AI Market Terminal</div>
+      </div>
+    </div>
+    <nav class="t-sidebar-nav">
+      <a href="/discover" class="t-nav-item{{ ' active' if request.path == '/discover' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+        Home
+      </a>
+      <a href="/screener" class="t-nav-item{{ ' active' if request.path == '/screener' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4h18M3 8h18M3 12h12M3 16h8"/></svg>
+        Markets
+      </a>
+      <a href="/market-radar" class="t-nav-item{{ ' active' if request.path == '/market-radar' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12h.008v.007H12V12z"/></svg>
+        Radar
+      </a>
+      <a href="/trade" class="t-nav-item{{ ' active' if request.path == '/trade' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+        Chart
+      </a>
+      <a href="/feed" class="t-nav-item{{ ' active' if request.path == '/feed' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+        Feed
+      </a>
+      <a href="/chat" class="t-nav-item{{ ' active' if request.path == '/chat' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"/></svg>
+        AI Copilot
+      </a>
+      <a href="/portfolio" class="t-nav-item{{ ' active' if request.path == '/portfolio' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg>
+        Portföy
+      </a>
+      <a href="/opportunities" class="t-nav-item{{ ' active' if request.path == '/opportunities' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z"/></svg>
+        Fırsatlar
+      </a>
+      <div class="t-nav-separator"></div>
+      <a href="/simulator" class="t-nav-item{{ ' active' if request.path == '/simulator' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        Simulator
+      </a>
+      <a href="/strategy-builder" class="t-nav-item{{ ' active' if request.path == '/strategy-builder' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11.42 15.17l-5.658-5.658a2.122 2.122 0 01-.002-3.004l.354-.353a2.122 2.122 0 013.004.002l5.658 5.658m-5.356-5.355l5.658 5.658a2.122 2.122 0 010 3.004l-.354.354a2.122 2.122 0 01-3.004 0L6.064 9.812"/></svg>
+        Strategy
+      </a>
+      <a href="/marketplace" class="t-nav-item{{ ' active' if request.path == '/marketplace' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0020.25 9.35"/></svg>
+        Marketplace
+      </a>
+      <a href="/mentors" class="t-nav-item{{ ' active' if request.path == '/mentors' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342"/></svg>
+        Mentors
+      </a>
+      <a href="/leaderboard" class="t-nav-item{{ ' active' if request.path == '/leaderboard' else '' }}">
+        <svg class="t-nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 007.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M18.75 4.236c.982.143 1.954.317 2.916.52A6.003 6.003 0 0016.27 9.728M18.75 4.236V4.5c0 2.108-.966 3.99-2.48 5.228m0 0a6.003 6.003 0 01-3.77 1.522m0 0a6.003 6.003 0 01-3.77-1.522"/></svg>
+        Leaderboard
+      </a>
+    </nav>
+    <div class="t-sidebar-footer">
+      <div class="t-legal-footer" style="border:0;padding:0;">
+        <span style="opacity:0.5">AI Market Intelligence Platform</span><br>
+        <a href="/disclaimer">Disclaimer</a> · <a href="/disclaimer">Terms</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- MAIN AREA                                                   -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="t-main" id="t-main">
+    {% block header %}
+    <header class="t-header">
+      <h1 class="t-header-title">{% block page_title %}ZKR Analiz{% endblock %}</h1>
+      <div class="t-header-actions">
+        {% block header_actions %}{% endblock %}
+      </div>
+    </header>
+    {% endblock %}
+
+    <div class="t-content {% block main_class %}{% endblock %}">
+      {% block content %}{% endblock %}
+    </div>
+
+    <!-- Legal Footer -->
+    <footer class="t-legal-footer">
+      <span>AI Market Intelligence Platform</span> ·
+      <a href="/disclaimer">Disclaimer</a> ·
+      <a href="/disclaimer">Risk Warning</a> ·
+      <a href="/disclaimer">Terms</a>
+      <div style="margin-top:4px;font-size:10px;opacity:0.5;">Bu platform yatırım tavsiyesi vermez. Tüm içerikler bilgilendirme amaçlıdır.</div>
+    </footer>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MOBILE BOTTOM BAR                                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<nav class="t-bottombar" id="t-bottombar">
+  <div class="t-bottombar-inner">
+    <a href="/discover" class="t-bottombar-item{{ ' active' if request.path == '/discover' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1"/></svg>
+      <span>Home</span>
+    </a>
+    <a href="/screener" class="t-bottombar-item{{ ' active' if request.path == '/screener' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4h18M3 8h18M3 12h12M3 16h8"/></svg>
+      <span>Markets</span>
+    </a>
+    <a href="/market-radar" class="t-bottombar-item{{ ' active' if request.path == '/market-radar' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546"/></svg>
+      <span>Radar</span>
+    </a>
+    <a href="/trade" class="t-bottombar-item{{ ' active' if request.path == '/trade' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+      <span>Chart</span>
+    </a>
+    <a href="/feed" class="t-bottombar-item{{ ' active' if request.path == '/feed' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+      <span>Feed</span>
+    </a>
+    <a href="/chat" class="t-bottombar-item{{ ' active' if request.path == '/chat' else '' }}">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+      <span>AI</span>
+    </a>
+  </div>
+</nav>
+
+{% block scripts %}{% endblock %}
+
+<script>
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}').catch(function () {});
+    });
+  })();
+</script>
+</body>
+</html>

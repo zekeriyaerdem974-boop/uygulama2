@@ -1,0 +1,53 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/Flutter.framework
+/ios/Flutter/Flutter.xcframework
+/ios/Flutter/flutter_export_environment.sh
+/ios/ServiceDefinitions.json
+/ios/Runner/GeneratedPluginRegistrant.*
+/ios/Runner/Flutter.podspec
+/ios/.symlinks/
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/ephemeralmodules.modulemap
+/macos/Flutter/GeneratedPluginRegistrant.swift
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/local.properties
+/android/.gradle/
+/android/captures/
+/android/gradle-wrapper.jar
+/android/gradlew
+/android/gradlew.bat
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+*.iml
+
+# macOS
+.DS_Store
+*.xcworkspace/
+xcuserdata/
+
+# Generated files
+*.g.dart
+*.config.dart
+
+# Logs
+*.log

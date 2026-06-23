@@ -1,0 +1,1571 @@
+# -*- coding: utf-8 -*-
+import os, json, time, math, requests, threading
+import numpy as np
+import pandas as pd
+from datetime import datetime, timedelta, timezone
+from dateutil import tz
+from ipaddress import ip_address, ip_network
+from pathlib import Path
+from typing import List, Dict
+from flask import Flask, render_template, jsonify, request, send_file, abort, redirect
+
+from core.job_manager import JobManager
+from core.market_data import MarketDataService
+from blueprints.market import bp as market_bp
+from blueprints.indicators import bp as indicators_bp
+from blueprints.orderflow import bp as orderflow_bp
+from blueprints.liquidation import bp as liquidation_bp
+from blueprints.alpha import bp as alpha_bp
+from flask_cors import CORS
+from flask_sock import Sock
+import websocket
+
+try:
+    import redis  # type: ignore
+except Exception:  # pragma: no cover
+    redis = None
+
+# -------------------- App & Config --------------------
+app = Flask(__name__)
+
+# Singletons for unified backend
+job_manager = JobManager()
+market_data = MarketDataService()
+
+# Make services discoverable from blueprints via current_app.extensions
+app.extensions["job_manager"] = job_manager
+app.extensions["market_data"] = market_data
+
+# Register unified API blueprints (new contract)
+app.register_blueprint(market_bp)
+app.register_blueprint(indicators_bp)
+app.register_blueprint(orderflow_bp)
+app.register_blueprint(liquidation_bp)
+app.register_blueprint(alpha_bp)
+
+
+# --- Compatibility redirects (legacy mounted paths) ---
+@app.route("/orderflow")
+@app.route("/orderflow/")
+def legacy_orderflow_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/likidasyon")
+@app.route("/likidasyon/")
+def legacy_likidasyon_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/alpha")
+@app.route("/alpha/")
+def legacy_alpha_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/orderflow/api/<path:subpath>")
+def legacy_orderflow_api(subpath: str):
+    return redirect(f"/api/orderflow/{subpath}", code=302)
+
+
+@app.route("/likidasyon/api/<path:subpath>")
+def legacy_liquidation_api(subpath: str):
+    return redirect(f"/api/liquidation/{subpath}", code=302)
+
+
+@app.route("/alpha/api/<path:subpath>")
+def legacy_alpha_api(subpath: str):
+    return redirect(f"/api/alpha/{subpath}", code=302)
+CORS(app)
+sock = Sock(app)
+
+BINANCE_API = "https://api.binance.com"
+BINANCE_FAPI = "https://fapi.binance.com"
+ALT_FNG_API = "https://api.alternative.me/fng/?limit=1"
+FR_API = "https://www.federalregister.gov/api/v1/documents.json"
+COINGECKO_API = "https://api.coingecko.com/api/v3"
+
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+COINGLASS_API_KEY = os.getenv("COINGLASS_API_KEY")
+
+TZ = tz.gettz("Europe/Berlin")
+
+# chat_context yenileme periyodu
+CHAT_REFRESH_SEC = int(os.getenv("CHAT_REFRESH_SEC", "60"))
+
+# chat_context warmup: startup'ta bloklamamak için arkaplanda hazırlanır.
+_CHAT_WARM_STARTED = False
+_CHAT_WARM_LOCK = threading.Lock()
+
+def warm_chat_context_async():
+    """Build chat_context in a background thread if not already running."""
+    global _CHAT_WARM_STARTED
+    with _CHAT_WARM_LOCK:
+        if _CHAT_WARM_STARTED:
+            return
+        _CHAT_WARM_STARTED = True
+
+    def _job():
+        global _CHAT_WARM_STARTED
+        try:
+            ctx = build_chat_context()
+            cache_set("chat_context", ctx)
+        except Exception as e:
+            print("[warmup] build_chat_context error:", e)
+        finally:
+            with _CHAT_WARM_LOCK:
+                _CHAT_WARM_STARTED = False
+
+    threading.Thread(target=_job, daemon=True).start()
+# top500 4h dataset yenileme periyodu
+TOP4H_REFRESH_SEC = int(os.getenv("TOP4H_REFRESH_SEC", "900"))  # 15 dk
+TOP4H_MAX_SYMBOLS = int(os.getenv("TOP4H_MAX_SYMBOLS", "500"))
+TOP4H_KLINES = int(os.getenv("TOP4H_KLINES", "500"))
+TOP4H_INTERVAL = "4h"
+
+# -------------------- Security toggles --------------------
+_PRIVATE_NETS = (
+    ip_network("127.0.0.0/8"),
+    ip_network("10.0.0.0/8"),
+    ip_network("172.16.0.0/12"),
+    ip_network("192.168.0.0/16"),
+)
+
+
+def _get_client_ip(req) -> str:
+    # If behind a reverse proxy, the first X-Forwarded-For entry is the client.
+    xf = (req.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return xf or (req.remote_addr or "")
+
+
+def _is_private_client(req) -> bool:
+    ip_str = _get_client_ip(req)
+    try:
+        addr = ip_address(ip_str)
+    except Exception:
+        return False
+    return any(addr in net for net in _PRIVATE_NETS)
+
+
+def _apk_download_enabled(req) -> bool:
+    return os.getenv("BULLWATCH_ENABLE_APK", "0") == "1" and _is_private_client(req)
+
+# -------------------- Cache (Redis optional, fallback in-memory) --------------------
+REDIS_URL = os.getenv("REDIS_URL")
+_redis = None
+if REDIS_URL and redis is not None:
+    try:
+        _redis = redis.Redis.from_url(REDIS_URL, decode_responses=True)
+        _redis.ping()
+        print("[cache] redis enabled:", REDIS_URL)
+    except Exception as e:
+        _redis = None
+        print("[cache] redis disabled:", e)
+
+_cache = {}
+_CACHE_LOCK = threading.Lock()
+
+# Background jobs guard
+_BG_STARTED = False
+_BG_LOCK = threading.Lock()
+
+def _pack(val):
+    return json.dumps({"ts": time.time(), "val": val}, ensure_ascii=False)
+
+def _unpack(raw):
+    obj = json.loads(raw)
+    return float(obj.get("ts", 0)), obj.get("val")
+
+def cache_get(key, ttl=60):
+    if _redis is not None:
+        raw = _redis.get(key)
+        if not raw:
+            return None
+        try:
+            ts, val = _unpack(raw)
+        except Exception:
+            return None
+        if time.time() - ts > ttl:
+            return None
+        return val
+
+    with _CACHE_LOCK:
+        it = _cache.get(key)
+        if not it:
+            return None
+        ts, val = it
+    if time.time() - ts > ttl:
+        return None
+    return val
+
+def cache_set(key, val):
+    if _redis is not None:
+        try:
+            _redis.set(key, _pack(val))
+            return
+        except Exception as e:
+            print("[cache] redis set failed, fallback memory:", e)
+
+    with _CACHE_LOCK:
+        _cache[key] = (time.time(), val)
+
+def utcnow():
+    return datetime.now(timezone.utc)
+
+# -------------------- Runtime Thresholds (Parametre Seti) --------------------
+# Varsayılan eşikler (runtime'da değiştirilebilir)
+DEFAULT_THRESHOLDS = {
+    # Günlük aşırı uzama filtresi (change24)
+    "overextended_change24_max": 25.0,   # > ise "PULLBACK BEKLE"
+    # Minimum momentum filtreleri
+    "min_ret7_pct": 5.0,                 # haftalık getiri alt limiti
+    "min_change24_pct": 2.0,             # günlük değişim alt limiti (momentum)
+    "max_change24_pct": 15.0,            # "ideal" üst sınır; üstü varsa kovalamama (pullback bekle)
+    # Kısa TF sıcaklık (EMA uzaklığı)
+    "heat_atr_max": 1.5,                 # (price-EMA20_15m)/ATR14_15m <= 1.5
+    # Rejim / Trend zorunlulukları
+    "require_btc_regime": True,          # BTC: SMA200 üstü ve 50>200
+    "require_above200": True,            # Coin: 1D SMA200 üstünde
+}
+
+THRESHOLDS_KEY = "runtime_thresholds_v1"
+
+def get_thresholds():
+    th = cache_get(THRESHOLDS_KEY, ttl=10**9)
+    if th is None:
+        th = DEFAULT_THRESHOLDS.copy()
+        cache_set(THRESHOLDS_KEY, th)
+    return th
+
+def update_thresholds(partial: Dict):
+    th = get_thresholds().copy()
+    # izin verilen anahtarlar
+    allowed = set(DEFAULT_THRESHOLDS.keys())
+    for k, v in (partial or {}).items():
+        if k in allowed:
+            # tip güvenliği: bool alanlar için bool'a döndür
+            if k in ("require_btc_regime", "require_above200"):
+                th[k] = bool(v)
+            else:
+                try:
+                    th[k] = float(v)
+                except Exception:
+                    # geçersiz sayı gelirse es geç
+                    continue
+    cache_set(THRESHOLDS_KEY, th)
+    return th
+
+# -------------------- Utilities --------------------
+def simple_sma(series, window):
+    if len(series) < window:
+        return None
+    return pd.Series(series).rolling(window=window).mean().iloc[-1]
+
+def safe_float(x):
+    try:
+        return float(x)
+    except Exception:
+        return None
+
+
+# -------------------- Server-side Binance WS (for mobile/light clients) --------------------
+BINANCE_TICKER_STREAM = "wss://stream.binance.com:9443/ws/!ticker@arr"
+TICKERS_KEY = "binance_top_tickers_v1"
+
+def binance_ticker_ws_loop():
+    """Connect to Binance ticker stream and cache top USDT tickers on server."""
+    last_emit = 0
+
+    def on_message(wsapp, message):
+        nonlocal last_emit
+        now = time.time()
+        if now - last_emit < 1.0:
+            return
+        last_emit = now
+        try:
+            data = json.loads(message)
+            if not isinstance(data, list):
+                return
+            rows = []
+            for x in data:
+                s = x.get('s')
+                if not s or not str(s).endswith('USDT'):
+                    continue
+                try:
+                    chg = float(x.get('P', 0.0))
+                    qv = float(x.get('q', 0.0))
+                    last = float(x.get('c', 0.0))
+                except Exception:
+                    continue
+                rows.append({"symbol": s, "change24_pct": chg, "quoteVolume": qv, "last": last})
+
+            rows.sort(key=lambda r: -r.get('quoteVolume', 0.0))
+            cache_set(TICKERS_KEY, rows[:40])
+        except Exception:
+            return
+
+    def on_error(wsapp, err):
+        print('[binance-ws] error:', err)
+
+    def on_close(wsapp, status_code, msg):
+        print('[binance-ws] closed:', status_code, msg)
+
+    while True:
+        try:
+            wsapp = websocket.WebSocketApp(
+                BINANCE_TICKER_STREAM,
+                on_message=on_message,
+                on_error=on_error,
+                on_close=on_close,
+            )
+            wsapp.run_forever(ping_interval=20, ping_timeout=10)
+        except Exception as e:
+            print('[binance-ws] loop error:', e)
+        time.sleep(2)
+
+
+@app.get('/api/mobile_snapshot')
+def api_mobile_snapshot():
+    """Mobile için tek istekle hafif snapshot."""
+    return jsonify({
+        "ok": True,
+        "data": {
+            "generated_at": utcnow().isoformat(),
+            "tickers": cache_get(TICKERS_KEY, ttl=5) or [],
+            "thresholds": get_thresholds(),
+        }
+    })
+
+
+@sock.route('/ws/stream')
+def ws_stream(ws):
+    """Mobile clients: stream cached data (server already pulls from exchanges)."""
+    while True:
+        payload = {
+            "generated_at": utcnow().isoformat(),
+            "tickers": cache_get(TICKERS_KEY, ttl=5) or [],
+        }
+        ws.send(json.dumps({"ok": True, "data": payload}, ensure_ascii=False))
+        time.sleep(1)
+
+# -------------------- External APIs --------------------
+def binance_klines(symbol="BTCUSDT", interval="1d", limit=400):
+    r = requests.get(f"{BINANCE_API}/api/v3/klines",
+                     params={"symbol":symbol,"interval":interval,"limit":limit}, timeout=15)
+    r.raise_for_status()
+    arr = r.json()
+    rows = []
+    for a in arr:
+        rows.append({
+            "open_time": int(a[0]), "open": float(a[1]), "high": float(a[2]),
+            "low": float(a[3]), "close": float(a[4]), "volume": float(a[5]),
+            "close_time": int(a[6])
+        })
+    return pd.DataFrame(rows)
+
+def fng_latest():
+    key = "fng_latest"
+    c = cache_get(key, ttl=60)
+    if c:
+        return c
+    r = requests.get(ALT_FNG_API, timeout=10)
+    r.raise_for_status()
+    data = r.json()
+    if data.get("data"):
+        it = data["data"][0]
+        out = {
+            "value": int(it["value"]),
+            "value_classification": it["value_classification"],
+            "timestamp": int(it["timestamp"]),
+            "time_readable": it.get("time_until_update")
+        }
+        cache_set(key, out)
+        return out
+    return {"value": None, "value_classification": None, "timestamp": None, "time_readable": None}
+
+def fapi_open_interest(symbol="BTCUSDT"):
+    r = requests.get(f"{BINANCE_FAPI}/fapi/v1/openInterest",
+                     params={"symbol": symbol}, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def fapi_open_interest_hist(symbol="BTCUSDT", period="1d", limit=30):
+    r = requests.get(f"{BINANCE_FAPI}/futures/data/openInterestHist",
+                     params={"symbol":symbol,"period":period,"limit":limit}, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def blockchain_hashrate(days=30):
+    url = "https://api.blockchain.info/charts/hash-rate"
+    r = requests.get(url, params={"format":"json","timespan":f"{days}days"}, timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+def defillama_stablecoins():
+    url = "https://stablecoins.llama.fi/stablecoins"
+    r = requests.get(url, timeout=20)
+    r.raise_for_status()
+    js = r.json()
+    coins = js.get("peggedAssets", []) or []
+
+    rows = []
+    for c in coins:
+        if c.get("pegType") != "peggedUSD":
+            continue
+        sym = c.get("symbol") or c.get("name") or "UNKNOWN"
+        cur = (c.get("circulating") or {}).get("peggedUSD")
+        prev = (c.get("circulatingPrevDay") or {}).get("peggedUSD")
+        if cur is None or prev is None:
+            continue
+        change_usd = float(cur) - float(prev)
+        rows.append({"symbol": sym, "change24_usd": change_usd})
+
+    rows.sort(key=lambda x: -abs(x["change24_usd"]))
+    top = rows[:10]
+    total_change = sum(x["change24_usd"] for x in top) if top else 0.0
+    return {"top": top, "approx_netflow_24h_usd": total_change}
+
+def coinglass_coinbase_premium():
+    if not COINGLASS_API_KEY:
+        return {"error":"COINGLASS_API_KEY missing"}
+    headers = {"coinglassSecret": COINGLASS_API_KEY}
+    r = requests.get("https://open-api-v4.coinglass.com/api/coinbase-premium-index",
+                     params={"symbol":"BTC"}, headers=headers, timeout=12)
+    if r.status_code != 200:
+        return {"error": f"http {r.status_code}"}
+    return r.json()
+
+# -------------------- Federal Register (ETF Events) --------------------
+ASSET_KEYWORDS = {
+    "BTC": ["bitcoin","spot bitcoin","btc","iShares","BlackRock","Fidelity","ARK 21Shares","Valkyrie","VanEck","WisdomTree","Franklin","Bitwise","Grayscale","Hashdex"],
+    "ETH": ["ether","ethereum","spot ether","eth","iShares","BlackRock","Fidelity","VanEck","Bitwise","Grayscale","21Shares","Franklin","WisdomTree"],
+    "SOL": ["solana","spot solana","sol","VanEck","21Shares","Fidelity","Hashdex","Grayscale","BlackRock"],
+    "XRP": ["xrp","ripple","spot xrp","ripple labs","21Shares","Hashdex","Grayscale","BlackRock","Fidelity"]
+}
+EXCHANGE_KEYWORDS = ["Cboe BZX","NYSE Arca","Nasdaq","Cboe EDGX","Cboe BYX"]
+
+def fr_search_documents(term, per_page=30, agency_slug="securities-and-exchange-commission"):
+    params = {
+        "per_page": per_page,
+        "order": "newest",
+        "conditions[term]": term,
+        "conditions[agencies][]": agency_slug,
+    }
+    r = requests.get(FR_API, params=params, timeout=20)
+    r.raise_for_status()
+    return r.json()
+
+def classify_fr_status(title: str):
+    t = (title or "").lower()
+    if "granting approval" in t or "order approving" in t or "approval order" in t: return "approved"
+    if "instituting proceedings" in t: return "proceedings"
+    if "designation of a longer period" in t or "longer period" in t or "extend" in t or "delay" in t: return "delay"
+    if "notice of filing" in t or "notice" in t: return "filed"
+    if "immediate effectiveness" in t: return "effective"
+    return "unknown"
+
+def detect_exchange(title):
+    for ex in EXCHANGE_KEYWORDS:
+        if ex.lower() in (title or "").lower():
+            return ex
+    return None
+
+def rough_deadline(status:str, pub_date:str):
+    if not pub_date:
+        return None
+    try:
+        d = datetime.fromisoformat(pub_date) if "T" in pub_date else datetime.fromisoformat(pub_date+"T00:00:00")
+        d = d.replace(tzinfo=timezone.utc)
+    except Exception:
+        return None
+    if status == "filed": return (d + timedelta(days=45)).isoformat()
+    if status == "proceedings": return (d + timedelta(days=60)).isoformat()
+    if status == "delay": return (d + timedelta(days=45)).isoformat()
+    return None
+
+def fetch_dynamic_etf_events():
+    key = "dynamic_etf_events_v2"
+    c = cache_get(key, ttl=300)
+    if c:
+        return c
+    ev = []
+    for asset, kws in ASSET_KEYWORDS.items():
+        found_any = False
+        for kw in kws:
+            term = f"{kw} 19b-4"
+            try:
+                js = fr_search_documents(term, per_page=200)
+                for d in js.get("results", []):
+                    title = d.get("title","")
+                    pub = (d.get("publication_date") or d.get("effective_on") 
+                           or d.get("signing_date") or d.get("created_at"))
+                    url = d.get("html_url") or d.get("pdf_url")
+                    doc = d.get("document_number")
+                    abstract = d.get("abstract") or ""
+                    status = classify_fr_status(title)
+                    exch = detect_exchange(title) or "—"
+                    manager = None
+                    for m in ["iShares","BlackRock","Fidelity","ARK 21Shares","Valkyrie","VanEck","WisdomTree","Franklin","Bitwise","Grayscale","Hashdex","21Shares"]:
+                        if m.lower() in (title+" "+abstract).lower():
+                            manager = m; break
+                    found_any = True
+                    ev.append({
+                        "asset": asset, "manager": manager or "—", "exchange": exch,
+                        "status": status, "title": title, "date": pub or "TBD",
+                        "url": url, "doc": doc, "next_deadline_est": rough_deadline(status, pub)
+                    })
+            except Exception:
+                continue
+            time.sleep(0.15)
+        if not found_any:
+            ev.append({"asset": asset, "status": "none", "title": f"{asset} için 19b-4 kaydı bulunamadı", "date": None, "url": None})
+    uniq = {}
+    for e in ev:
+        k = (e.get("doc") or "") + "|" + (e.get("title") or "")
+        if k not in uniq:
+            uniq[k] = e
+    out = list(uniq.values())
+    out.sort(key=lambda x: (x.get("date") or ""), reverse=True)
+    if out:
+        cache_set(key, out)
+    return out
+
+# -------------------- Pump Candidates --------------------
+def pump_candidates(limit_pairs=40):
+    r = requests.get(f"{BINANCE_API}/api/v3/ticker/24hr", timeout=20)
+    r.raise_for_status()
+    arr = r.json()
+    rows = []
+    for x in arr:
+        s = x.get("symbol","")
+        if not s.endswith("USDT"):
+            continue
+        try:
+            qv = float(x.get("quoteVolume","0"))
+            ch = float(x.get("priceChangePercent","0"))
+        except Exception:
+            continue
+        rows.append({"symbol":s, "quoteVolume": qv, "change24": ch})
+    rows.sort(key=lambda x: -x["quoteVolume"])
+    top = rows[:limit_pairs]
+
+    out = []
+    rank_map = {top[i]["symbol"]: i+1 for i in range(len(top))}
+    for item in top:
+        sym = item["symbol"]
+        try:
+            df = binance_klines(sym, "1d", 220)
+            closes = df["close"].tolist()
+            if len(closes) < 200:
+                continue
+            sma200 = simple_sma(closes, 200)
+            last = closes[-1]
+            above = last > (sma200 or 1e18)
+            ret7 = (closes[-1]/closes[-8]-1.0) if len(closes)>=8 else 0.0
+            score = ((ret7*100)*0.4 + item["change24"]*0.3 + (20 if above else 0) + max(0, 20 - (rank_map[sym]-1)))
+            out.append({
+                "symbol": sym,
+                "last": float(last),
+                "sma200": float(sma200) if sma200 is not None else None,
+                "above200": bool(above),
+                "ret7_pct": float(ret7*100.0),
+                "change24_pct": float(item["change24"]),
+                "volume_rank": int(rank_map[sym]),
+                "score": round(float(score),2)
+            })
+            time.sleep(0.03)
+        except Exception:
+            continue
+    out.sort(key=lambda x: -x["score"])
+    return out[:15]
+
+# -------------------- Bull Estimate --------------------
+def heuristic_bull_estimate(btc_df, fng, etf_events):
+    if btc_df is None or btc_df.empty:
+        return {"bull_start_estimate": None, "bull_end_estimate": None,
+                "phase_label": "unknown", "score": 0, "explain": ["Veri yok"]}
+    closes = btc_df["close"].tolist()
+    sma200 = simple_sma(closes, 200)
+    sma50 = simple_sma(closes, 50)
+    sma20 = simple_sma(closes, 20)
+    last = closes[-1]
+    checks, score = [], 0
+    cond1 = last > (sma200 or last+1); checks.append(("BTC 200D SMA üstünde", bool(cond1))); score += 1 if cond1 else 0
+    cond2 = (sma50 or 0) > (sma200 or 1e12); checks.append(("50D > 200D", bool(cond2))); score += 1 if cond2 else 0
+    cond3 = (sma20 or 0) > (sma50 or 1e12); checks.append(("20D > 50D", bool(cond3))); score += 1 if cond3 else 0
+    ret90 = (closes[-1] / closes[-90] - 1.0) if len(closes) >= 90 else 0.0
+    cond4 = ret90 > 0.20; checks.append((f"Son 90g BTC getirisi {ret90:.1%}", bool(cond4))); score += 1 if cond4 else 0
+    fng_val = fng.get("value"); cond5 = (fng_val or 0) >= 55; checks.append((f"FNG ≥ 55 (şu an: {fng_val})", bool(cond5))); score += 1 if cond5 else 0
+    soon_cut = utcnow() + timedelta(days=60)
+    near = []
+    for e in etf_events:
+        dt = e.get("next_deadline_est") or e.get("date")
+        if not dt:
+            continue
+        try:
+            d = datetime.fromisoformat(dt) if "T" in dt else datetime.fromisoformat(dt+"T00:00:00")
+            d = d.replace(tzinfo=timezone.utc)
+            if d <= soon_cut and e.get("status") != "none":
+                near.append(e)
+        except Exception:
+            pass
+    cond6 = len(near) > 0; checks.append((f"ETF kritik pencereler (≤60g): {len(near)}", bool(cond6))); score += 1 if cond6 else 0
+    if score <= 1: phase = "Dip Toplama"
+    elif score <= 3: phase = "İnançlı Yükseliş"
+    elif score in (4,5): phase = "Genişleme"
+    else: phase = "FOMO/Zirve Yakını"
+    now = utcnow()
+    start_in_days = max(0, 120 - score*15)
+    bull_start_est = now + timedelta(days=start_in_days)
+    bull_end_est = now + timedelta(days=480 + (6-score)*15)
+    explain = [f"{l}: {'✓' if ok else '×'}" for (l,ok) in checks]
+    explain.append("Halving sonrası zirve penceresi ~ 2025-04 – 2025-10 (tarihsel bağlam)")
+    return {"bull_start_estimate": bull_start_est.isoformat(),
+            "bull_end_estimate": bull_end_est.isoformat(),
+            "phase_label": phase, "score": int(score),
+            "checks": checks, "explain": explain}
+
+# -------------------- BTC Indicators (HTTP'siz) --------------------
+def compute_btc_indicators_from_df(df):
+    closes = df["close"].tolist()
+    last = closes[-1]
+    sma20 = simple_sma(closes, 20)
+    sma50 = simple_sma(closes, 50)
+    sma200 = simple_sma(closes, 200)
+    if len(closes) >= 30:
+        ret30 = closes[-1] / closes[-30] - 1.0
+        vol30 = float(np.std(closes[-30:]) / np.mean(closes[-30:])) if np.mean(closes[-30:]) > 0 else None
+    else:
+        ret30, vol30 = None, None
+    return {
+        "price": float(last),
+        "sma20": float(sma20) if sma20 is not None else None,
+        "sma50": float(sma50) if sma50 is not None else None,
+        "sma200": float(sma200) if sma200 is not None else None,
+        "ret30": float(ret30) if ret30 is not None else None,
+        "vol30": float(vol30) if vol30 is not None else None,
+        "updated_at": utcnow().isoformat()
+    }
+
+# -------------------- Indicators (15m) --------------------
+def ema_last(series, window=20):
+    if len(series) < window:
+        return None
+    s = pd.Series(series)
+    return float(s.ewm(span=window, adjust=False).mean().iloc[-1])
+
+def atr_last(df: pd.DataFrame, period=14):
+    if df is None or df.empty or len(df) < period + 1:
+        return None
+    high = df["high"].astype(float)
+    low = df["low"].astype(float)
+    close = df["close"].astype(float)
+    prev_close = close.shift(1)
+    tr = pd.concat([
+        high - low,
+        (high - prev_close).abs(),
+        (low - prev_close).abs()
+    ], axis=1).max(axis=1)
+    return float(tr.rolling(period).mean().iloc[-1])
+
+def vwap_last(df: pd.DataFrame, window=96):
+    if df is None or df.empty:
+        return None
+    w = min(window, len(df))
+    tp = (df["high"].astype(float) + df["low"].astype(float) + df["close"].astype(float)) / 3.0
+    vol = df["volume"].astype(float)
+    num = (tp.iloc[-w:] * vol.iloc[-w:]).sum()
+    den = vol.iloc[-w:].sum()
+    return float(num / den) if den > 0 else None
+
+def fetch_klines_df(symbol, interval, limit):
+    raw = binance_klines(symbol, interval=interval, limit=limit)
+    return raw
+
+# -------------------- Signal Engine --------------------
+def evaluate_entry_signal(symbol: str, pump_row: Dict = None, thresholds: Dict = None) -> Dict:
+    """
+    Karar: AL / PULLBACK BEKLE / ALMA
+    Kullanılan eşikler: get_thresholds() -> runtime (POST /api/thresholds ile güncellenir)
+    """
+    th = thresholds or get_thresholds()
+    ticks = []
+
+    # --- 1) BTC rejimi ---
+    try:
+        btc_df = cache_get("btc_1d_df", ttl=300)
+        if btc_df is None:
+            btc_df = binance_klines("BTCUSDT", "1d", 400)
+            cache_set("btc_1d_df", btc_df)
+        closes_btc = btc_df["close"].tolist()
+        btc_sma200 = simple_sma(closes_btc, 200)
+        btc_sma50 = simple_sma(closes_btc, 50)
+        btc_last = closes_btc[-1]
+        btc_regime = (btc_last > (btc_sma200 or 1e18)) and ((btc_sma50 or 0) > (btc_sma200 or 1e18))
+    except Exception:
+        btc_regime = False
+    ticks.append({"label": "BTC rejimi (SMA200 üstü & 50>200)", "ok": (not th["require_btc_regime"]) or bool(btc_regime)})
+
+    # --- 2) Coin 1D trend/momentum ---
+    try:
+        ddf = binance_klines(symbol, "1d", 220)
+        dcl = ddf["close"].tolist()
+        if len(dcl) >= 200:
+            sma200_c = simple_sma(dcl, 200)
+            last_c = dcl[-1]
+            above200 = last_c > (sma200_c or 1e18)
+        else:
+            above200 = False
+        ret7_pct = (dcl[-1]/dcl[-8]-1.0)*100 if len(dcl) >= 8 else 0.0
+        if pump_row and "change24_pct" in pump_row:
+            change24 = float(pump_row["change24_pct"])
+        else:
+            change24 = ((dcl[-1] / dcl[-2]) - 1.0) * 100 if len(dcl) >= 2 else 0.0
+    except Exception:
+        above200, ret7_pct, change24 = False, 0.0, 0.0
+
+    # Trend ve momentum tick’leri
+    ticks.append({"label": "Coin 1D trend (SMA200 üstü)", "ok": (not th["require_above200"]) or bool(above200)})
+    ticks.append({"label": f"Haftalık momentum (ret7 ≥ {th['min_ret7_pct']:.1f}%)", "ok": ret7_pct >= th["min_ret7_pct"]})
+    ticks.append({"label": f"Günlük momentum (change24 ≥ {th['min_change24_pct']:.1f}%)", "ok": change24 >= th["min_change24_pct"]})
+
+    # Aşırı uzama ve ideal aralık tick’leri
+    overextended = change24 >= th["overextended_change24_max"]
+    ideal_upto = change24 <= th["max_change24_pct"]
+    ticks.append({"label": f"Aşırı uzama değil (24h ≤ {th['overextended_change24_max']:.1f}%)", "ok": not overextended})
+    ticks.append({"label": f"İdeal aralıkta (24h ≤ {th['max_change24_pct']:.1f}%)", "ok": ideal_upto})
+
+    # --- 3) 15m teyit: EMA20 & VWAP & sıcaklık ---
+    last15 = ema20_15 = atr14_15 = vwap96_15 = None
+    cond_reclaim = False
+    try:
+        m15 = fetch_klines_df(symbol, "15m", 200)
+        close_series = m15["close"].astype(float).tolist()
+        last15 = float(close_series[-1])
+        ema20_15 = ema_last(close_series, 20)
+        atr14_15 = atr_last(m15, 14)
+        vwap96_15 = vwap_last(m15, 96)
+        cond_reclaim = (ema20_15 is not None and last15 > ema20_15) and (vwap96_15 is not None and last15 > vwap96_15)
+        ticks.append({"label": "15m EMA20 üstü", "ok": (ema20_15 is not None and last15 > ema20_15)})
+        ticks.append({"label": "15m VWAP üstü", "ok": (vwap96_15 is not None and last15 > vwap96_15)})
+
+        heat_ok = False
+        if atr14_15 and ema20_15:
+            heat = (last15 - ema20_15) / max(atr14_15, 1e-9)
+            heat_ok = heat <= th["heat_atr_max"]
+            ticks.append({"label": f"Sıcaklık (EMA mesafesi ≤ {th['heat_atr_max']:.2f} ATR)", "ok": heat_ok})
+        else:
+            ticks.append({"label": f"Sıcaklık (EMA/ATR hesaplandı)", "ok": False})
+    except Exception:
+        ticks.append({"label": "15m EMA20/VWAP teyidi", "ok": False})
+
+    # --- 4) Karar mantığı ---
+    decision = "ALMA"
+    note = ""
+    sl = tp1 = tp2 = None
+    pullbacks = []
+
+    # Pullback hedefleri (her durumda üret)
+    try:
+        if ema20_15:
+            pullbacks.append({"label": "EMA20 (15m)", "price": round(ema20_15, 6)})
+        if vwap96_15:
+            pullbacks.append({"label": "VWAP (15m, ~son 24s)", "price": round(vwap96_15, 6)})
+        if 'm15' in locals() and m15 is not None and len(m15) >= 30:
+            h = float(m15["high"].iloc[-96:].max())
+            l = float(m15["low"].iloc[-96:].min())
+            rng = h - l
+            for lv, name in [(0.236, "Fibo 23.6%"), (0.382, "Fibo 38.2%"), (0.5, "Fibo 50%")]:
+                pullbacks.append({"label": name, "price": round(h - rng*lv, 6)})
+    except Exception:
+        pass
+
+    # Karar ağaçları
+    if th["require_btc_regime"] and not btc_regime:
+        decision = "ALMA"; note = "BTC rejimi uygun değil."
+    elif th["require_above200"] and not above200:
+        decision = "ALMA"; note = "Coin 1D trendi zayıf (SMA200 altı)."
+    elif ret7_pct < th["min_ret7_pct"] or change24 < th["min_change24_pct"]:
+        decision = "ALMA"; note = "Momentum yetersiz."
+    elif overextended:
+        decision = "PULLBACK BEKLE"; note = f"Günlük değişim yüksek (≈ {change24:.1f}%). Çekilme/konsolidasyon bekleyin."
+    elif not cond_reclaim:
+        decision = "PULLBACK BEKLE"; note = "15m EMA20 ve/veya VWAP üzeri kapanış teyidi yok."
+    else:
+        decision = "AL"; note = "Rejim + trend + 15m reclaim uyumlu."
+
+    # SL/TP önerisi (bilgilendirici)
+    if last15 and atr14_15:
+        sl = round(last15 - 1.5 * atr14_15, 6)
+        tp1 = round(last15 + 1.0 * atr14_15, 6)
+        tp2 = round(last15 + 2.0 * atr14_15, 6)
+
+    return {
+        "symbol": symbol,
+        "now": utcnow().isoformat(),
+        "decision": decision,              # "AL" | "PULLBACK BEKLE" | "ALMA"
+        "note": note,
+        "ticks": ticks,                    # [{label, ok}]
+        "context": {
+            "change24_pct": round(change24, 2),
+            "ret7_pct": round(ret7_pct, 2),
+            "above200_1d": bool(above200),
+            "btc_regime_ok": bool(btc_regime),
+            "last15": last15,
+            "ema20_15": ema20_15,
+            "vwap96_15": vwap96_15,
+            "atr14_15": atr14_15,
+        },
+        "risk": {
+            "suggested_sl": sl,
+            "tp1": tp1,
+            "tp2": tp2,
+            "rationale": "SL=1.5×ATR(14,15m); TP1=+1R, TP2=+2R; kalan için ATR-trailing önerilir."
+        },
+        "pullback_targets": pullbacks      # potansiyel gerileme hedefleri
+    }
+
+# -------------------- Chat Context Build --------------------
+def build_chat_context():
+    # 1) BTC 1D kline
+    df = cache_get("btc_1d_df", ttl=300)
+    if df is None:
+        df = binance_klines("BTCUSDT","1d",400)
+        cache_set("btc_1d_df", df)
+
+    # 2) FNG
+    fng = fng_latest()
+
+    # 3) Pump adayları
+    pumps = cache_get("pump_candidates_v1", ttl=300)
+    if pumps is None:
+        pumps = pump_candidates(limit_pairs=40)
+        cache_set("pump_candidates_v1", pumps)
+
+    # 4) ETF event’leri
+    etf = fetch_dynamic_etf_events()
+
+    # 5) BTC göstergeleri
+    btc = compute_btc_indicators_from_df(df)
+
+    # 6) ETF kısa özet
+    etf_summary = {}
+    for a in ["BTC","ETH","SOL","XRP"]:
+        etf_summary[a] = [e for e in etf if e.get("asset")==a and e.get("status")!="none"][:2]
+
+    context = {
+        "now": utcnow().isoformat(),
+        "btc": btc,
+        "fng": fng,
+        "pump_candidates": pumps[:5],
+        "etf_summary": etf_summary,
+        "thresholds": get_thresholds()
+    }
+    return context
+
+# -------------------- Background Refreshers --------------------
+def refresh_loop():
+    """60 sn'de bir sohbet için gerekli bütün verileri tazeler ve chat_context'i yazar."""
+    while True:
+        try:
+            # Kline güncelle
+            df = binance_klines("BTCUSDT", "1d", 400)
+            cache_set("btc_1d_df", df)
+
+            # FNG kendi cache'ini tazeler
+            _ = fng_latest()
+
+            # Pump adayları
+            pumps = pump_candidates(limit_pairs=40)
+            cache_set("pump_candidates_v1", pumps)
+
+            # ETF events
+            etf = fetch_dynamic_etf_events()
+            cache_set("etf_events", etf)
+
+            # Chat context hazırla
+            ctx = build_chat_context()
+            cache_set("chat_context", ctx)
+        except Exception as e:
+            print("[refresh_loop] error:", e)
+        time.sleep(CHAT_REFRESH_SEC)
+
+# ---- Top 500 Market Cap -> Binance 4h/500 klines dataset ----
+def get_binance_usdt_map():
+    ex = cache_get("exchange_info", ttl=600)
+    if ex is None:
+        r = requests.get(f"{BINANCE_API}/api/v3/exchangeInfo", timeout=20)
+        r.raise_for_status()
+        ex = r.json()
+        cache_set("exchange_info", ex)
+    base_to_symbol = {}
+    for s in ex["symbols"]:
+        if (s["status"] == "TRADING"
+            and s.get("isSpotTradingAllowed")
+            and s.get("quoteAsset") == "USDT"):
+            base = s.get("baseAsset")
+            symb = s.get("symbol")
+            if base and symb:
+                base_to_symbol[base.upper()] = symb
+    return base_to_symbol
+
+def coingecko_top_by_marketcap(limit=500) -> List[Dict]:
+    out = []
+    pages = (limit + 249) // 250
+    per_page = 250
+    for page in range(1, pages + 1):
+        r = requests.get(
+            f"{COINGECKO_API}/coins/markets",
+            params={
+                "vs_currency": "usd",
+                "order": "market_cap_desc",
+                "per_page": per_page,
+                "page": page,
+                "price_change_percentage": "24h",
+                "locale": "en",
+            },
+            timeout=25,
+        )
+        r.raise_for_status()
+        data = r.json() or []
+        out.extend(data)
+        time.sleep(0.15)
+    return out[:limit]
+
+def fetch_4h_klines_for_symbols(symbols: List[str], limit_candles=500):
+    res = {}
+    for i, sb in enumerate(symbols):
+        try:
+            df = binance_klines(sb, interval=TOP4H_INTERVAL, limit=limit_candles)
+            rows = []
+            for _, r in df.iterrows():
+                rows.append([
+                    int(r["open_time"]),
+                    float(r["open"]),
+                    float(r["high"]),
+                    float(r["low"]),
+                    float(r["close"]),
+                    float(r["volume"]),
+                    int(r["close_time"]),
+                ])
+            res[sb] = rows
+        except Exception:
+            continue
+        if (i + 1) % 10 == 0:
+            time.sleep(0.1)
+    return res
+
+def build_top_coins_4h_dataset(max_symbols=TOP4H_MAX_SYMBOLS, klines=TOP4H_KLINES):
+    cg_list = coingecko_top_by_marketcap(limit=max_symbols)
+    usdt_map = get_binance_usdt_map()
+
+    mapped = []
+    for c in cg_list:
+        base_sym = (c.get("symbol") or "").upper()
+        name = c.get("name")
+        rank = c.get("market_cap_rank")
+        cg_id = c.get("id")
+        mcap = c.get("market_cap")
+        px = c.get("current_price")
+        ch24 = (c.get("price_change_percentage_24h") or 0)
+
+        binance_symbol = usdt_map.get(base_sym)
+        if not binance_symbol:
+            aliases = {"WBTC": "BTC", "WETH": "ETH"}
+            alt = aliases.get(base_sym)
+            if alt and alt in usdt_map:
+                binance_symbol = usdt_map[alt]
+
+        if binance_symbol:
+            mapped.append({
+                "cg_id": cg_id,
+                "name": name,
+                "ticker": base_sym,
+                "rank": rank,
+                "market_cap": mcap,
+                "price": px,
+                "change24_pct": ch24,
+                "binance_symbol": binance_symbol
+            })
+
+    symbols = [m["binance_symbol"] for m in mapped]
+    kmap = fetch_4h_klines_for_symbols(symbols, limit_candles=klines)
+
+    final = []
+    for m in mapped:
+        sb = m["binance_symbol"]
+        if sb in kmap:
+            final.append({
+                **m,
+                "klines_4h": kmap[sb]
+            })
+
+    payload = {
+        "generated_at": utcnow().isoformat(),
+        "interval": TOP4H_INTERVAL,
+        "candles": klines,
+        "total_requested": len(mapped),
+        "total_with_klines": len(final),
+        "rows": final
+    }
+    return payload
+
+def refresh_top4h_loop():
+    """15 dk'da bir, top-500 market cap -> 4h/500 klines dataset hazırlar."""
+    while True:
+        try:
+            dataset = build_top_coins_4h_dataset(
+                max_symbols=TOP4H_MAX_SYMBOLS,
+                klines=TOP4H_KLINES
+            )
+            cache_set("top_coins_4h_dataset", dataset)
+        except Exception as e:
+            print("[refresh_top4h_loop] error:", e)
+        time.sleep(TOP4H_REFRESH_SEC)
+
+# -------------------- Ollama --------------------
+def ollama_generate(model, prompt, system=None, stream=False):
+    base = OLLAMA_HOST.rstrip("/")
+    payload = {"model": model, "prompt": prompt, "stream": stream}
+    if system:
+        payload["system"] = system
+    url = f"{base}/api/generate"
+    try:
+        r = requests.post(url, json=payload, timeout=120)
+        if r.status_code == 200:
+            return r.json()
+    except Exception:
+        pass
+
+    url2 = f"{base}/api/chat"
+    messages = []
+    if system:
+        messages.append({"role":"system","content":system})
+    messages.append({"role":"user","content":prompt})
+    try:
+        r2 = requests.post(url2, json={"model": model, "messages": messages, "stream": False}, timeout=120)
+        if r2.status_code == 200:
+            js = r2.json()
+            text = js.get("message",{}).get("content") or js.get("response") or ""
+            return {"response": text}
+    except Exception:
+        pass
+
+    url3 = f"{base}/v1/chat/completions"
+    try:
+        r3 = requests.post(url3, json={"model": model, "messages": messages}, timeout=120)
+        if r3.status_code == 200:
+            js = r3.json()
+            text = (js.get("choices") or [{}])[0].get("message",{}).get("content","")
+            return {"response": text}
+    except Exception:
+        pass
+
+    raise RuntimeError("Ollama API ulaşılamadı (generate/chat/completions).")
+
+# -------------------- Flask Routes --------------------
+@app.route("/")
+def home():
+    return render_template("index.html", show_apk=_apk_download_enabled(request))
+
+
+@app.route("/apk/BullWatch.apk")
+def apk_download():
+    # APK distribution is OFF by default.
+    # Enable only for trusted/private network clients with: BULLWATCH_ENABLE_APK=1
+    if not _apk_download_enabled(request):
+        abort(404)
+
+    apk_path = Path(__file__).resolve().parent / "private_downloads" / "BullWatch.apk"
+    if not apk_path.exists():
+        abort(404)
+
+    return send_file(
+        apk_path,
+        as_attachment=True,
+        download_name="BullWatch.apk",
+        mimetype="application/vnd.android.package-archive",
+        max_age=0,
+    )
+
+@app.route("/chat")
+def chat_page():
+    return render_template("chat.html")
+
+
+@app.route("/tv")
+def tv_page():
+    return render_template("tv.html")
+
+
+@app.route("/trade")
+def trade_page():
+    return render_template("trade.html")
+
+
+@app.route("/sim/mobile")
+def mobile_sim_page():
+    return render_template("mobile_sim.html")
+
+
+def _compute_rsi(closes: pd.Series, period: int = 14) -> pd.Series:
+    delta = closes.diff()
+    up = delta.clip(lower=0)
+    down = (-delta).clip(lower=0)
+    roll_up = up.ewm(alpha=1 / period, adjust=False).mean()
+    roll_down = down.ewm(alpha=1 / period, adjust=False).mean()
+    rs = roll_up / roll_down.replace(0, np.nan)
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
+
+
+def _compute_macd(closes: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9):
+    ema_fast = closes.ewm(span=fast, adjust=False).mean()
+    ema_slow = closes.ewm(span=slow, adjust=False).mean()
+    macd = ema_fast - ema_slow
+    sig = macd.ewm(span=signal, adjust=False).mean()
+    hist = macd - sig
+    return macd, sig, hist
+
+
+@app.get("/api/trade_bundle")
+def api_trade_bundle():
+    """Unified chart bundle for the integrated trading UI.
+
+    Returns candles + volume + RSI + MACD aligned by time.
+    """
+    try:
+        symbol = (request.args.get("symbol") or "BTCUSDT").upper()
+        interval = request.args.get("interval") or "15m"
+        limit = int(request.args.get("limit") or "500")
+        limit = max(50, min(limit, 1000))
+
+        cache_key = f"trade_bundle:{symbol}:{interval}:{limit}"
+        cached = cache_get(cache_key, ttl=3)
+        if cached is not None:
+            return jsonify({"ok": True, "data": cached})
+
+        df = binance_klines(symbol, interval, limit)
+        if df is None or df.empty:
+            return jsonify({"ok": False, "error": "no_data"}), 502
+
+        # Lightweight-charts uses seconds timestamps
+        t = (df["open_time"].astype(np.int64) // 1000).tolist()
+        o = df["open"].astype(float).tolist()
+        h = df["high"].astype(float).tolist()
+        l = df["low"].astype(float).tolist()
+        c = df["close"].astype(float).tolist()
+        v = df["volume"].astype(float).tolist()
+
+        closes = df["close"].astype(float)
+        rsi14 = _compute_rsi(closes, 14)
+        macd, macd_sig, macd_hist = _compute_macd(closes)
+
+        candles = []
+        volume = []
+        rsi_series = []
+        macd_series = []
+        sig_series = []
+        hist_series = []
+
+        for i in range(len(t)):
+            candles.append({"time": int(t[i]), "open": o[i], "high": h[i], "low": l[i], "close": c[i]})
+            volume.append({
+                "time": int(t[i]),
+                "value": v[i],
+                "color": "rgba(45,212,191,.55)" if c[i] >= o[i] else "rgba(251,113,133,.55)",
+            })
+
+            rv = rsi14.iloc[i]
+            rsi_series.append({"time": int(t[i]), "value": None if pd.isna(rv) else float(rv)})
+
+            mv = macd.iloc[i]
+            sv = macd_sig.iloc[i]
+            hv = macd_hist.iloc[i]
+            macd_series.append({"time": int(t[i]), "value": None if pd.isna(mv) else float(mv)})
+            sig_series.append({"time": int(t[i]), "value": None if pd.isna(sv) else float(sv)})
+            hist_series.append({
+                "time": int(t[i]),
+                "value": None if pd.isna(hv) else float(hv),
+                "color": "rgba(45,212,191,.55)" if (not pd.isna(hv) and float(hv) >= 0) else "rgba(251,113,133,.55)",
+            })
+
+        last = {
+            "open": o[-1],
+            "high": h[-1],
+            "low": l[-1],
+            "close": c[-1],
+            "volume": v[-1],
+            "rsi14": None if pd.isna(rsi14.iloc[-1]) else float(rsi14.iloc[-1]),
+            "macd": None if pd.isna(macd.iloc[-1]) else float(macd.iloc[-1]),
+            "macd_signal": None if pd.isna(macd_sig.iloc[-1]) else float(macd_sig.iloc[-1]),
+            "macd_hist": None if pd.isna(macd_hist.iloc[-1]) else float(macd_hist.iloc[-1]),
+        }
+
+        out = {
+            "symbol": symbol,
+            "interval": interval,
+            "meta": {"generated_at": utcnow().isoformat()},
+            "candles": candles,
+            "volume": volume,
+            "rsi14": rsi_series,
+            "macd": macd_series,
+            "macd_signal": sig_series,
+            "macd_hist": hist_series,
+            "last": last,
+            # optional: if tickers are warmed, include 24h change for this symbol
+            "change24": next((x.get("change") for x in (cache_get(TICKERS_KEY, ttl=5) or []) if x.get("symbol") == symbol), None),
+        }
+
+        cache_set(cache_key, out)
+        return jsonify({"ok": True, "data": out})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+def start_background_jobs() -> None:
+    """Start BullWatch background refresh loops (idempotent).
+
+    Needed when running behind combined_server.py (imported as module).
+    """
+    global _BG_STARTED
+    with _BG_LOCK:
+        if _BG_STARTED:
+            return
+        _BG_STARTED = True
+
+    try:
+        cache_set(THRESHOLDS_KEY, DEFAULT_THRESHOLDS.copy())
+    except Exception:
+        pass
+
+    try:
+        cache_set("chat_context", {"generated_at": utcnow().isoformat(), "status": "warming_up"})
+        warm_chat_context_async()
+    except Exception:
+        pass
+
+    # Register jobs (once) then start via JobManager
+    try:
+        job_manager.register_thread("bullwatch:ticker_ws", binance_ticker_ws_loop)
+        job_manager.register_thread("bullwatch:refresh", refresh_loop)
+        job_manager.register_thread("bullwatch:refresh_top4h", refresh_top4h_loop)
+    except Exception:
+        # ignore duplicate registration or unexpected errors
+        pass
+
+    job_manager.start_all()
+
+# === Thresholds API ===
+@app.route("/api/thresholds", methods=["GET", "POST"])
+def api_thresholds():
+    try:
+        if request.method == "GET":
+            return jsonify({"ok": True, "data": get_thresholds()})
+        # POST: eşikleri güncelle
+        body = request.get_json(force=True, silent=True) or {}
+        new_th = update_thresholds(body)
+        # chat_context içinde de görünsün diye tazele
+        try:
+            ctx = build_chat_context()
+            cache_set("chat_context", ctx)
+        except Exception:
+            pass
+        return jsonify({"ok": True, "data": new_th})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/fng")
+def api_fng():
+    try:
+        return jsonify({"ok":True,"data":fng_latest()})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/btc_indicators")
+def api_btc_indicators():
+    try:
+        df = cache_get("btc_1d_df", ttl=300)
+        if df is None:
+            df = binance_klines("BTCUSDT","1d",400)
+            cache_set("btc_1d_df", df)
+        closes = df["close"].tolist(); last = closes[-1]
+        sma20, sma50, sma200 = simple_sma(closes,20), simple_sma(closes,50), simple_sma(closes,200)
+        if len(closes)>=30:
+            ret30 = closes[-1]/closes[-30]-1.0
+            vol30 = float(np.std(closes[-30:])/np.mean(closes[-30:])) if np.mean(closes[-30:])>0 else None
+        else:
+            ret30, vol30 = None, None
+        return jsonify({"ok":True,"data":{
+            "price": float(last),
+            "sma20": float(sma20) if sma20 is not None else None,
+            "sma50": float(sma50) if sma50 is not None else None,
+            "sma200": float(sma200) if sma200 is not None else None,
+            "ret30": float(ret30) if ret30 is not None else None,
+            "vol30": float(vol30) if vol30 is not None else None,
+            "updated_at": utcnow().isoformat()
+        }})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/coins_sma_summary")
+def api_coins_sma_summary():
+    try:
+        limit = int(request.args.get("limit", 60))
+        ex = cache_get("exchange_info", ttl=600)
+        if ex is None:
+            r = requests.get(f"{BINANCE_API}/api/v3/exchangeInfo", timeout=15)
+            r.raise_for_status()
+            ex = r.json()
+            cache_set("exchange_info", ex)
+        symbols = []
+        for s in ex["symbols"]:
+            if s["status"]=="TRADING" and s["quoteAsset"]=="USDT" and s.get("isSpotTradingAllowed"):
+                symbols.append(s["symbol"])
+        symbols = symbols[:limit]
+        count_above, scan = 0, []
+        for sb in symbols:
+            try:
+                df = binance_klines(sb,"1d",220)
+                if df.empty or len(df)<200:
+                    continue
+                closes = df["close"].tolist()
+                sma200 = simple_sma(closes,200); last = closes[-1]
+                above = last > (sma200 or 1e18)
+                scan.append({"symbol":sb,"last":float(last),"sma200":float(sma200) if sma200 is not None else None,"above":bool(above)})
+                if above:
+                    count_above += 1
+                time.sleep(0.03)
+            except Exception:
+                continue
+        pct = (count_above/len(scan))*100 if scan else 0.0
+        return jsonify({"ok":True,"data":{
+            "scanned":len(scan),"above200":count_above,"percent_above200":pct,"rows":scan
+        }})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/etf_events")
+def api_etf_events():
+    try:
+        return jsonify({"ok":True,"data":fetch_dynamic_etf_events()})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/pump_candidates")
+def api_pump_candidates():
+    try:
+        res = cache_get("pump_candidates_v1", ttl=300)
+        if not res:
+            res = pump_candidates(limit_pairs=40)
+            cache_set("pump_candidates_v1", res)
+        return jsonify({"ok":True,"data":res})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+# === Signal APIs ===
+@app.route("/api/signal")
+def api_signal():
+    """
+    Kullanım:
+      /api/signal                -> pump listenden 1.sıradaki coini değerlendirir
+      /api/signal?symbol=SNXUSDT -> belirtilen coini değerlendirir
+    """
+    try:
+        symbol = request.args.get("symbol")
+        pump_map = {}
+        if symbol:
+            symbol = symbol.upper()
+        else:
+            lst = cache_get("pump_candidates_v1", ttl=300)
+            if not lst:
+                lst = pump_candidates(limit_pairs=40)
+                cache_set("pump_candidates_v1", lst)
+            if not lst:
+                return jsonify({"ok": False, "error": "Aday bulunamadı."}), 400
+            symbol = lst[0]["symbol"]
+            pump_map = {x["symbol"]: x for x in lst}
+
+        row = pump_map.get(symbol)
+        res = evaluate_entry_signal(symbol, row, thresholds=get_thresholds())
+        return jsonify({"ok": True, "data": res})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/signals")
+def api_signals():
+    """
+    Pump listesi (ilk N) için toplu sinyal üretir.
+    Kullanım:
+      /api/signals?limit=10
+    """
+    try:
+        limit = 20
+        lst = cache_get("pump_candidates_v1", ttl=300)
+        if not lst:
+            lst = pump_candidates(limit_pairs=40)
+            cache_set("pump_candidates_v1", lst)
+        rows = lst[:limit]
+        th = get_thresholds()
+        out = []
+        for r in rows:
+            sym = r["symbol"]
+            sig = evaluate_entry_signal(sym, r, thresholds=th)
+            # Kart kolaylığı için bazı alanları üst seviyeye kopyalayalım
+            out.append({
+                "symbol": sym,
+                "score": r.get("score"),
+                "change24_pct": r.get("change24_pct"),
+                "ret7_pct": r.get("ret7_pct"),
+                "above200": r.get("above200"),
+                "volume_rank": r.get("volume_rank"),
+                "decision": sig["decision"],
+                "note": sig["note"],
+                "ticks": sig["ticks"],
+                "risk": sig["risk"],
+                "pullback_targets": sig["pullback_targets"],
+                "context": sig["context"]
+            })
+            time.sleep(0.01)
+        return jsonify({"ok": True, "data": {"thresholds": th, "count": len(out), "rows": out}})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/bull_estimate")
+def api_bull_estimate():
+    try:
+        fng = fng_latest()
+        df = cache_get("btc_1d_df", ttl=300)
+        if df is None:
+            df = binance_klines("BTCUSDT","1d",400)
+            cache_set("btc_1d_df", df)
+        est = heuristic_bull_estimate(df, fng, fetch_dynamic_etf_events())
+        return jsonify({"ok":True,"data":est})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/oi")
+def api_oi():
+    try:
+        spot = {}
+        for sym in ["BTCUSDT","ETHUSDT"]:
+            cur = fapi_open_interest(sym)
+            hist = fapi_open_interest_hist(sym, period="1d", limit=30)
+            spot[sym] = {"now": cur, "hist": hist}
+        return jsonify({"ok":True,"data":spot})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/hashrate")
+def api_hashrate():
+    try:
+        return jsonify({"ok":True,"data":blockchain_hashrate(30)})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/stablecoin_flow")
+def api_stablecoin_flow():
+    try:
+        return jsonify({"ok":True,"data":defillama_stablecoins()})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/coinbase_premium")
+def api_coinbase_premium():
+    try:
+        res = coinglass_coinbase_premium()
+        if "error" in res:
+            return jsonify({"ok":False,"error":res["error"]}),400
+        return jsonify({"ok":True,"data":res})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+@app.route("/api/top_coins_4h")
+def api_top_coins_4h():
+    try:
+        limit = int(request.args.get("limit", "100"))  # 500 da verilebilir
+        compact = request.args.get("compact", "false").lower() == "true"
+        ds = cache_get("top_coins_4h_dataset", ttl=TOP4H_REFRESH_SEC + 30)
+        if ds is None:
+            ds = build_top_coins_4h_dataset(
+                max_symbols=TOP4H_MAX_SYMBOLS,
+                klines=TOP4H_KLINES
+            )
+            cache_set("top_coins_4h_dataset", ds)
+
+        rows = ds.get("rows", [])[:limit]
+        if compact:
+            comp = []
+            for r in rows:
+                comp.append([
+                    r.get("rank"),
+                    r.get("ticker"),
+                    r.get("binance_symbol"),
+                    safe_float(r.get("market_cap")),
+                    safe_float(r.get("price")),
+                    safe_float(r.get("change24_pct")),
+                    r.get("klines_4h"),
+                ])
+            return jsonify({"ok": True, "data": {
+                "generated_at": ds.get("generated_at"),
+                "interval": ds.get("interval"),
+                "candles": ds.get("candles"),
+                "count": len(comp),
+                "rows": comp
+            }})
+        else:
+            return jsonify({"ok": True, "data": {
+                "generated_at": ds.get("generated_at"),
+                "interval": ds.get("interval"),
+                "candles": ds.get("candles"),
+                "count": len(rows),
+                "rows": rows
+            }})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    try:
+        body = request.get_json(force=True)
+        model = body.get("model","llama3.1:8b-instruct-q6_K")
+        messages = body.get("messages", [])
+
+        # Hazır chat_context'i kullan
+        context = cache_get("chat_context", ttl=CHAT_REFRESH_SEC + 30)
+        if context is None:
+            # İlk kullanımda senkron bloklamayalım; arkaplanda hazırlansın.
+            placeholder = {"generated_at": utcnow().isoformat(), "status": "warming_up"}
+            cache_set("chat_context", placeholder)
+            warm_chat_context_async()
+            context = placeholder
+
+        sys_prompt = "You are a local crypto assistant. Use the JSON CONTEXT as latest truth. Answer in Turkish."
+        prompt = f"[CONTEXT JSON]\n{json.dumps(context, ensure_ascii=False)}\n\n"
+        for m in messages:
+            role = m.get('role','user'); content = m.get('content','')
+            prompt += f"{role}: {content}\n"
+        prompt += "assistant:"
+
+        resp = ollama_generate(model, prompt, system=sys_prompt, stream=False)
+        out = (resp.get("response") or "").strip()
+        return jsonify({"ok":True,"data":{"response": out}})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+# -------------------- Main --------------------
+if __name__ == "__main__":
+    # İlk thresholds yükle
+    cache_set(THRESHOLDS_KEY, DEFAULT_THRESHOLDS.copy())
+
+    # chat_context'i startup'ta senkron çekme (network/timeout yüzünden açılışı kilitlemesin)
+    cache_set("chat_context", {"generated_at": utcnow().isoformat(), "status": "warming_up"})
+    warm_chat_context_async()
+
+    # Background thread'leri başlat
+    threading.Thread(target=binance_ticker_ws_loop, daemon=True).start()
+    threading.Thread(target=refresh_loop, daemon=True).start()
+    threading.Thread(target=refresh_top4h_loop, daemon=True).start()
+
+    debug = os.getenv("BULLWATCH_DEBUG", "0") == "1"
+    app.run(debug=debug, use_reloader=False, port=34000, host="0.0.0.0")

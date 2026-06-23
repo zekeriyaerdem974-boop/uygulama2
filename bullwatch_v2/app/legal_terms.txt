@@ -1,0 +1,83 @@
+ZKR ANALİZ PRO KULLANICI SÖZLEŞMESİ, SORUMLULUK BEYANI VE KVKK AÇIK RIZA METNİ
+
+==================================================
+1. TARAFLAR
+==================================================
+Bu Sözleşme "ZKR Analiz Pro" (bundan sonra "Platform") ve kullanıcı (bundan sonra "Kullanıcı") arasında yapılmıştır.
+
+==================================================
+2. SÖZLEŞME KONUSU HİZMET (Sınırlı Hizmet Beyanı)
+==================================================
+Platform, yalnızca sözleşmede belirtilen sınırlı kapsamda hizmet sunmaktadır. Platform:
+- Piyasa analiz ve veri görselleştirme araçları sağlamaktadır
+- Eğitim, rehberlik ve bilgi paylaşımı hizmetleri vermektadır
+- Yukarıda belirtilen hizmetlerle sınırlı bir kapsamda faaliyet göstermektedir
+Platform başkaca bir taahhüt ve garanti taşımamaktadır.
+
+==================================================
+3. SPK MEVZUATI UYARINCA SORUMLULUK BEYANI VE RİSK BİLDİRİMİ
+==================================================
+Servis kapsamında yer alan TÜM bilgiler, eğitim materyalleri, grafikler, yorumlar, analizler ve 
+öneriler YÜRÜTÜLEBİLİR "GÖRÜŞ" niteliğindedir. Bunlar:
+- Kesinlikle yatırım tavsiyesi değildir
+- Kesinlikle piyasa yönlendirmesi değildir
+- Kesinlikle finansal danışmanlık değildir
+- Verilen bilgiler genel eğitim ve bilgi amaçlıdır
+
+Finansal piyasalara girmek yüksek risktir. Kullanıcı bu riski bizzat almaktadır.
+Platform, sunulan hizmetlerden doğan herhangi bir kayıp, zarar veya doğrudan/dolaylı 
+hasardan sorumlu değildir.
+
+==================================================
+4. KULLANICI YÜKYÜMLÜLÜKLERİ VE İHLAL NEDENLERİ
+==================================================
+Kullanıcı aşağıdaki fiilleri gerçekleştirmemeyi taahhüt etmektedir:
+- Platform verilerinin otomatik aracılığı (bot/crawler) ile toplanması ("Veri Kazıma")
+- Platform işaretlerinin, sinyallerinin veya analizlerinin kopyalanması, 
+  transfer edilmesi veya üçüncü taraflara sunulması ("Sinyal Hırsızlığı")
+- Platform içeriğinin ticari amaçlar doğrultusunda yeniden dağıtılması
+- Kullanıcı hesabının başkasına devredilmesi veya paylaşılması
+- Platform'un teknik altyapısına saldırı, güvenlik ihlali veya sistem kırılması teşebbüsleri
+
+Yukarıda sayılan fiillerin herhangi biri tespit edilir ise Platform, hesabı derhal kapatma,
+hukuki işlem başlatma ve ilgili makamlara bildirim yapma hakkını saklı tutar.
+
+==================================================
+5. MÜŞTERİ HİZMETLERİ, SORUN ÇÖZÜMÜ VE İLETİŞİM BİLGİLERİ
+==================================================
+Kullanıcıların sorunları, şikayetleri ve hukuki taleplerine yönelik iletişim:
+
+E-Posta: legal@zkr-analiz.com
+Telefon: +90 (212) 555-0123
+Adres: ZKR Teknoloji A.Ş., İstanbul, Türkiye
+
+Müşteri hizmetleri günde 5 gün (Pazartesi-Cuma) 09:00-18:00 saatleri arasında 
+hizmet vermektedir. Şikayetler maksimum 30 gün içinde yanıtlanacaktır.
+
+==================================================
+6. HUKUKİ DELİL SÖZLEŞMESİ (HMK Madde 193)
+==================================================
+Bu sözleşme, Hukuk Muhakemeleri Kanunu Madde 193 kapsamında dijital delil niteliğinde 
+tutulmaktadır. Tüm işlem kayıtları SHA-256 hash algoritması ile şifrelenmiş 
+olarak saklanmaktadır ve hukuki uyuşmazlıklar durumunda delil olarak kullanılabilir.
+
+==================================================
+7. KVKK AYDINLATMA METNİ VE KİŞİSEL VERİLERİN SAKLANMA SÜRELERİ
+==================================================
+Platformunuz tarafından talep edilen her türlü kişisel verileriniz (ad, soyad, 
+e-posta, telefon numarası, adres, ödeme bilgileri, kimlik numarası vb):
+
+- MECBURİ OLARAK toplanmaktadır
+- Platform tarafından muhafaza, işlenme ve saklanmaktadır
+- Kanuni saklama süreleri (3-10 yıl arası) boyunca tutulmaktadır
+- Talep üzerine "uygun müddet" içinde silinmektedir
+- Hesap silme durumunda kanuni yükümlülükler bitse dahi 3 yıl boyunca arşiv olarak saklanmaktadır
+
+KVKK Başvuruları ve Kişisel Veri Talepleriniz:
+E-Posta: kvkk@zkr-analiz.com
+Telefon: +90 (212) 555-0124
+Başvuru Yanıt Süresi: Maksimum 30 gün
+
+==================================================
+
+[DETAYLI YASAL METİNLER VE TAMAMLAYICI HÜKÜMLER HUKUK DEPARTMANI TARAFINDAN ENJEKTE EDİLECEKTİR]

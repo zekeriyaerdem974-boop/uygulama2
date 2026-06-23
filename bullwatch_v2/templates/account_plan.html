@@ -1,0 +1,254 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Plan & Abonelik — ZKR Analiz Pro{% endblock %}
+{% block page_title %}👤 Hesap Planı{% endblock %}
+{% block topbar_title %}Account{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 max-w-2xl mx-auto space-y-6">
+
+  <!-- ── LOADING ──────────────────────────────────────────────── -->
+  <div id="plan-loading" class="text-center py-12 text-white/40">
+    <div class="animate-spin w-8 h-8 border-2 border-white/20 border-t-white rounded-full mx-auto mb-3"></div>
+    Yükleniyor…
+  </div>
+
+  <!-- ── NOT LOGGED IN ────────────────────────────────────────── -->
+  <div id="plan-login" class="hidden text-center py-12 space-y-3">
+    <p class="text-white/50 text-lg">Giriş yapmanız gerekiyor</p>
+    <a href="/login" class="inline-block bg-bull-blue text-black px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition">Giriş Yap</a>
+  </div>
+
+  <!-- ── MAIN CONTENT ─────────────────────────────────────────── -->
+  <div id="plan-content" class="hidden space-y-6">
+
+    <!-- Current Plan Card -->
+    <div id="plan-card" class="rounded-2xl border border-white/10 bg-surface-50 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-xs text-white/40">Mevcut Plan</p>
+          <h2 id="plan-name" class="text-2xl font-black">Free</h2>
+        </div>
+        <div id="plan-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400">
+          Aktif
+        </div>
+      </div>
+      <div id="plan-dates" class="text-xs text-white/40 space-y-1 hidden">
+        <p>Başlangıç: <span id="plan-start">—</span></p>
+        <p>Bitiş: <span id="plan-end">—</span></p>
+      </div>
+    </div>
+
+    <!-- Usage Stats -->
+    <div class="rounded-2xl border border-white/10 bg-surface-50 p-6 space-y-4">
+      <h3 class="font-bold">📊 Kullanım Durumu</h3>
+
+      <div class="space-y-3">
+        <!-- Alert Usage -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span>Alarmlar</span>
+            <span id="usage-alerts" class="text-white/60">0 / 5</span>
+          </div>
+          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="bar-alerts" class="h-full bg-bull-blue rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Active Strategy Usage -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span>Aktif Stratejiler</span>
+            <span id="usage-strategies" class="text-white/60">0 / 1</span>
+          </div>
+          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="bar-strategies" class="h-full bg-bull-green rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Saved Strategy Usage -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span>Kayıtlı Stratejiler</span>
+            <span id="usage-saved" class="text-white/60">0 / 3</span>
+          </div>
+          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="bar-saved" class="h-full bg-purple-500 rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Copilot Usage -->
+        <div>
+          <div class="flex justify-between text-sm mb-1">
+            <span>Copilot (bugün)</span>
+            <span id="usage-copilot" class="text-white/60">0 / 10</span>
+          </div>
+          <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="bar-copilot" class="h-full bg-bull-amber rounded-full transition-all" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Access -->
+    <div class="rounded-2xl border border-white/10 bg-surface-50 p-6 space-y-4">
+      <h3 class="font-bold">🔐 Özellik Erişimi</h3>
+      <div id="feature-list" class="space-y-2">
+        <!-- dynamically filled -->
+      </div>
+    </div>
+
+    <!-- Payment History -->
+    <div id="payment-history-section" class="rounded-2xl border border-white/10 bg-surface-50 p-6 space-y-4 hidden">
+      <h3 class="font-bold">💳 Ödeme Geçmişi</h3>
+      <div id="payment-history-list" class="space-y-2">
+        <!-- dynamically filled -->
+      </div>
+      <div id="payment-history-empty" class="hidden text-center py-4 text-sm text-white/30">
+        Henüz ödeme geçmişi bulunmuyor
+      </div>
+    </div>
+
+    <!-- Upgrade CTA -->
+    <div id="upgrade-cta" class="rounded-2xl bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/20 p-6 text-center space-y-3">
+      <p class="font-bold text-lg">📈 Planınızı Yükseltin</p>
+      <p class="text-sm text-white/50">Daha fazla alarm, strateji ve premium içeriklere erişim kazanın</p>
+      <a href="/pricing" class="inline-block bg-bull-blue text-black px-6 py-2 rounded-xl font-semibold hover:opacity-90 transition">Planları Gör</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  const L = document.getElementById('plan-loading');
+  const C = document.getElementById('plan-content');
+  const LL= document.getElementById('plan-login');
+
+  async function load(){
+    try {
+      const [subRes, usageRes] = await Promise.all([
+        fetch('/api/subscription/me'),
+        fetch('/api/subscription/usage')
+      ]);
+
+      if(subRes.status === 401){
+        L.classList.add('hidden');
+        LL.classList.remove('hidden');
+        return;
+      }
+
+      const sub = await subRes.json();
+      const usage = await usageRes.json();
+
+      L.classList.add('hidden');
+      C.classList.remove('hidden');
+
+      // Plan name
+      const cur = sub.current || {};
+      document.getElementById('plan-name').textContent = cur.plan_name || 'Free';
+
+      // Badge
+      const badge = document.getElementById('plan-badge');
+      const st = cur.status || 'active';
+      badge.textContent = st === 'active' ? 'Aktif' : st === 'trial' ? 'Deneme' : st;
+      if(st !== 'active' && st !== 'trial'){
+        badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400';
+      }
+
+      // Dates
+      if(cur.start_date){
+        document.getElementById('plan-dates').classList.remove('hidden');
+        document.getElementById('plan-start').textContent = cur.start_date?.split('T')[0] || '—';
+        document.getElementById('plan-end').textContent = cur.end_date?.split('T')[0] || 'Süresiz';
+      }
+
+      // Usage bars
+      function setBar(id, barId, used, max){
+        document.getElementById(id).textContent = used + ' / ' + (max >= 999 ? '∞' : max);
+        const pct = max >= 999 ? Math.min(used, 5) : Math.min(100, (used/max)*100);
+        document.getElementById(barId).style.width = pct + '%';
+        if(max < 999 && used >= max){
+          document.getElementById(barId).classList.add('bg-red-500');
+        }
+      }
+
+      if(usage.ok){
+        setBar('usage-alerts', 'bar-alerts', usage.alerts.used, usage.alerts.max);
+        setBar('usage-strategies', 'bar-strategies', usage.active_strategies.used, usage.active_strategies.max);
+        setBar('usage-saved', 'bar-saved', usage.saved_strategies.used, usage.saved_strategies.max);
+        setBar('usage-copilot', 'bar-copilot', usage.copilot.used_today, usage.copilot.daily_limit);
+      }
+
+      // Feature access
+      const features = [
+        {key:'premium_courses', label:'Premium Kurslar'},
+        {key:'premium_rooms', label:'Premium Odalar'},
+        {key:'premium_strategies', label:'Marketplace Premium'},
+        {key:'advanced_screener', label:'Advanced Screener'},
+        {key:'advanced_backtest', label:'Advanced Backtest'},
+        {key:'advanced_copilot', label:'Gelişmiş Copilot'},
+      ];
+      const fl = document.getElementById('feature-list');
+      const limits = cur.limits || {};
+      features.forEach(f => {
+        const allowed = limits[{
+          premium_courses: 'can_use_premium_courses',
+          premium_rooms: 'can_use_premium_rooms',
+          premium_strategies: 'can_use_premium_strategies',
+          advanced_screener: 'can_use_advanced_screener',
+          advanced_backtest: 'can_use_advanced_backtest',
+          advanced_copilot: 'can_use_advanced_copilot'
+        }[f.key]];
+        fl.innerHTML += '<div class="flex items-center justify-between py-1.5 px-2 rounded-lg '+(allowed?'bg-green-500/5':'bg-white/5')+'">' +
+          '<span class="text-sm">'+f.label+'</span>' +
+          (allowed
+            ? '<span class="text-green-400 text-xs font-semibold">✓ Erişim var</span>'
+            : '<span class="text-red-400 text-xs font-semibold">🔒 Pro gerekli</span>'
+          ) +
+          '</div>';
+      });
+
+      // Hide upgrade CTA for pro/pro_plus
+      if(cur.plan_code === 'pro' || cur.plan_code === 'pro_plus'){
+        document.getElementById('upgrade-cta').classList.add('hidden');
+      }
+
+      // Load payment history
+      try {
+        const histRes = await fetch('/api/payment/history');
+        if(histRes.ok){
+          const histData = await histRes.json();
+          if(histData.ok && histData.payments && histData.payments.length > 0){
+            const section = document.getElementById('payment-history-section');
+            section.classList.remove('hidden');
+            const list = document.getElementById('payment-history-list');
+            var statusMap = {completed:'Tamamlandı', pending:'Bekliyor', failed:'Başarısız', cancelled:'İptal'};
+            var statusColor = {completed:'text-green-400', pending:'text-yellow-400', failed:'text-red-400', cancelled:'text-white/40'};
+            var planNames = {pro:'Pro', pro_plus:'Pro+'};
+            histData.payments.forEach(function(p){
+              var date = p.created_at ? p.created_at.split('T')[0] : '—';
+              var sLabel = statusMap[p.status] || p.status;
+              var sColor = statusColor[p.status] || 'text-white/50';
+              var pName = planNames[p.plan_code] || p.plan_code;
+              list.innerHTML += '<div class="flex items-center justify-between py-2 px-3 rounded-lg bg-white/5 text-sm">' +
+                '<div class="space-y-0.5"><div class="font-medium">' + pName + ' Plan</div><div class="text-xs text-white/40">' + date + '</div></div>' +
+                '<div class="text-right space-y-0.5"><div class="font-bold">₺' + parseFloat(p.amount).toFixed(2) + '</div>' +
+                '<div class="text-xs font-semibold ' + sColor + '">' + sLabel + '</div></div></div>';
+            });
+          } else {
+            document.getElementById('payment-history-section').classList.remove('hidden');
+            document.getElementById('payment-history-empty').classList.remove('hidden');
+          }
+        }
+      } catch(e){}
+
+    } catch(e){
+      L.innerHTML = '<p class="text-red-400">Yüklenirken hata oluştu</p>';
+    }
+  }
+
+  load();
+})();
+</script>
+{% endblock %}

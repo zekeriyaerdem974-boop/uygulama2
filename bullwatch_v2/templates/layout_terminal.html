@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="{{ g.lang|default('en') }}" dir="{{ 'rtl' if g.lang == 'ar' else 'ltr' }}" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>{% block title %}ZKR Analiz Pro{% endblock %}</title>
+
+  <!-- FAZ 47: Design System v3 -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='design/design_tokens.css') }}?v=47">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design/design_components.css') }}?v=47">
+  <link rel="stylesheet" href="{{ url_for('static', filename='design/design_layout.css') }}?v=47">
+
+  <!-- Legacy compat layers -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/design_system.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/widgets.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_components.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/terminal.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/discover.css') }}?v=3">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile_trading.css') }}?v=54b">
+
+  {% block extra_head %}{% endblock %}
+
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="terminal-body {% block body_class %}{% endblock %}">
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TERMINAL GRID — Full viewport, no header                       -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<div class="tl-grid" id="terminalGrid">
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- SIDEBAR — 70px icon bar                                      -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <aside class="tl-sidebar" id="proSidebar">
+    <div class="tl-sidebar-brand">
+      <div class="tl-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M13 7l5 5-5 5M6 7l5 5-5 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="sidebar-brand-text">ZKR Analiz</span>
+    </div>
+
+    <!-- Sidebar expand toggle -->
+    <button class="sidebar-toggle" id="sidebarToggle" data-tooltip="Expand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M8.25 4.5l7.5 7.5-7.5 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <nav class="tl-nav" id="proNav">
+      <!-- Market Section -->
+      <span class="nav-section-label" data-i18n="nav.markets">Markets</span>
+      <a href="/discover" class="tl-nav-btn{{ ' active' if request.path == '/discover' else '' }}" data-tooltip="Discover" data-i18n-tooltip="sidebar.discover">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/activity" class="tl-nav-btn{{ ' active' if request.path == '/activity' else '' }}" data-tooltip="Activity" data-i18n-tooltip="discover.activity">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/tv" class="tl-nav-btn{{ ' active' if request.path in ['/tv', '/chart'] else '' }}" data-tooltip="Chart" data-i18n-tooltip="bottombar.chart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- Trading Section -->
+      <span class="nav-section-label" data-i18n="nav.trading">Trading</span>
+      <a href="/trade" class="tl-nav-btn{{ ' active' if request.path == '/trade' else '' }}" data-tooltip="Paper Trading (Eğitim Modu)" data-i18n-tooltip="sidebar.paper_trading">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/screener" class="tl-nav-btn{{ ' active' if request.path == '/screener' else '' }}" data-tooltip="Screener" data-i18n-tooltip="sidebar.screener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/opportunities" class="tl-nav-btn{{ ' active' if request.path == '/opportunities' else '' }}" data-tooltip="Opportunities" data-i18n-tooltip="discover.opportunities">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/portfolio" class="tl-nav-btn{{ ' active' if request.path == '/portfolio' else '' }}" data-tooltip="Portfolio" data-i18n-tooltip="sidebar.portfolio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- AI Section -->
+      <span class="nav-section-label" data-i18n="nav.ai_tools">AI Tools</span>
+      <a href="/ai-agent" class="tl-nav-btn{{ ' active' if request.path == '/ai-agent' else '' }}" data-tooltip="AI Agent" data-i18n-tooltip="sidebar.ai_agent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/copilot" class="tl-nav-btn{{ ' active' if request.path == '/copilot' else '' }}" data-tooltip="Copilot" data-i18n-tooltip="sidebar.copilot">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.076-4.076a1.526 1.526 0 011.037-.443 48.282 48.282 0 005.68-.494c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- Simulate & Monitor -->
+      <span class="nav-section-label" data-i18n="nav.tools">Tools</span>
+      <a href="/simulator" class="tl-nav-btn{{ ' active' if request.path == '/simulator' else '' }}" data-tooltip="Simulator" data-i18n-tooltip="sidebar.simulator">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/alerts" class="tl-nav-btn{{ ' active' if request.path == '/alerts' else '' }}" data-tooltip="Alerts" data-i18n-tooltip="sidebar.alerts">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- Social Section -->
+      <span class="nav-section-label" data-i18n="nav.social">Social</span>
+      <a href="/marketplace" class="tl-nav-btn{{ ' active' if request.path == '/marketplace' else '' }}" data-tooltip="Marketplace" data-i18n-tooltip="sidebar.marketplace">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016A3.001 3.001 0 0020.25 9.35" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/mentors" class="tl-nav-btn cs-locked{{ ' active' if request.path == '/mentors' else '' }}" data-tooltip="Yakında" data-i18n-tooltip="sidebar.coming_soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/rooms" class="tl-nav-btn cs-locked{{ ' active' if request.path.startswith('/room') else '' }}" data-tooltip="Yakında" data-i18n-tooltip="sidebar.coming_soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- Learning -->
+      <span class="nav-section-label" data-i18n="nav.learn">Learn</span>
+      <a href="/courses" class="tl-nav-btn cs-locked{{ ' active' if request.path.startswith('/course') else '' }}" data-tooltip="Yakında" data-i18n-tooltip="sidebar.coming_soon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+
+      <!-- Settings -->
+      <span class="nav-section-label" data-i18n="nav.account">Account</span>
+      <a href="/settings" class="tl-nav-btn{{ ' active' if request.path == '/settings' else '' }}" data-tooltip="Settings" data-i18n-tooltip="sidebar.settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </nav>
+
+    <!-- Sidebar footer icons -->
+    <div class="tl-sidebar-foot">
+      <a href="/invite" class="tl-nav-btn{{ ' active' if request.path.startswith('/invite') else '' }}" data-tooltip="Invite & Earn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="/leaderboard" class="tl-nav-btn{{ ' active' if request.path == '/leaderboard' else '' }}" data-tooltip="Leaderboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 01-.982-3.172M9.497 14.25a7.454 7.454 0 00.981-3.172" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <button class="tl-nav-btn" id="notifBtn" data-tooltip="Notifications">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="tl-notif-dot" id="notifDot" style="display:none"></span>
+      </button>
+      <button class="tl-nav-btn tl-user-btn" id="userBtn" data-tooltip="Profile">
+        <div class="tl-avatar">
+          {% if current_user and current_user.is_authenticated %}
+            {{ current_user.username[0]|upper if current_user.username else 'U' }}
+          {% else %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          {% endif %}
+        </div>
+      </button>
+      <!-- FAZ 43: PWA Install Button -->
+      <button class="tl-nav-btn" id="pwaInstallSidebarBtn" data-tooltip="Install App" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15M12 3v9m0 0l-3-3m3 3l3-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <!-- MAIN CONTENT AREA — topbar + scrollable content              -->
+  <!-- ═════════════════════════════════════════════════════════════ -->
+  <main class="tl-main {% block main_class %}{% endblock %}" id="proMain">
+    <!-- ─── TOPBAR ─── -->
+    <div class="topbar" id="proTopbar">
+      <div class="topbar-left">
+        <h1 class="topbar-title">{% block topbar_title %}{% endblock %}</h1>
+        {% block topbar_left %}{% endblock %}
+      </div>
+      <div class="topbar-center">
+        <div class="pro-search" id="globalSearch">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input type="text" placeholder="Search markets, assets, features..." data-i18n-placeholder="search.placeholder" />
+          <span class="search-shortcut">⌘K</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        {% block topbar_right %}{% endblock %}
+        <div class="market-status open" id="marketStatus">
+          <span class="status-dot live"></span>
+          <span data-i18n="market.status_open">Markets Open</span>
+        </div>
+        <div class="topbar-lang-wrap" style="position:relative">
+          <button class="topbar-btn" id="topbarLangBtn" data-tip="Language" style="font-size:16px" aria-label="Language">🌐</button>
+          <div class="topbar-lang-dropdown" id="topbarLangDropdown" style="display:none;position:absolute;right:0;top:100%;margin-top:8px;background:var(--card-bg,#1a1a2e);border:1px solid var(--border-color,#2d2d44);border-radius:10px;padding:6px;min-width:170px;z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+          </div>
+        </div>
+        <button class="topbar-btn" id="topbarNotifBtn" data-tip="Notifications">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="topbar-btn topbar-avatar-btn" id="topbarUserBtn">
+          <div class="pro-avatar sm gradient">
+            {% if current_user and current_user.is_authenticated %}
+              {{ current_user.username[0]|upper if current_user.username else 'U' }}
+            {% else %}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="16" height="16"><path d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            {% endif %}
+          </div>
+        </button>
+      </div>
+    </div>
+    <!-- ─── PAGE CONTENT ─── -->
+    <div class="main-content">
+      {% block header %}{% endblock %}
+      <div class="pro-content">
+        {% block content %}{% endblock %}
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ═════════════════════════════════════════════════════════════ -->
+<!-- NOTIFICATION PANEL (slide-in overlay)                        -->
+<!-- ═════════════════════════════════════════════════════════════ -->
+<div class="pro-notif-panel" id="notifPanel">
+  <div class="pro-notif-header">
+    <h3 data-i18n="notif.title">Notifications</h3>
+    <button class="pro-notif-close" id="notifClose">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <div class="pro-notif-filters">
+    <button class="pro-notif-filter active" data-filter="all" data-i18n="notif.all">All</button>
+    <button class="pro-notif-filter" data-filter="alerts" data-i18n="notif.alerts">Alerts</button>
+    <button class="pro-notif-filter" data-filter="opportunities" data-i18n="notif.opportunities">Opportunities</button>
+    <button class="pro-notif-filter" data-filter="signals" data-i18n="notif.signals">Signals</button>
+  </div>
+  <div class="pro-notif-list" id="notifList">
+    <div class="pro-notif-empty" data-i18n="notif.empty">No notifications yet</div>
+  </div>
+</div>
+<div class="pro-notif-overlay" id="notifOverlay"></div>
+
+<!-- ═════════════════════════════════════════════════════════════ -->
+<!-- MOBILE BOTTOM BAR                                             -->
+<!-- ═════════════════════════════════════════════════════════════ -->
+<nav class="pro-bottombar mt-bottombar" id="proBottombar">
+  <a href="/discover" class="pro-bb-item mt-bb-item{{ ' active' if request.path in ['/discover', '/'] else '' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="bottombar.discover">İzleme</span>
+  </a>
+  <a href="/tv" class="pro-bb-item mt-bb-item{{ ' active' if request.path in ['/tv', '/chart'] else '' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="bottombar.chart">Grafik</span>
+  </a>
+  <a href="/activity" class="pro-bb-item mt-bb-item{{ ' active' if request.path == '/activity' else '' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="bottombar.activity">Keşfet</span>
+  </a>
+  <a href="/feed" class="pro-bb-item mt-bb-item{{ ' active' if request.path == '/feed' else '' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="bottombar.community">Topluluk</span>
+  </a>
+  <a href="/menu" class="pro-bb-item mt-bb-item{{ ' active' if request.path == '/menu' else '' }}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="22" height="22"><path d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span data-i18n="bottombar.menu">Menü</span>
+  </a>
+</nav>
+
+<!-- Toast Container -->
+<div class="pro-toast-container" id="toastContainer"></div>
+
+{% block scripts %}{% endblock %}
+
+<!-- Core Pro JS -->
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
+<script src="{{ url_for('static', filename='js/components/toast.js') }}"></script>
+<script src="{{ url_for('static', filename='js/components/mobile_sheet.js') }}"></script>
+<script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pwa_install.js') }}"></script>
+<script src="{{ url_for('static', filename='js/mobile_nav.js') }}"></script>
+<script>
+(function(){
+  const sidebar = document.getElementById('proSidebar');
+
+  // ── Sidebar expand/collapse ──
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener('click', function() {
+      sidebar.classList.toggle('expanded');
+      const grid = document.getElementById('terminalGrid');
+      if (sidebar.classList.contains('expanded')) {
+        grid.style.gridTemplateColumns = 'var(--sidebar-expanded) 1fr';
+      } else {
+        grid.style.gridTemplateColumns = 'var(--sidebar-width) 1fr';
+      }
+    });
+  }
+
+  // Mobile menu — hamburger in bottombar or swipe
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+  if (mobileBtn) {
+    mobileBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('mobile-open');
+    });
+  }
+
+  // Notification panel — topbar button
+  const topbarNotifBtn = document.getElementById('topbarNotifBtn');
+  const notifBtn       = document.getElementById('notifBtn');
+  const notifPanel     = document.getElementById('notifPanel');
+  const notifClose     = document.getElementById('notifClose');
+  const notifOverlay   = document.getElementById('notifOverlay');
+  function toggleNotif(open) {
+    notifPanel.classList.toggle('open', open);
+    notifOverlay.classList.toggle('open', open);
+  }
+  if (topbarNotifBtn) topbarNotifBtn.addEventListener('click', () => toggleNotif(true));
+  if (notifBtn)       notifBtn.addEventListener('click', () => toggleNotif(true));
+  if (notifClose)     notifClose.addEventListener('click', () => toggleNotif(false));
+  if (notifOverlay)   notifOverlay.addEventListener('click', () => toggleNotif(false));
+
+  // Notification filters
+  document.querySelectorAll('.pro-notif-filter').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.pro-notif-filter').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // ── Global search shortcut (Cmd/Ctrl + K) ──
+  document.addEventListener('keydown', function(e) {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      var searchInput = document.querySelector('#globalSearch input');
+      if (searchInput) searchInput.focus();
+    }
+  });
+
+  // ── Button ripple effect ──
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.pro-btn-primary, .pro-btn-success');
+    if (!btn) return;
+    var rect = btn.getBoundingClientRect();
+    var ripple = document.createElement('span');
+    ripple.className = 'ripple';
+    ripple.style.width = ripple.style.height = Math.max(rect.width, rect.height) + 'px';
+    ripple.style.left = (e.clientX - rect.left - rect.width / 2) + 'px';
+    ripple.style.top  = (e.clientY - rect.top - rect.height / 2) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(function() { ripple.remove(); }, 500);
+  });
+
+  // ── Language selector dropdown ──
+  (function(){
+    var langBtn = document.getElementById('topbarLangBtn');
+    var langDrop = document.getElementById('topbarLangDropdown');
+    if (langBtn && langDrop) {
+      var langs = [
+        {code:'en',flag:'🇺🇸',name:'English'},
+        {code:'tr',flag:'🇹🇷',name:'Türkçe'},
+        {code:'es',flag:'🇪🇸',name:'Español'},
+        {code:'de',flag:'🇩🇪',name:'Deutsch'},
+        {code:'fr',flag:'🇫🇷',name:'Français'},
+        {code:'pt',flag:'🇧🇷',name:'Português'},
+        {code:'ru',flag:'🇷🇺',name:'Русский'},
+        {code:'ar',flag:'🇸🇦',name:'العربية'},
+        {code:'zh',flag:'🇨🇳',name:'中文'}
+      ];
+      var html = '';
+      langs.forEach(function(l){
+        html += '<button data-lang="'+l.code+'" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;color:var(--text-primary,#e0e0e0);cursor:pointer;border-radius:6px;font-size:13px;text-align:left" onmouseover="this.style.background=\'rgba(255,255,255,.06)\'" onmouseout="this.style.background=\'none\'">' + l.flag + ' ' + l.name + '</button>';
+      });
+      langDrop.innerHTML = html;
+      langBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        langDrop.style.display = langDrop.style.display === 'none' ? 'block' : 'none';
+      });
+      langDrop.addEventListener('click', function(e){
+        var btn = e.target.closest('[data-lang]');
+        if (btn && window.BW && BW.i18n) {
+          BW.i18n.setLanguage(btn.dataset.lang);
+          langDrop.style.display = 'none';
+        }
+      });
+      document.addEventListener('click', function(){ langDrop.style.display = 'none'; });
+    }
+  })();
+
+  // Service worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}').catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>

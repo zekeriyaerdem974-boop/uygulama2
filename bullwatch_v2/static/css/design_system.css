@@ -1,0 +1,246 @@
+/* ═══════════════════════════════════════════════════════════════════
+   ZKR Analiz Pro — Design System v2.0 (FAZ 41)
+   Bloomberg Terminal / TradingView-grade fintech design tokens
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Color Tokens ────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-primary:   #0b0f14;
+  --bg-secondary: #0e1420;
+  --bg-surface:   #121822;
+  --bg-card:      #121822;
+  --bg-card-hover:#1b2433;
+  --bg-elevated:  #1b2433;
+  --bg-glass:     rgba(18,24,34,0.85);
+  --bg-input:     rgba(255,255,255,0.04);
+
+  /* Accent & Semantic */
+  --accent:       #3B82F6;
+  --accent-hover: #2563EB;
+  --accent-soft:  rgba(59,130,246,0.12);
+  --accent-glow:  rgba(59,130,246,0.25);
+  --success:      #10B981;
+  --success-bg:   rgba(16,185,129,0.10);
+  --danger:       #EF4444;
+  --danger-bg:    rgba(239,68,68,0.10);
+  --warning:      #F59E0B;
+  --warning-bg:   rgba(245,158,11,0.10);
+  --info:         #6366F1;
+  --info-bg:      rgba(99,102,241,0.10);
+
+  /* Text */
+  --text-primary:   #F9FAFB;
+  --text-secondary: #D1D5DB;
+  --text-muted:     #9CA3AF;
+  --text-dim:       #6B7280;
+  --text-disabled:  #4B5563;
+
+  /* Borders */
+  --border:         #1f2a3a;
+  --border-subtle:  #171f2e;
+  --border-hover:   #2a3a52;
+  --border-focus:   rgba(59,130,246,0.5);
+
+  /* Radius */
+  --radius-xs:  4px;
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --radius-2xl: 24px;
+  --radius-full:9999px;
+
+  /* Shadows */
+  --shadow-sm:      0 2px 8px rgba(0,0,0,0.3);
+  --shadow-card:    0 4px 24px rgba(0,0,0,0.35);
+  --shadow-elevated:0 12px 40px rgba(0,0,0,0.5);
+  --shadow-glow:    0 0 20px var(--accent-glow);
+  --shadow-inset:   inset 0 1px 0 rgba(255,255,255,0.04);
+
+  /* Blur */
+  --blur-sm:  blur(8px);
+  --blur-md:  blur(16px);
+  --blur-lg:  blur(24px);
+
+  /* Typography */
+  --font:      'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  /* Font Sizes */
+  --text-xs:  11px;
+  --text-sm:  12px;
+  --text-md:  14px;
+  --text-lg:  16px;
+  --text-xl:  18px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+
+  /* Spacing Scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Layout */
+  --sidebar-width:     72px;
+  --sidebar-expanded:  240px;
+  --header-h:          48px;
+  --bottombar-h:       56px;
+
+  /* Transitions */
+  --transition-fast:   0.15s ease;
+  --transition-normal: 0.25s ease;
+  --transition-slow:   0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-Index Scale */
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-sidebar:   300;
+  --z-header:    400;
+  --z-modal:     500;
+  --z-toast:     600;
+  --z-tooltip:   700;
+}
+
+/* ── Typography System ────────────────────────────────────────── */
+.ds-h1     { font-size: var(--text-3xl); font-weight: 700; line-height: 1.15; letter-spacing: -0.025em; }
+.ds-h2     { font-size: var(--text-2xl); font-weight: 700; line-height: 1.2;  letter-spacing: -0.02em; }
+.ds-h3     { font-size: var(--text-xl);  font-weight: 600; line-height: 1.3;  letter-spacing: -0.01em; }
+.ds-h4     { font-size: var(--text-lg);  font-weight: 600; line-height: 1.35; }
+.ds-body   { font-size: var(--text-md);  font-weight: 400; line-height: 1.5; }
+.ds-small  { font-size: var(--text-sm);  font-weight: 400; line-height: 1.5; }
+.ds-caption{ font-size: var(--text-xs);  font-weight: 400; line-height: 1.4; color: var(--text-dim); }
+.ds-mono   { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.ds-label  { font-size: var(--text-xs);  font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-dim); }
+
+/* ── Glassmorphism Cards ──────────────────────────────────────── */
+.ds-glass {
+  background: var(--bg-glass);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), var(--shadow-inset);
+}
+.ds-glass:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-elevated), var(--shadow-inset);
+}
+
+/* ── Confidence Indicator ─────────────────────────────────────── */
+.ds-confidence {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.ds-confidence-bar {
+  width: 48px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+  position: relative;
+}
+.ds-confidence-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width var(--transition-normal);
+}
+.ds-conf-low  .ds-confidence-fill { background: var(--text-dim); }
+.ds-conf-med  .ds-confidence-fill { background: var(--warning); }
+.ds-conf-high .ds-confidence-fill { background: #F97316; }
+.ds-conf-top  .ds-confidence-fill { background: var(--success); }
+.ds-conf-low  { color: var(--text-dim); }
+.ds-conf-med  { color: var(--warning); }
+.ds-conf-high { color: #F97316; }
+.ds-conf-top  { color: var(--success); }
+
+/* ── Skeleton Loaders (enhanced) ──────────────────────────────── */
+.ds-skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.06) 40%,
+    rgba(255,255,255,0.03) 100%
+  );
+  background-size: 300% 100%;
+  animation: ds-shimmer 1.8s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes ds-shimmer {
+  0%   { background-position: 300% 0; }
+  100% { background-position: -300% 0; }
+}
+
+/* ── Scrollbar (thin, dark) ───────────────────────────────────── */
+.ds-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.ds-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.ds-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+.ds-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+/* ── Animations ───────────────────────────────────────────────── */
+@keyframes ds-fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ds-fadeUp    { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ds-slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ds-slideRight{ from { opacity: 0; transform: translateX(-12px);} to { opacity: 1; transform: translateX(0); } }
+@keyframes ds-scaleIn   { from { opacity: 0; transform: scale(0.95); }     to { opacity: 1; transform: scale(1); } }
+@keyframes ds-pulse     { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes ds-spin      { to { transform: rotate(360deg); } }
+
+.ds-animate-fadeIn     { animation: ds-fadeIn 0.3s ease; }
+.ds-animate-fadeUp     { animation: ds-fadeUp 0.4s ease; }
+.ds-animate-slideDown  { animation: ds-slideDown 0.3s ease; }
+.ds-animate-scaleIn    { animation: ds-scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+.ds-animate-pulse      { animation: ds-pulse 2s ease-in-out infinite; }
+.ds-animate-spin       { animation: ds-spin 1s linear infinite; }
+
+/* ── Status Indicators ────────────────────────────────────────── */
+.ds-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ds-dot-live    { background: var(--success); box-shadow: 0 0 8px rgba(16,185,129,0.4); animation: ds-pulse 2s infinite; }
+.ds-dot-warning { background: var(--warning); }
+.ds-dot-danger  { background: var(--danger); }
+.ds-dot-neutral { background: var(--text-dim); }
+
+/* ── Dividers ─────────────────────────────────────────────────── */
+.ds-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-4) 0;
+}
+.ds-divider-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-dim);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ds-divider-label::before,
+.ds-divider-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Utility Additions ────────────────────────────────────────── */
+.ds-truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-clamp-2      { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ds-clamp-3      { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ds-tabular-nums { font-variant-numeric: tabular-nums; }
+.ds-no-select    { user-select: none; -webkit-user-select: none; }

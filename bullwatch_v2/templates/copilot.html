@@ -1,0 +1,257 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}AI Copilot • ZKR Analiz Pro{% endblock %}
+{% block page_title %}AI Copilot{% endblock %}
+{% block topbar_title %}AI Copilot{% endblock %}
+
+{% block topbar_right %}
+<div class="pro-badge-accent" style="font-size:10px;padding:2px 8px;">AI</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.copilot-page { max-width: 800px; margin: 0 auto; }
+.copilot-header { text-align: center; padding: 24px 0 16px; }
+.copilot-header h2 { font-size: 20px; font-weight: 700; margin: 0 0 4px; }
+.copilot-header p { font-size: 13px; color: var(--text-dim); margin: 0; }
+
+.copilot-actions {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+  margin-bottom: 20px;
+}
+.copilot-action-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-radius: var(--radius-lg);
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  color: var(--text-primary); cursor: pointer; transition: all 0.15s;
+  font-size: 13px; font-weight: 500; text-align: left;
+}
+.copilot-action-btn:hover { border-color: var(--accent); background: rgba(59,130,246,0.06); }
+.copilot-action-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0;
+}
+.copilot-action-label { font-weight: 600; }
+.copilot-action-desc { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+.copilot-chat {
+  background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); overflow: hidden;
+  display: flex; flex-direction: column; min-height: 400px;
+}
+.copilot-messages {
+  flex: 1; overflow-y: auto; padding: 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.copilot-msg {
+  max-width: 85%; padding: 12px 16px; border-radius: 14px;
+  font-size: 13px; line-height: 1.6;
+}
+.copilot-msg.user {
+  align-self: flex-end;
+  background: var(--accent); color: #fff; border-bottom-right-radius: 4px;
+}
+.copilot-msg.ai {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.copilot-msg.ai .msg-label {
+  font-size: 10px; font-weight: 600; color: var(--accent);
+  margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.copilot-input-wrap {
+  display: flex; gap: 8px; padding: 12px 16px;
+  border-top: 1px solid var(--border); background: rgba(0,0,0,0.15);
+}
+.copilot-input {
+  flex: 1; padding: 10px 14px; border-radius: var(--radius-md);
+  background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+  color: var(--text-primary); font-size: 13px; outline: none;
+}
+.copilot-input:focus { border-color: var(--accent); }
+.copilot-send {
+  padding: 10px 20px; border-radius: var(--radius-md);
+  background: var(--accent); color: #fff; border: none;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.copilot-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.copilot-typing { display: none; align-self: flex-start; padding: 8px 16px; }
+.copilot-typing.visible { display: flex; }
+.copilot-typing span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--text-dim);
+  animation: copilot-bounce 1.2s infinite;
+  margin: 0 2px;
+}
+.copilot-typing span:nth-child(2) { animation-delay: 0.2s; }
+.copilot-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes copilot-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@media (max-width: 640px) {
+  .copilot-actions { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="copilot-page">
+  <div class="copilot-header">
+    <h2>🧠 AI Copilot</h2>
+    <p>Your AI-powered trading assistant</p>
+  </div>
+
+  <!-- Quick Action Buttons -->
+  <div class="copilot-actions">
+    <button class="copilot-action-btn" data-action="ask" data-prompt="Bugün piyasalar nasıl? Genel bir özet ver.">
+      <div class="copilot-action-icon" style="background:rgba(59,130,246,0.12);">💬</div>
+      <div>
+        <div class="copilot-action-label">Ask AI</div>
+        <div class="copilot-action-desc">Ask any market question</div>
+      </div>
+    </button>
+    <button class="copilot-action-btn" data-action="ask" data-prompt="Piyasa analizi yap. BTC, ETH, BIST 100 ve altın için teknik ve temel analiz özeti ver.">
+      <div class="copilot-action-icon" style="background:rgba(16,185,129,0.12);">📊</div>
+      <div>
+        <div class="copilot-action-label">Market Analysis</div>
+        <div class="copilot-action-desc">Technical & fundamental overview</div>
+      </div>
+    </button>
+    <button class="copilot-action-btn" data-action="portfolio" data-prompt="Portföyümü analiz et. Risk ve dağılım hakkında önerilerde bulun.">
+      <div class="copilot-action-icon" style="background:rgba(245,158,11,0.12);">💼</div>
+      <div>
+        <div class="copilot-action-label">Portfolio Analysis</div>
+        <div class="copilot-action-desc">Review portfolio risk & allocation</div>
+      </div>
+    </button>
+    <button class="copilot-action-btn" data-action="ask" data-prompt="Bana en iyi strateji önerilerini ver. Risk/ödül oranı yüksek fırsatları listele.">
+      <div class="copilot-action-icon" style="background:rgba(139,92,246,0.12);">🎯</div>
+      <div>
+        <div class="copilot-action-label">Strategy Help</div>
+        <div class="copilot-action-desc">Get strategy recommendations</div>
+      </div>
+    </button>
+    <button class="copilot-action-btn" data-action="opportunities" data-prompt="Mevcut fırsatları analiz et ve önerilerde bulun.">
+      <div class="copilot-action-icon" style="background:rgba(236,72,153,0.12);">🔍</div>
+      <div>
+        <div class="copilot-action-label">Opportunity Explain</div>
+        <div class="copilot-action-desc">Understand current opportunities</div>
+      </div>
+    </button>
+    <button class="copilot-action-btn" data-action="activity" data-prompt="Son piyasa aktivitelerini özetle.">
+      <div class="copilot-action-icon" style="background:rgba(20,184,166,0.12);">⚡</div>
+      <div>
+        <div class="copilot-action-label">Activity Summary</div>
+        <div class="copilot-action-desc">Recent market activity recap</div>
+      </div>
+    </button>
+  </div>
+
+  <!-- Chat Area -->
+  <div class="copilot-chat" id="copilotChat">
+    <div class="copilot-messages" id="copilotMessages">
+      <div class="copilot-msg ai">
+        <div class="msg-label">AI Copilot</div>
+        Merhaba! Ben ZKR Analiz AI Copilot. Piyasa analizi, portföy değerlendirmesi, strateji önerisi veya herhangi bir soru için buradayım. Nasıl yardımcı olabilirim?
+      </div>
+    </div>
+    <div class="copilot-typing" id="copilotTyping">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="copilot-input-wrap">
+      <input class="copilot-input" id="copilotInput" type="text" placeholder="Ask anything about markets..." autocomplete="off" />
+      <button class="copilot-send" id="copilotSend">Send</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const messagesEl = document.getElementById('copilotMessages');
+  const inputEl = document.getElementById('copilotInput');
+  const sendBtn = document.getElementById('copilotSend');
+  const typingEl = document.getElementById('copilotTyping');
+  let busy = false;
+
+  function esc(s) {
+    var d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function addMsg(text, role) {
+    var div = document.createElement('div');
+    div.className = 'copilot-msg ' + role;
+    if (role === 'ai') {
+      div.innerHTML = '<div class="msg-label">AI Copilot</div>' + esc(text);
+    } else {
+      div.textContent = text;
+    }
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function sendMessage(prompt, endpoint) {
+    if (busy || !prompt) return;
+    busy = true;
+    sendBtn.disabled = true;
+    addMsg(prompt, 'user');
+    typingEl.classList.add('visible');
+
+    var ep = endpoint || '/api/copilot/ask';
+    try {
+      var res = await fetch(ep, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: prompt, question: prompt})
+      });
+      var data = await res.json();
+      typingEl.classList.remove('visible');
+      if (data.ok && data.data) {
+        var answer = data.data.answer || data.data.summary || JSON.stringify(data.data);
+        addMsg(answer, 'ai');
+      } else {
+        addMsg(data.error || 'Bir hata oluştu. Lütfen tekrar deneyin.', 'ai');
+      }
+    } catch(e) {
+      typingEl.classList.remove('visible');
+      addMsg('Bağlantı hatası. Lütfen tekrar deneyin.', 'ai');
+    }
+    busy = false;
+    sendBtn.disabled = false;
+  }
+
+  sendBtn.addEventListener('click', function() {
+    var v = inputEl.value.trim();
+    if (v) { inputEl.value = ''; sendMessage(v); }
+  });
+
+  inputEl.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      var v = inputEl.value.trim();
+      if (v) { inputEl.value = ''; sendMessage(v); }
+    }
+  });
+
+  /* Quick action buttons */
+  document.querySelectorAll('.copilot-action-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var action = btn.dataset.action;
+      var prompt = btn.dataset.prompt;
+      var ep = '/api/copilot/ask';
+      if (action === 'portfolio') ep = '/api/copilot/portfolio';
+      else if (action === 'opportunities') ep = '/api/copilot/opportunities';
+      else if (action === 'activity') ep = '/api/copilot/activity';
+      sendMessage(prompt, ep);
+    });
+  });
+})();
+</script>
+{% endblock %}

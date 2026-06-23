@@ -1,0 +1,115 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Strateji Detay — ZKR Analiz{% endblock %}
+{% block page_title %}Strateji Detay{% endblock %}
+{% block topbar_title %}Strategy{% endblock %}
+
+{% block extra_head %}
+<meta name="user-id" content="{{ current_user.id if current_user else '' }}">
+<meta name="strategy-slug" content="{{ slug }}">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   MARKETPLACE DETAIL — FAZ 29
+   ═══════════════════════════════════════════════════════════════ */
+.md-container { max-width:900px; margin:0 auto; padding:16px 12px 100px; }
+
+/* ── Header ───────────────────── */
+.md-header { margin-bottom:20px; }
+.md-back { color:#888; font-size:13px; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-bottom:12px; }
+.md-back:hover { color:#f59e0b; }
+.md-title { font-size:22px; font-weight:700; color:#eee; margin-bottom:4px; }
+.md-creator { font-size:13px; color:#666; margin-bottom:8px; }
+.md-creator a { color:#f59e0b; text-decoration:none; }
+.md-desc { font-size:14px; color:#999; line-height:1.5; margin-bottom:12px; }
+.md-tags { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.md-tag { font-size:11px; padding:3px 10px; border-radius:10px; background:#1a1a2e; color:#888; }
+.md-tag.market { background:#0d4f3c22; color:#10b981; }
+.md-tag.risk { background:#ef444422; color:#ef4444; }
+
+/* ── Actions ──────────────────── */
+.md-actions { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+.md-btn { padding:10px 20px; border-radius:10px; font-size:14px; font-weight:600;
+           border:none; cursor:pointer; transition:all .2s; display:inline-flex; align-items:center; gap:6px; }
+.md-btn-follow { background:linear-gradient(135deg,#f59e0b,#d97706); color:#000; }
+.md-btn-follow:hover { transform:scale(1.03); }
+.md-btn-follow.following { background:#333; color:#f59e0b; border:1px solid #f59e0b44; }
+.md-btn-copy { background:#1a1a2e; color:#eee; border:1px solid #333; }
+.md-btn-copy:hover { border-color:#f59e0b; }
+.md-btn-live { background:linear-gradient(135deg,#10b981,#059669); color:#fff; }
+.md-btn-live:hover { transform:scale(1.03); }
+
+/* ── Metrics Grid ─────────────── */
+.md-metrics { display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:10px; margin-bottom:20px; }
+.md-metric { background:#0d0d12; border:1px solid #1a1a2e; border-radius:10px; padding:12px; text-align:center; }
+.md-metric-value { font-size:18px; font-weight:700; color:#eee; }
+.md-metric-value.green { color:#10b981; }
+.md-metric-value.red { color:#ef4444; }
+.md-metric-value.amber { color:#f59e0b; }
+.md-metric-label { font-size:11px; color:#666; margin-top:4px; }
+
+/* ── Code Preview ─────────────── */
+.md-code-section { margin-bottom:20px; }
+.md-code-title { font-size:14px; font-weight:600; color:#ccc; margin-bottom:8px; display:flex; align-items:center; gap:6px; }
+.md-code-block { background:#0a0a0f; border:1px solid #1a1a2e; border-radius:10px; padding:14px;
+                  font-family:'JetBrains Mono',monospace; font-size:12px; color:#a0a0b8;
+                  line-height:1.6; white-space:pre-wrap; overflow-x:auto; max-height:200px; overflow-y:auto; }
+.md-code-block .kw { color:#c084fc; }
+.md-code-block .str { color:#86efac; }
+.md-code-block .ind { color:#60a5fa; }
+
+/* ── Chart ────────────────────── */
+.md-chart-section { margin-bottom:20px; }
+.md-chart-container { background:#0a0a0f; border:1px solid #1a1a2e; border-radius:10px;
+                       height:350px; overflow:hidden; }
+
+/* ── Signals List ─────────────── */
+.md-signals-section { margin-bottom:20px; }
+.md-signal-item { display:flex; align-items:center; gap:12px; padding:10px 12px;
+                   background:#0d0d12; border:1px solid #1a1a2e; border-radius:8px; margin-bottom:6px; }
+.md-signal-type { font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; min-width:40px; text-align:center; }
+.md-signal-type.BULLISH { background:#10b98122; color:#10b981; }
+.md-signal-type.BEARISH { background:#ef444422; color:#ef4444; }
+.md-signal-info { flex:1; }
+.md-signal-symbol { font-size:13px; font-weight:600; color:#eee; }
+.md-signal-time { font-size:11px; color:#666; }
+.md-signal-price { font-size:13px; font-weight:600; color:#ccc; }
+
+.md-section-title { font-size:15px; font-weight:600; color:#ccc; margin-bottom:10px;
+                     display:flex; align-items:center; gap:6px; }
+
+/* ── Loading ──────────────────── */
+.md-loading { text-align:center; padding:60px; color:#555; }
+.md-loading-spinner { width:30px; height:30px; border:3px solid #222; border-top-color:#f59e0b;
+                        border-radius:50%; animation:md-spin 1s linear infinite; margin:0 auto 12px; }
+@keyframes md-spin { to { transform:rotate(360deg); } }
+
+.md-empty { text-align:center; padding:20px; color:#555; font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="md-container">
+
+  <div class="md-header">
+    <a href="/marketplace" class="md-back">← Marketplace'e Dön</a>
+  </div>
+
+  <div id="md-content">
+    <div class="md-loading">
+      <div class="md-loading-spinner"></div>
+      Strateji yükleniyor...
+    </div>
+  </div>
+
+<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 16px;margin:16px 0 0;font-size:12px;color:#d4a017;display:flex;align-items:center;gap:8px;">
+  <span>ℹ️</span>
+  <span>Strateji analiz aracı — yatırım tavsiyesi değildir. / Strategy analysis tool — not financial advice.</span>
+</div>
+{% include "legal_disclaimer.html" %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="{{ url_for('static', filename='js/marketplace_detail.js') }}"></script>
+{% endblock %}

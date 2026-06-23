@@ -1,0 +1,61 @@
+from __future__ import annotations
+
+import time
+from flask import Blueprint, current_app, jsonify, request
+
+
+bp = Blueprint("alpha", __name__, url_prefix="/api/alpha")
+
+
+def _svc():
+    return current_app.extensions["market_data"]
+
+
+@bp.get("/status")
+def status():
+    """Lightweight alpha status.
+
+    Real (non-mock) integration: fetches ALPHA_*USDT symbols from Binance and optionally
+    samples klines for a subset to detect data availability.
+
+    Query:
+      - sample (int): number of symbols to sample for kline availability (default 25)
+      - interval (str): kline interval (default 15m)
+      - limit (int): kline limit (default 60)
+    """
+
+    sample = int(request.args.get("sample") or "25")
+    sample = max(0, min(sample, 200))
+    interval = request.args.get("interval") or "15m"
+    limit = int(request.args.get("limit") or "60")
+
+    # Fetch real Alpha pairs from Binance Alpha public endpoints
+    pairs = _svc().get_alpha_pairs()
+    symbols = [p["pair"] for p in pairs]
+    failed = []
+    scanned = 0
+    if sample > 0:
+        for sym in symbols[:sample]:
+            scanned += 1
+            try:
+                rows = _svc().get_alpha_klines(sym, interval, limit, ttl_s=2.0)
+                if not rows:
+                    failed.append({"pair": sym, "error": "klines empty"})
+            except Exception as e:
+                failed.append({"pair": sym, "error": str(e)})
+
+    return jsonify(
+        {
+            "ok": True,
+            "generated_at": int(time.time()),
+            "total_symbols": len(symbols),
+            "scanned": scanned,
+            "failed": failed,
+        }
+    )
+
+
+@bp.get("/symbols")
+def symbols():
+    pairs = _svc().get_alpha_pairs()
+    return jsonify({"ok": True, "count": len(pairs), "symbols": pairs})

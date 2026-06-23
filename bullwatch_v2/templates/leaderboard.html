@@ -1,0 +1,113 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Analist Liderlik Tablosu • ZKR Analiz{% endblock %}
+{% block page_title %}Liderlik Tablosu{% endblock %}
+{% block topbar_title %}Leaderboard{% endblock %}
+
+{% block extra_head %}
+<style>
+  .lb-wrap { max-width: 640px; margin: 0 auto; padding: 16px; }
+  .lb-hero { text-align: center; padding: 24px 16px 20px; }
+  .lb-hero h1 { font-size: 24px; font-weight: 800; background: linear-gradient(135deg, #FFD600, #FF6D00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .lb-hero p { color: #6b7280; font-size: 13px; margin-top: 4px; }
+  .lb-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .lb-tab { flex: 1; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #9ca3af; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .lb-tab.active { background: rgba(41,121,255,0.1); border-color: rgba(41,121,255,0.3); color: #2979FF; }
+  .lb-card { background: #111; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+  .lb-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.2s; cursor: pointer; text-decoration: none; }
+  .lb-row:hover { background: rgba(255,255,255,0.03); }
+  .lb-rank { width: 28px; font-size: 14px; font-weight: 700; text-align: center; color: #6b7280; flex-shrink: 0; }
+  .lb-rank-1 { color: #FFD600; font-size: 18px; }
+  .lb-rank-2 { color: #C0C0C0; font-size: 16px; }
+  .lb-rank-3 { color: #CD7F32; font-size: 16px; }
+  .lb-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #2979FF, #00C853); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; color: #fff; flex-shrink: 0; }
+  .lb-info { flex: 1; min-width: 0; }
+  .lb-name { font-weight: 600; font-size: 14px; color: #e5e7eb; }
+  .lb-trust { font-size: 11px; padding: 1px 6px; border-radius: 8px; font-weight: 600; margin-left: 4px; }
+  .lb-sub { font-size: 12px; color: #6b7280; margin-top: 1px; }
+  .lb-score-col { text-align: right; flex-shrink: 0; }
+  .lb-score { font-size: 16px; font-weight: 700; color: #FFD600; }
+  .lb-score-label { font-size: 10px; color: #6b7280; }
+  .lb-stats-row { display: flex; gap: 6px; margin-top: 4px; }
+  .lb-mini-stat { font-size: 11px; color: #6b7280; }
+  .lb-loading { text-align: center; padding: 60px; color: #6b7280; font-size: 14px; }
+  .lb-empty { text-align: center; padding: 60px; color: #6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lb-wrap">
+  <div class="lb-hero">
+    <h1>🏆 Analist Liderlik Tablosu</h1>
+    <p>En etkili analizciler — analiz, beğeni ve etkileşim bazlı sıralama</p>
+  </div>
+
+  <div class="lb-card" id="lbCard">
+    <div class="lb-loading" id="lbLoading">Yükleniyor…</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const card = document.getElementById('lbCard');
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s || '';
+    return d.innerHTML;
+  }
+
+  function trustBadge(level) {
+    if (!level) return '';
+    const colors = {'Beginner Analyst':'#64748b','Trusted Analyst':'#3b82f6','Top Analyst':'#f59e0b','Elite Mentor':'#ef4444'};
+    const c = colors[level] || '#64748b';
+    return `<span class="lb-trust" style="color:${c};background:${c}22;">${escapeHtml(level)}</span>`;
+  }
+
+  function rankIcon(i) {
+    if (i === 0) return '🥇';
+    if (i === 1) return '🥈';
+    if (i === 2) return '🥉';
+    return '#' + (i + 1);
+  }
+
+  async function load() {
+    try {
+      const r = await fetch('/api/analysis/leaderboard?limit=20');
+      const d = await r.json();
+      if (!d.ok || !d.leaderboard || d.leaderboard.length === 0) {
+        card.innerHTML = '<div class="lb-empty"><p>Henüz analiz paylaşılmamış.</p><p style="margin-top:8px;"><a href="/trade" style="color:#2979FF;">İlk analizini paylaş →</a></p></div>';
+        return;
+      }
+
+      card.innerHTML = d.leaderboard.map((u, i) => `
+        <a href="/user/${encodeURIComponent(u.username)}" class="lb-row">
+          <div class="lb-rank ${i < 3 ? 'lb-rank-' + (i+1) : ''}">${rankIcon(i)}</div>
+          <div class="lb-avatar">${(u.username||'?')[0].toUpperCase()}</div>
+          <div class="lb-info">
+            <div class="lb-name">@${escapeHtml(u.username)} ${trustBadge(u.trust_level)}</div>
+            <div class="lb-stats-row">
+              <span class="lb-mini-stat">📊 ${u.analysis_count} analiz</span>
+              <span class="lb-mini-stat">❤️ ${u.total_likes}</span>
+              <span class="lb-mini-stat">👁 ${u.total_views}</span>
+              <span class="lb-mini-stat">💬 ${u.total_comments}</span>
+            </div>
+          </div>
+          <div class="lb-score-col">
+            <div class="lb-score">${u.score}</div>
+            <div class="lb-score-label">puan</div>
+          </div>
+        </a>
+      `).join('');
+
+    } catch(e) {
+      card.innerHTML = '<div class="lb-empty">Yüklenemedi</div>';
+    }
+  }
+
+  load();
+})();
+</script>
+{% endblock %}

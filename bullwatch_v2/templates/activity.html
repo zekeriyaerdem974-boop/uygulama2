@@ -1,0 +1,689 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}{{ t('activity.title', 'Aktivite') }} • ZKR Analiz Pro{% endblock %}
+{% block page_title %}{{ t('activity.title', 'Aktivite') }}{% endblock %}
+{% block topbar_title %}<span data-i18n="activity.title">{{ t('activity.title', 'Aktivite') }}</span>{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══ ACTIVITY PAGE — Mobile-first compact layout ═══ */
+.act-page { padding-bottom: calc(var(--mt-bottombar-h, 56px) + 8px); background: var(--mt-bg, #000); min-height: 100vh; }
+
+.act-status-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-bottom: 1px solid var(--mt-border);
+  background: var(--mt-surface);
+}
+.act-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.act-status-dot.critical { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+.act-pulse { animation: actPulse 2s ease-in-out infinite; }
+@keyframes actPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+.act-filter-chip { /* alias for compat — uses mt-chip style */ }
+
+.act-event-list { display: flex; flex-direction: column; min-height: 200px; }
+
+/* Event card — compact row style */
+.act-event-card {
+  display: flex; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--mt-border-light, rgba(255,255,255,0.04));
+  cursor: pointer; transition: background 0.12s; position: relative;
+  align-items: flex-start;
+}
+.act-event-card:hover { background: rgba(255,255,255,0.02); }
+.act-event-card.severity-critical { border-left: 3px solid var(--mt-negative, #FF4D6D); }
+.act-event-card.severity-high { border-left: 3px solid var(--mt-warning, #F59E0B); }
+.act-event-card.severity-medium { border-left: 3px solid var(--mt-accent, #3B82F6); }
+.act-event-card.severity-low { border-left: none; }
+
+.act-event-icon-wrap {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--mt-surface-3, #18181D);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 16px;
+}
+.act-event-content { flex: 1; min-width: 0; }
+.act-event-head { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
+.act-event-icon { display: none; }
+.act-event-type { font-size: 10px; color: var(--mt-text-dim); text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+.act-event-time { margin-left: auto; font-size: 10px; color: var(--mt-text-dim); font-family: var(--mt-font-mono); }
+.act-event-title { font-size: 13px; font-weight: 600; color: var(--mt-text); line-height: 1.3; }
+.act-event-summary { font-size: 12px; color: var(--mt-text-secondary); line-height: 1.4; margin-top: 2px; }
+.act-event-meta { display: flex; gap: 6px; margin-top: 6px; align-items: center; flex-wrap: wrap; }
+.act-event-badge {
+  font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 600;
+  font-family: var(--mt-font-mono);
+}
+.act-badge-symbol { background: rgba(59,130,246,0.12); color: var(--mt-accent); }
+.act-badge-market { background: rgba(22,199,132,0.12); color: var(--mt-positive); }
+.act-badge-confidence { background: rgba(245,158,11,0.12); color: var(--mt-warning); }
+.act-badge-source { background: rgba(139,92,246,0.12); color: #a78bfa; }
+
+.act-severity-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.act-severity-dot.critical { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.5); }
+.act-severity-dot.high { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.5); }
+.act-severity-dot.medium { background: #3b82f6; }
+.act-severity-dot.low { background: var(--mt-text-dim); }
+
+.act-conf-bar { width: 40px; height: 3px; background: var(--mt-surface-3); border-radius: 2px; overflow: hidden; }
+.act-conf-fill { height: 100%; border-radius: 2px; transition: width 0.3s ease; }
+
+/* Grid: single column on mobile, 2-col on desktop */
+.act-grid { display: flex; flex-direction: column; gap: 0; }
+@media (min-width: 1025px) {
+  .act-grid { display: grid; grid-template-columns: 1fr 300px; gap: 0; }
+}
+
+/* Sidebar */
+.act-sidebar { border-top: 1px solid var(--mt-border); }
+@media (min-width: 1025px) {
+  .act-sidebar { border-top: none; border-left: 1px solid var(--mt-border); }
+}
+.act-side-card { padding: 16px; border-bottom: 1px solid var(--mt-border-light); }
+.act-side-title { font-size: 11px; font-weight: 600; color: var(--mt-text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.4px; }
+.act-trending-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--mt-border-light); }
+.act-trending-item:last-child { border: none; }
+.act-trending-sym { font-size: 13px; font-weight: 600; color: var(--mt-accent); font-family: var(--mt-font-mono); }
+.act-trending-count { font-size: 11px; color: var(--mt-text-dim); }
+.act-summary-text { font-size: 12px; color: var(--mt-text-secondary); line-height: 1.5; }
+.act-type-stat { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; }
+.act-type-stat-label { font-size: 12px; color: var(--mt-text-secondary); display: flex; align-items: center; gap: 6px; }
+.act-type-stat-count { font-size: 12px; font-weight: 600; color: var(--mt-text); font-family: var(--mt-font-mono); }
+
+.act-load-more { text-align: center; padding: 16px; }
+.act-load-more button {
+  padding: 8px 20px; border-radius: 8px; background: var(--mt-surface-2);
+  border: 1px solid var(--mt-border); color: var(--mt-text-secondary);
+  font-size: 12px; cursor: pointer; transition: all 0.15s;
+}
+.act-load-more button:hover { border-color: var(--mt-accent); color: var(--mt-text); }
+.act-empty { text-align: center; padding: 40px 16px; color: var(--mt-text-dim); font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="act-page">
+
+  <!-- Status Bar -->
+  <div class="act-status-bar">
+    <span class="act-status-dot critical act-pulse" style="width:8px;height:8px;"></span>
+    <span style="font-size:12px;color:var(--mt-text-secondary);" id="act-live-status" data-i18n="activity.connecting">Bağlanıyor…</span>
+    <span style="font-size:10px;color:var(--mt-text-dim);margin-left:auto;" id="act-unread-badge">0 <span data-i18n="activity.events">olay</span></span>
+  </div>
+
+  <!-- Filter Chips -->
+  <div class="mt-chips" id="act-filters">
+    <button class="mt-chip active act-filter-chip" data-filter="all" data-i18n="activity.filter_all">Tümü</button>
+    <button class="mt-chip act-filter-chip" data-filter="critical" data-i18n="activity.filter_critical">🔴 Kritik</button>
+    <button class="mt-chip act-filter-chip" data-filter="high" data-i18n="activity.filter_high">🟡 Yüksek</button>
+    <button class="mt-chip act-filter-chip" data-filter="volume_spike" data-i18n="activity.filter_volume">📊 Hacim</button>
+    <button class="mt-chip act-filter-chip" data-filter="momentum_shift" data-i18n="activity.filter_momentum">🚀 Momentum</button>
+    <button class="mt-chip act-filter-chip" data-filter="news_impact" data-i18n="activity.filter_news">📰 Haber</button>
+    <button class="mt-chip act-filter-chip" data-filter="strategy_activity" data-i18n="activity.filter_strategy">⚙️ Strateji</button>
+    <button class="mt-chip act-filter-chip" data-filter="social_trending" data-i18n="activity.filter_social">🔥 Sosyal</button>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="act-grid">
+    <!-- Event List -->
+    <div>
+      <div class="act-event-list" id="act-event-list">
+        <div class="mt-skeleton" style="height:60px;margin:12px 16px;"></div>
+        <div class="mt-skeleton" style="height:60px;margin:12px 16px;"></div>
+        <div class="mt-skeleton" style="height:60px;margin:12px 16px;"></div>
+      </div>
+      <div class="act-load-more">
+        <button id="act-load-more" data-i18n="activity.load_more">Daha Fazla ↓</button>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="act-sidebar">
+      <div class="act-side-card">
+        <div class="act-side-title">📋 <span data-i18n="activity.ai_summary">AI Özet</span></div>
+        <div class="act-summary-text" id="act-ai-summary" data-i18n="activity.ai_loading">Aktivite özeti yükleniyor…</div>
+      </div>
+      <div class="act-side-card">
+        <div class="act-side-title">🔥 <span data-i18n="activity.trending_symbols">Trend Semboller</span></div>
+        <div id="act-trending-list">
+          <div class="mt-skeleton" style="height:20px;margin:4px 0;"></div>
+          <div class="mt-skeleton" style="height:20px;margin:4px 0;"></div>
+        </div>
+      </div>
+      <div class="act-side-card">
+        <div class="act-side-title">📊 <span data-i18n="activity.type_distribution">Tür Dağılımı</span></div>
+        <div id="act-type-stats">
+          <div class="mt-skeleton" style="height:20px;margin:4px 0;"></div>
+        </div>
+      </div>
+      <div class="act-side-card">
+        <div class="act-side-title">⚡ <span data-i18n="activity.severity_levels">Önem Seviyesi</span></div>
+        <div id="act-severity-stats">
+          <div class="act-type-stat"><span class="act-type-stat-label"><span class="act-severity-dot critical"></span> <span data-i18n="activity.sev_critical">Kritik</span></span><span class="act-type-stat-count" id="sev-critical">0</span></div>
+          <div class="act-type-stat"><span class="act-type-stat-label"><span class="act-severity-dot high"></span> <span data-i18n="activity.sev_high">Yüksek</span></span><span class="act-type-stat-count" id="sev-high">0</span></div>
+          <div class="act-type-stat"><span class="act-type-stat-label"><span class="act-severity-dot medium"></span> <span data-i18n="activity.sev_medium">Orta</span></span><span class="act-type-stat-count" id="sev-medium">0</span></div>
+          <div class="act-type-stat"><span class="act-type-stat-label"><span class="act-severity-dot low"></span> <span data-i18n="activity.sev_low">Düşük</span></span><span class="act-type-stat-count" id="sev-low">0</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  /* ═══════════════════════════════════════════════════════
+     CONSTANTS
+     ═══════════════════════════════════════════════════════ */
+  var EVENT_META = {
+    volume_spike:{icon:'📊',label:'Volume Spike',color:'#3b82f6'},
+    volatility_spike:{icon:'⚡',label:'Volatility Spike',color:'#f59e0b'},
+    momentum_shift:{icon:'🚀',label:'Momentum Shift',color:'#10b981'},
+    sector_rotation:{icon:'🔄',label:'Sector Rotation',color:'#ec4899'},
+    news_impact:{icon:'📰',label:'News Impact',color:'#6366f1'},
+    macro_impact:{icon:'🌍',label:'Macro Impact',color:'#8b5cf6'},
+    asset_activity:{icon:'💹',label:'Asset Activity',color:'#14b8a6'},
+    mentor_post:{icon:'🎓',label:'Mentor Post',color:'#f97316'},
+    mentor_live_room:{icon:'🔴',label:'Mentor Live Room',color:'#ef4444'},
+    strategy_activity:{icon:'⚙️',label:'Strategy Activity',color:'#06b6d4'},
+    social_trending:{icon:'🔥',label:'Social Trending',color:'#eab308'},
+    portfolio_risk_change:{icon:'🛡️',label:'Portfolio Risk',color:'#dc2626'},
+    breakout:{icon:'📈',label:'Breakout',color:'#10b981'},
+    divergence:{icon:'📉',label:'Divergence',color:'#f59e0b'},
+    correlation:{icon:'🔗',label:'Correlation',color:'#8b5cf6'},
+    earnings:{icon:'💰',label:'Earnings',color:'#06b6d4'},
+    whale_alert:{icon:'🐋',label:'Whale Alert',color:'#3b82f6'},
+    sector_activity:{icon:'🏦',label:'Sector Activity',color:'#ec4899'}
+  };
+
+  var DEMO_EVENTS = [
+    {id:'demo-1',event_type:'volume_spike',symbol:'BTCUSDT',market:'crypto',title:'BTC Volume Spike Detected',summary:'24h volume increased 340% — whale accumulation pattern.',severity:'high',confidence:85,source:'scanner',created_at:new Date(Date.now()-60000*2).toISOString()},
+    {id:'demo-2',event_type:'momentum_shift',symbol:'ETHUSDT',market:'crypto',title:'ETH Momentum Shift',summary:'RSI crossed 70 with strong volume confirmation on the 4h chart.',severity:'medium',confidence:72,source:'scanner',created_at:new Date(Date.now()-60000*15).toISOString()},
+    {id:'demo-3',event_type:'breakout',symbol:'SOLUSDT',market:'crypto',title:'SOL Breakout Alert',summary:'Price broke above $180 resistance with high volume.',severity:'high',confidence:78,source:'scanner',created_at:new Date(Date.now()-60000*30).toISOString()},
+    {id:'demo-4',event_type:'whale_alert',symbol:'BTCUSDT',market:'crypto',title:'Large BTC Transfer',summary:'2,500 BTC moved from exchange to cold wallet.',severity:'high',confidence:90,source:'on_chain',created_at:new Date(Date.now()-60000*45).toISOString()},
+    {id:'demo-5',event_type:'news_impact',symbol:'NVDA',market:'stocks',title:'NVDA Earnings Beat',summary:'Revenue beat estimates by 4.2% — cloud growth strong.',severity:'medium',confidence:65,source:'news',created_at:new Date(Date.now()-60000*60).toISOString()},
+    {id:'demo-6',event_type:'sector_activity',symbol:'BIST_BANK',market:'bist',title:'BIST Banking Sector Activity',summary:'Banking index up 2.8% — sector rotation underway.',severity:'medium',confidence:60,source:'scanner',created_at:new Date(Date.now()-60000*90).toISOString()},
+    {id:'demo-7',event_type:'correlation',symbol:'XAUUSD',market:'commodities',title:'Gold-Dollar Correlation Break',summary:'Gold rising despite DXY strength — unusual pattern.',severity:'medium',confidence:68,source:'macro',created_at:new Date(Date.now()-60000*120).toISOString()}
+  ];
+
+  var allEvents = [];
+  var currentFilter = 'all';
+  var offset = 0;
+  var LIMIT = 20;
+  var isDemo = false;
+  var wsRef = null;
+
+  /* ═══════════════════════════════════════════════════════
+     HELPERS
+     ═══════════════════════════════════════════════════════ */
+  function esc(s) { var d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  function timeAgo(iso) {
+    if (!iso) return '';
+    var s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 0) s = 0;
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+
+  function confColor(c) {
+    if (c >= 80) return '#10b981';
+    if (c >= 60) return '#f59e0b';
+    return '#6b7280';
+  }
+
+  /** Normalize an event from any source (API, demo, WS) into consistent shape */
+  function normalizeEvent(ev) {
+    return {
+      id:          ev.id || ('evt-' + Math.random().toString(36).substr(2,8)),
+      event_type:  ev.event_type || ev.type || 'asset_activity',
+      symbol:      ev.symbol || '',
+      market:      ev.market || '',
+      title:       ev.title || 'Activity Event',
+      summary:     ev.summary || ev.description || '',
+      severity:    ev.severity || 'low',
+      confidence:  typeof ev.confidence === 'number' ? ev.confidence : 50,
+      source:      ev.source || '',
+      created_at:  ev.created_at || new Date().toISOString(),
+      demo:        ev.demo || ev.demo_event || false
+    };
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     STATUS INDICATOR
+     ═══════════════════════════════════════════════════════ */
+  function setStatus(state) {
+    var dot = document.querySelector('.act-severity-dot.critical.act-pulse');
+    var label = document.getElementById('act-live-status');
+    if (!dot || !label) return;
+
+    if (state === 'live') {
+      dot.style.background = '#10b981';
+      dot.style.boxShadow = '0 0 6px rgba(16,185,129,0.6)';
+      label.textContent = 'Live';
+      label.style.color = '#10b981';
+    } else if (state === 'demo') {
+      dot.style.background = '#f59e0b';
+      dot.style.boxShadow = '0 0 6px rgba(245,158,11,0.4)';
+      label.textContent = 'Demo Mode';
+      label.style.color = '#f59e0b';
+    } else if (state === 'reconnecting') {
+      dot.style.background = '#f59e0b';
+      dot.style.boxShadow = 'none';
+      label.textContent = 'Reconnecting…';
+      label.style.color = '#f59e0b';
+    } else if (state === 'error') {
+      dot.style.background = '#ef4444';
+      dot.style.boxShadow = '0 0 6px rgba(239,68,68,0.5)';
+      label.textContent = 'Error';
+      label.style.color = '#ef4444';
+    } else {
+      dot.style.background = '#ef4444';
+      dot.style.boxShadow = '0 0 6px rgba(239,68,68,0.5)';
+      label.textContent = 'Connecting…';
+      label.style.color = 'var(--text-secondary)';
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     RENDER
+     ═══════════════════════════════════════════════════════ */
+  function renderEventCard(ev) {
+    var meta = EVENT_META[ev.event_type] || {icon:'💹',label:ev.event_type||'Activity',color:'#6b7280'};
+    var badges = [];
+    if (ev.symbol) badges.push('<span class="act-event-badge act-badge-symbol">' + esc(ev.symbol) + '</span>');
+    if (ev.market) badges.push('<span class="act-event-badge act-badge-market">' + esc(ev.market) + '</span>');
+    if (typeof ev.confidence === 'number') badges.push('<span class="act-event-badge act-badge-confidence">' + ev.confidence + '%</span>');
+    if (ev.source) badges.push('<span class="act-event-badge act-badge-source">' + esc(ev.source.replace('_engine','')) + '</span>');
+    if (ev.demo) badges.push('<span class="act-event-badge" style="background:rgba(245,158,11,0.12);color:#fbbf24;">DEMO</span>');
+
+    var conf = typeof ev.confidence === 'number' ? ev.confidence : 50;
+    return '<div class="act-event-card severity-' + esc(ev.severity || 'low') + '" data-id="' + esc(ev.id) + '" data-type="' + esc(ev.event_type) + '" data-severity="' + esc(ev.severity) + '">'
+      + '<div class="act-event-icon-wrap">' + meta.icon + '</div>'
+      + '<div class="act-event-content">'
+        + '<div class="act-event-head">'
+          + '<span class="act-severity-dot ' + esc(ev.severity || 'low') + '"></span>'
+          + '<span class="act-event-type" style="color:' + meta.color + '">' + esc(meta.label) + '</span>'
+          + '<span class="act-event-time">' + timeAgo(ev.created_at) + '</span>'
+        + '</div>'
+        + '<div class="act-event-title">' + esc(ev.title) + '</div>'
+        + (ev.summary ? '<div class="act-event-summary">' + esc(ev.summary) + '</div>' : '')
+        + '<div class="act-event-meta">'
+          + badges.join('')
+          + '<div style="margin-left:auto;display:flex;align-items:center;gap:4px;">'
+            + '<div class="act-conf-bar"><div class="act-conf-fill" style="width:' + conf + '%;background:' + confColor(conf) + '"></div></div>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  }
+
+  function renderEvents(events) {
+    var container = document.getElementById('act-event-list');
+    if (!container) return;
+    if (!events || !events.length) {
+      container.innerHTML = '<div class="act-empty">No activity events match the current filter.</div>';
+      updateSeverityCounts([]);
+      return;
+    }
+    container.innerHTML = events.map(renderEventCard).join('');
+    updateSeverityCounts(events);
+  }
+
+  function updateSeverityCounts(events) {
+    var sevCounts = {critical:0,high:0,medium:0,low:0};
+    (events || allEvents).forEach(function(e) {
+      var s = e.severity || 'low';
+      sevCounts[s] = (sevCounts[s]||0) + 1;
+    });
+    ['critical','high','medium','low'].forEach(function(s) {
+      var el = document.getElementById('sev-' + s);
+      if (el) el.textContent = sevCounts[s];
+    });
+  }
+
+  function updateTypeStats(events) {
+    var typeStats = document.getElementById('act-type-stats');
+    if (!typeStats) return;
+    var byType = {};
+    (events || allEvents).forEach(function(e) {
+      var t = e.event_type || 'unknown';
+      byType[t] = (byType[t]||0) + 1;
+    });
+    var keys = Object.keys(byType).sort(function(a,b){ return byType[b]-byType[a]; });
+    if (!keys.length) {
+      typeStats.innerHTML = '<div style="font-size:12px;color:var(--text-tertiary);">No type data yet.</div>';
+      return;
+    }
+    typeStats.innerHTML = keys.map(function(k) {
+      var m = EVENT_META[k] || {icon:'💹',label:k};
+      return '<div class="act-type-stat"><span class="act-type-stat-label">' + m.icon + ' ' + esc(m.label) + '</span><span class="act-type-stat-count">' + byType[k] + '</span></div>';
+    }).join('');
+  }
+
+  function updateTrending(events) {
+    var container = document.getElementById('act-trending-list');
+    if (!container) return;
+    var symCount = {};
+    var symSeverity = {};
+    (events || allEvents).forEach(function(e) {
+      if (!e.symbol) return;
+      symCount[e.symbol] = (symCount[e.symbol]||0) + 1;
+      var cur = symSeverity[e.symbol] || 'low';
+      var rank = {critical:4,high:3,medium:2,low:1};
+      if ((rank[e.severity]||0) > (rank[cur]||0)) symSeverity[e.symbol] = e.severity;
+    });
+    var sorted = Object.keys(symCount).sort(function(a,b){ return symCount[b]-symCount[a]; }).slice(0,8);
+    if (!sorted.length) {
+      container.innerHTML = '<div style="font-size:12px;color:var(--text-tertiary);">No trending symbols yet.</div>';
+      return;
+    }
+    container.innerHTML = sorted.map(function(sym) {
+      return '<div class="act-trending-item"><span class="act-trending-sym">' + esc(sym) + '</span><span class="act-trending-count">' + symCount[sym] + ' events · ' + (symSeverity[sym]||'low') + '</span></div>';
+    }).join('');
+  }
+
+  function applyFilter() {
+    var filtered = allEvents;
+    if (currentFilter === 'critical') filtered = allEvents.filter(function(e){ return e.severity === 'critical'; });
+    else if (currentFilter === 'high') filtered = allEvents.filter(function(e){ return e.severity === 'high'; });
+    else if (currentFilter !== 'all') filtered = allEvents.filter(function(e){ return e.event_type === currentFilter; });
+    renderEvents(filtered);
+  }
+
+  function refreshSidebar() {
+    updateSeverityCounts(allEvents);
+    updateTypeStats(allEvents);
+    updateTrending(allEvents);
+    // Unread badge
+    var badge = document.getElementById('act-unread-badge');
+    if (badge) badge.textContent = allEvents.length + ' events';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     DEMO FALLBACK
+     ═══════════════════════════════════════════════════════ */
+  function injectDemoFallback() {
+    isDemo = true;
+    allEvents = DEMO_EVENTS.map(normalizeEvent);
+    offset = allEvents.length;
+    applyFilter();
+    refreshSidebar();
+    setStatus('demo');
+
+    var summaryEl = document.getElementById('act-ai-summary');
+    if (summaryEl) summaryEl.textContent = '7 demo events loaded. Live events will appear automatically when market activity is detected.';
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     REST SEED — Initial Data Load
+     ═══════════════════════════════════════════════════════ */
+  function loadInitialData() {
+    var eventsLoaded = false;
+
+    // 1) Load main events
+    fetch('/api/activity?limit=' + LIMIT + '&hours=24')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok && d.data && d.data.length) {
+          allEvents = d.data.map(normalizeEvent);
+          offset = allEvents.length;
+          eventsLoaded = true;
+          isDemo = false;
+          applyFilter();
+          refreshSidebar();
+        } else {
+          // Try demo fallback from API
+          return fetch('/api/demo/activity?limit=10').then(function(r){ return r.json(); }).then(function(dd){
+            if (dd.ok && dd.events && dd.events.length) {
+              allEvents = dd.events.map(normalizeEvent);
+            } else {
+              allEvents = DEMO_EVENTS.map(normalizeEvent);
+            }
+            isDemo = true;
+            offset = allEvents.length;
+            applyFilter();
+            refreshSidebar();
+            if (!wsRef || wsRef.readyState !== WebSocket.OPEN) setStatus('demo');
+          });
+        }
+      })
+      .catch(function(){
+        // REST failed entirely — use inline demo
+        if (!allEvents.length) {
+          injectDemoFallback();
+        }
+      });
+
+    // 2) Load trending (REST)
+    fetch('/api/activity/trending?hours=12&limit=8')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var container = document.getElementById('act-trending-list');
+        if (!container) return;
+        if (d.ok && d.data && d.data.length) {
+          container.innerHTML = d.data.map(function(t) {
+            return '<div class="act-trending-item"><span class="act-trending-sym">' + esc(t.symbol) + '</span><span class="act-trending-count">' + t.event_count + ' events · ' + (t.max_severity||'low') + '</span></div>';
+          }).join('');
+        }
+        // If empty, updateTrending from allEvents will handle it
+      })
+      .catch(function(){});
+
+    // 3) Load AI summary
+    fetch('/api/activity/summary?hours=6')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        var el = document.getElementById('act-ai-summary');
+        if (!el) return;
+        if (d.ok && d.data) {
+          el.textContent = d.data.summary || 'No significant market activity detected recently.';
+          // Also populate type stats from summary if available
+          if (d.data.by_type) {
+            var typeStats = document.getElementById('act-type-stats');
+            if (typeStats) {
+              typeStats.innerHTML = Object.keys(d.data.by_type).map(function(k) {
+                var m = EVENT_META[k] || {icon:'💹',label:k};
+                return '<div class="act-type-stat"><span class="act-type-stat-label">' + m.icon + ' ' + esc(m.label) + '</span><span class="act-type-stat-count">' + d.data.by_type[k] + '</span></div>';
+              }).join('');
+            }
+          }
+        } else {
+          el.textContent = 'No significant market activity detected recently.';
+        }
+      })
+      .catch(function(){
+        var el = document.getElementById('act-ai-summary');
+        if (el) el.textContent = 'Summary unavailable. Events are shown in the feed.';
+      });
+
+    // 4) Load unread count
+    fetch('/api/activity/unread-count')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok) {
+          var badge = document.getElementById('act-unread-badge');
+          if (badge) badge.textContent = d.unread + ' unread';
+        }
+      })
+      .catch(function(){});
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     LOAD MORE
+     ═══════════════════════════════════════════════════════ */
+  function loadMore() {
+    fetch('/api/activity?limit=' + LIMIT + '&offset=' + offset + '&hours=168')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok && d.data && d.data.length) {
+          var newEvents = d.data.map(normalizeEvent);
+          allEvents = allEvents.concat(newEvents);
+          offset = allEvents.length;
+          applyFilter();
+          refreshSidebar();
+        }
+      })
+      .catch(function(){});
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     WEBSOCKET — Live Updates
+     ═══════════════════════════════════════════════════════ */
+  function prependActivity(ev) {
+    var normalized = normalizeEvent(ev);
+
+    // If we were in demo mode and a real event arrives, clear demo events
+    if (isDemo && !normalized.demo) {
+      allEvents = allEvents.filter(function(e){ return !e.demo; });
+      isDemo = false;
+    }
+
+    // Deduplicate
+    var exists = allEvents.some(function(e){ return e.id === normalized.id; });
+    if (!exists) {
+      allEvents.unshift(normalized);
+      // Keep max 200
+      if (allEvents.length > 200) allEvents = allEvents.slice(0, 200);
+    }
+
+    applyFilter();
+    refreshSidebar();
+
+    // Toast for critical events
+    if (normalized.severity === 'critical' && window.ProToast) {
+      var m = EVENT_META[normalized.event_type] || {};
+      window.ProToast.show((m.icon||'⚡') + ' ' + normalized.title, 'warning');
+    }
+  }
+
+  function connectWS() {
+    if (wsRef && wsRef.readyState <= WebSocket.OPEN) return;
+    var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    try {
+      wsRef = new WebSocket(proto + '//' + location.host + '/ws/activity');
+    } catch(e) {
+      if (isDemo || !allEvents.length) {
+        injectDemoFallback();
+      } else {
+        setStatus('error');
+      }
+      setTimeout(connectWS, 10000);
+      return;
+    }
+
+    wsRef.onopen = function() {
+      wsRef.send(JSON.stringify({action:'subscribe'}));
+      setStatus('live');
+    };
+
+    wsRef.onmessage = function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        if (msg.type === 'activity_event' && msg.event) {
+          prependActivity(msg.event);
+        }
+      } catch(err) {}
+    };
+
+    wsRef.onclose = function() {
+      if (isDemo || !allEvents.length) {
+        setStatus('demo');
+      } else {
+        setStatus('reconnecting');
+      }
+      setTimeout(connectWS, 5000);
+    };
+
+    wsRef.onerror = function() {
+      // onclose will fire after this
+    };
+
+    // Keepalive ping
+    setInterval(function() {
+      if (wsRef && wsRef.readyState === WebSocket.OPEN) {
+        wsRef.send(JSON.stringify({action:'ping'}));
+      }
+    }, 25000);
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     FILTER CHIPS
+     ═══════════════════════════════════════════════════════ */
+  var filterContainer = document.getElementById('act-filters');
+  if (filterContainer) {
+    filterContainer.addEventListener('click', function(e) {
+      var chip = e.target.closest('.mt-chip');
+      if (!chip) return;
+      document.querySelectorAll('#act-filters .mt-chip').forEach(function(c){ c.classList.remove('active'); });
+      chip.classList.add('active');
+      currentFilter = chip.dataset.filter;
+      applyFilter();
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     LOAD MORE BUTTON
+     ═══════════════════════════════════════════════════════ */
+  var loadMoreBtn = document.getElementById('act-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function() { loadMore(); });
+  }
+
+  /* ═══════════════════════════════════════════════════════
+     BOOT
+     ═══════════════════════════════════════════════════════ */
+  setStatus('connecting');
+  loadInitialData();
+  connectWS();
+
+  // Periodic refresh every 2 minutes
+  setInterval(function() {
+    fetch('/api/activity?limit=' + LIMIT + '&hours=24')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok && d.data && d.data.length) {
+          // Merge new events
+          var existingIds = {};
+          allEvents.forEach(function(e){ existingIds[e.id] = true; });
+          d.data.forEach(function(e){
+            var n = normalizeEvent(e);
+            if (!existingIds[n.id]) {
+              allEvents.unshift(n);
+              existingIds[n.id] = true;
+            }
+          });
+          if (!isDemo) { applyFilter(); refreshSidebar(); }
+        }
+      }).catch(function(){});
+
+    fetch('/api/activity/trending?hours=12&limit=8')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok && d.data && d.data.length) {
+          var container = document.getElementById('act-trending-list');
+          if (container) {
+            container.innerHTML = d.data.map(function(t) {
+              return '<div class="act-trending-item"><span class="act-trending-sym">' + esc(t.symbol) + '</span><span class="act-trending-count">' + t.event_count + ' events · ' + (t.max_severity||'low') + '</span></div>';
+            }).join('');
+          }
+        }
+      }).catch(function(){});
+
+    fetch('/api/activity/summary?hours=6')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if (d.ok && d.data) {
+          var el = document.getElementById('act-ai-summary');
+          if (el) el.textContent = d.data.summary || 'No significant activity.';
+        }
+      }).catch(function(){});
+  }, 120000);
+
+})();
+</script>
+{% endblock %}

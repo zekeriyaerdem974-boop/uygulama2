@@ -1,0 +1,55 @@
+"""BullWatch Unified App Package.
+
+Provides ``create_app()`` factory and ``start_background_jobs()``
+entry points.
+
+FAZ 1 — Safe architectural refactor:
+  * Cache extracted to ``app.cache``
+  * Service singletons live in ``app.extensions``
+  * Legacy monolith is still the route/logic owner
+  * The factory wraps the monolith's Flask app, applies centralized
+    config, and ensures extension singletons are discoverable.
+"""
+from __future__ import annotations
+
+
+def create_app(config_object=None):
+    """Application factory.
+
+    1. Imports ``legacy_monolith`` (triggers route registration).
+    2. Applies centralized ``Config`` from ``app.config``.
+    3. Ensures extension singletons are on ``app.extensions``.
+
+    Args:
+        config_object: Optional config class/object to override defaults.
+
+    Returns:
+        The configured Flask application instance.
+    """
+    from app.config import Config
+    from app.extensions import init_extensions
+
+    # Importing the monolith triggers Flask app creation,
+    # route registration, CORS, Sock, and blueprint mounting.
+    import legacy_monolith
+
+    flask_app = legacy_monolith.app
+
+    # Apply centralized configuration
+    flask_app.config.from_object(config_object or Config)
+
+    # Ensure extension singletons are discoverable by blueprints
+    init_extensions(flask_app)
+
+    return flask_app
+
+
+def start_background_jobs():
+    """Start all background refresh loops (idempotent).
+
+    Delegates to the legacy monolith's ``start_background_jobs()``
+    which uses JobManager for thread lifecycle.
+    """
+    import legacy_monolith
+
+    legacy_monolith.start_background_jobs()

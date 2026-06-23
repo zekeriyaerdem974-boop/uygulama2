@@ -1,0 +1,537 @@
+# -*- coding: utf-8 -*-
+import os, json, time, math, requests, threading
+import numpy as np
+import pandas as pd
+from datetime import datetime, timedelta, timezone
+from dateutil import tz
+from ipaddress import ip_address, ip_network
+from pathlib import Path
+from typing import List, Dict
+from flask import Flask, render_template, jsonify, request, send_file, abort, redirect
+
+from app.cache import cache_get, cache_set, cache_get_or_set, cache_keys, utcnow
+from app.extensions import job_manager, market_data
+from blueprints.market import bp as market_bp
+from blueprints.indicators import bp as indicators_bp
+from blueprints.orderflow import bp as orderflow_bp
+from blueprints.liquidation import bp as liquidation_bp
+from blueprints.alpha import bp as alpha_bp
+from flask_cors import CORS
+from flask_sock import Sock
+import websocket
+
+# FAZ 3 — core modules
+from app.core.ta import (
+    simple_sma, ema_last, atr_last, vwap_last,
+    compute_rsi, compute_macd, compute_btc_indicators_from_df,
+)
+from app.core.binance_client import (
+    binance_klines, fetch_klines_df, _fetch_exchange_info,
+    get_binance_usdt_map, fapi_open_interest, fapi_open_interest_hist,
+    _fetch_fng_raw, fng_latest, blockchain_hashrate,
+    defillama_stablecoins, coinglass_coinbase_premium,
+    pump_candidates, coingecko_top_by_marketcap,
+)
+from app.core.etf_tracker import fetch_dynamic_etf_events
+from app.core.ollama_client import ollama_generate
+from app.core.thresholds import DEFAULT_THRESHOLDS, THRESHOLDS_KEY, get_thresholds, update_thresholds
+
+# FAZ 4 — dashboard blueprint
+from app.blueprints.dashboard import dashboard_bp
+
+# FAZ 5 — signals blueprint
+from app.blueprints.signals import signals_bp
+
+# FAZ 6 — chat blueprint
+from app.blueprints.chat import chat_bp
+from app.blueprints.chat.context import (
+    build_chat_context, warm_chat_context_async,
+    CHAT_REFRESH_SEC,
+)
+
+
+# -------------------- App & Config --------------------
+app = Flask(__name__)
+
+# Singletons imported from app.extensions
+# Registration on app.extensions is handled by init_extensions() in create_app()
+
+# Register unified API blueprints (new contract)
+app.register_blueprint(market_bp)
+app.register_blueprint(indicators_bp)
+app.register_blueprint(orderflow_bp)
+app.register_blueprint(liquidation_bp)
+app.register_blueprint(alpha_bp)
+app.register_blueprint(dashboard_bp)
+app.register_blueprint(signals_bp)
+app.register_blueprint(chat_bp)
+
+
+# --- Compatibility redirects (legacy mounted paths) ---
+@app.route("/orderflow")
+@app.route("/orderflow/")
+def legacy_orderflow_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/likidasyon")
+@app.route("/likidasyon/")
+def legacy_likidasyon_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/alpha")
+@app.route("/alpha/")
+def legacy_alpha_root():
+    return redirect("/trade", code=302)
+
+
+@app.route("/orderflow/api/<path:subpath>")
+def legacy_orderflow_api(subpath: str):
+    return redirect(f"/api/orderflow/{subpath}", code=302)
+
+
+@app.route("/likidasyon/api/<path:subpath>")
+def legacy_liquidation_api(subpath: str):
+    return redirect(f"/api/liquidation/{subpath}", code=302)
+
+
+@app.route("/alpha/api/<path:subpath>")
+def legacy_alpha_api(subpath: str):
+    return redirect(f"/api/alpha/{subpath}", code=302)
+CORS(app)
+sock = Sock(app)
+
+# API constants moved to app.core.binance_client / etf_tracker / ollama_client
+
+TZ = tz.gettz("Europe/Berlin")
+
+# FAZ 6 — CHAT_REFRESH_SEC, warm_chat_context_async, build_chat_context
+# moved to app.blueprints.chat.context
+# top500 4h dataset yenileme periyodu
+TOP4H_REFRESH_SEC = int(os.getenv("TOP4H_REFRESH_SEC", "900"))  # 15 dk
+TOP4H_MAX_SYMBOLS = int(os.getenv("TOP4H_MAX_SYMBOLS", "500"))
+TOP4H_KLINES = int(os.getenv("TOP4H_KLINES", "500"))
+TOP4H_INTERVAL = "4h"
+
+# -------------------- Security toggles --------------------
+_PRIVATE_NETS = (
+    ip_network("127.0.0.0/8"),
+    ip_network("10.0.0.0/8"),
+    ip_network("172.16.0.0/12"),
+    ip_network("192.168.0.0/16"),
+)
+
+
+def _get_client_ip(req) -> str:
+    # If behind a reverse proxy, the first X-Forwarded-For entry is the client.
+    xf = (req.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    return xf or (req.remote_addr or "")
+
+
+def _is_private_client(req) -> bool:
+    ip_str = _get_client_ip(req)
+    try:
+        addr = ip_address(ip_str)
+    except Exception:
+        return False
+    return any(addr in net for net in _PRIVATE_NETS)
+
+
+def _apk_download_enabled(req) -> bool:
+    return os.getenv("BULLWATCH_ENABLE_APK", "0") == "1" and _is_private_client(req)
+
+# Background jobs guard
+_BG_STARTED = False
+_BG_LOCK = threading.Lock()
+
+# FAZ 4 — Threshold management moved to app.core.thresholds
+# DEFAULT_THRESHOLDS, THRESHOLDS_KEY, get_thresholds(), update_thresholds()
+# are now imported at the top of this file.
+
+# -------------------- Utilities --------------------
+# simple_sma → app.core.ta (FAZ 3)
+
+def safe_float(x):
+    try:
+        return float(x)
+    except Exception:
+        return None
+
+
+# -------------------- Server-side Binance WS (for mobile/light clients) --------------------
+BINANCE_TICKER_STREAM = "wss://stream.binance.com:9443/ws/!ticker@arr"
+TICKERS_KEY = "binance_top_tickers_v1"
+
+def binance_ticker_ws_loop():
+    """Connect to Binance ticker stream and cache top USDT tickers on server."""
+    last_emit = 0
+
+    def on_message(wsapp, message):
+        nonlocal last_emit
+        now = time.time()
+        if now - last_emit < 1.0:
+            return
+        last_emit = now
+        try:
+            data = json.loads(message)
+            if not isinstance(data, list):
+                return
+            rows = []
+            for x in data:
+                s = x.get('s')
+                if not s or not str(s).endswith('USDT'):
+                    continue
+                try:
+                    chg = float(x.get('P', 0.0))
+                    qv = float(x.get('q', 0.0))
+                    last = float(x.get('c', 0.0))
+                except Exception:
+                    continue
+                rows.append({"symbol": s, "change24_pct": chg, "quoteVolume": qv, "last": last})
+
+            rows.sort(key=lambda r: -r.get('quoteVolume', 0.0))
+            cache_set(TICKERS_KEY, rows[:40])
+        except Exception:
+            return
+
+    def on_error(wsapp, err):
+        print('[binance-ws] error:', err)
+
+    def on_close(wsapp, status_code, msg):
+        print('[binance-ws] closed:', status_code, msg)
+
+    while True:
+        try:
+            wsapp = websocket.WebSocketApp(
+                BINANCE_TICKER_STREAM,
+                on_message=on_message,
+                on_error=on_error,
+                on_close=on_close,
+            )
+            wsapp.run_forever(ping_interval=20, ping_timeout=10)
+        except Exception as e:
+            print('[binance-ws] loop error:', e)
+        time.sleep(2)
+
+
+@sock.route('/ws/stream')
+def ws_stream(ws):
+    """Mobile clients: stream cached data (server already pulls from exchanges)."""
+    while True:
+        payload = {
+            "generated_at": utcnow().isoformat(),
+            "tickers": cache_get(TICKERS_KEY, ttl=5) or [],
+        }
+        ws.send(json.dumps({"ok": True, "data": payload}, ensure_ascii=False))
+        time.sleep(1)
+
+# -------------------- External APIs --------------------
+# binance_klines → app.core.binance_client (FAZ 3)
+
+# _fetch_fng_raw, fng_latest → app.core.binance_client (FAZ 3)
+
+# fapi_open_interest, fapi_open_interest_hist, blockchain_hashrate,
+# defillama_stablecoins, coinglass_coinbase_premium → app.core.binance_client (FAZ 3)
+
+# -------------------- Federal Register (ETF Events) → app.core.etf_tracker (FAZ 3) --------------------
+# -------------------- Pump Candidates → app.core.binance_client (FAZ 3) --------------------
+# -------------------- Bull Estimate --------------------
+def heuristic_bull_estimate(btc_df, fng, etf_events):
+    if btc_df is None or btc_df.empty:
+        return {"bull_start_estimate": None, "bull_end_estimate": None,
+                "phase_label": "unknown", "score": 0, "explain": ["Veri yok"]}
+    closes = btc_df["close"].tolist()
+    sma200 = simple_sma(closes, 200)
+    sma50 = simple_sma(closes, 50)
+    sma20 = simple_sma(closes, 20)
+    last = closes[-1]
+    checks, score = [], 0
+    cond1 = last > (sma200 or last+1); checks.append(("BTC 200D SMA üstünde", bool(cond1))); score += 1 if cond1 else 0
+    cond2 = (sma50 or 0) > (sma200 or 1e12); checks.append(("50D > 200D", bool(cond2))); score += 1 if cond2 else 0
+    cond3 = (sma20 or 0) > (sma50 or 1e12); checks.append(("20D > 50D", bool(cond3))); score += 1 if cond3 else 0
+    ret90 = (closes[-1] / closes[-90] - 1.0) if len(closes) >= 90 else 0.0
+    cond4 = ret90 > 0.20; checks.append((f"Son 90g BTC getirisi {ret90:.1%}", bool(cond4))); score += 1 if cond4 else 0
+    fng_val = fng.get("value"); cond5 = (fng_val or 0) >= 55; checks.append((f"FNG ≥ 55 (şu an: {fng_val})", bool(cond5))); score += 1 if cond5 else 0
+    soon_cut = utcnow() + timedelta(days=60)
+    near = []
+    for e in etf_events:
+        dt = e.get("next_deadline_est") or e.get("date")
+        if not dt:
+            continue
+        try:
+            d = datetime.fromisoformat(dt) if "T" in dt else datetime.fromisoformat(dt+"T00:00:00")
+            d = d.replace(tzinfo=timezone.utc)
+            if d <= soon_cut and e.get("status") != "none":
+                near.append(e)
+        except Exception:
+            pass
+    cond6 = len(near) > 0; checks.append((f"ETF kritik pencereler (≤60g): {len(near)}", bool(cond6))); score += 1 if cond6 else 0
+    if score <= 1: phase = "Dip Toplama"
+    elif score <= 3: phase = "İnançlı Yükseliş"
+    elif score in (4,5): phase = "Genişleme"
+    else: phase = "FOMO/Zirve Yakını"
+    now = utcnow()
+    start_in_days = max(0, 120 - score*15)
+    bull_start_est = now + timedelta(days=start_in_days)
+    bull_end_est = now + timedelta(days=480 + (6-score)*15)
+    explain = [f"{l}: {'✓' if ok else '×'}" for (l,ok) in checks]
+    explain.append("Halving sonrası zirve penceresi ~ 2025-04 – 2025-10 (tarihsel bağlam)")
+    return {"bull_start_estimate": bull_start_est.isoformat(),
+            "bull_end_estimate": bull_end_est.isoformat(),
+            "phase_label": phase, "score": int(score),
+            "checks": checks, "explain": explain}
+
+# compute_btc_indicators_from_df → app.core.ta (FAZ 3)
+# ema_last, atr_last, vwap_last, fetch_klines_df → app.core.ta / binance_client (FAZ 3)
+
+# FAZ 5 — evaluate_entry_signal moved to app.blueprints.signals.engine
+
+# FAZ 6 — build_chat_context moved to app.blueprints.chat.context
+
+# -------------------- Background Refreshers --------------------
+def refresh_loop():
+    """60 sn'de bir sohbet için gerekli bütün verileri tazeler ve chat_context'i yazar."""
+    while True:
+        try:
+            # Kline güncelle
+            df = binance_klines("BTCUSDT", "1d", 400)
+            cache_set("btc_1d_df", df)
+
+            # FNG kendi cache'ini tazeler
+            _ = fng_latest()
+
+            # Pump adayları
+            pumps = pump_candidates(limit_pairs=40)
+            cache_set("pump_candidates_v1", pumps)
+
+            # ETF events
+            etf = fetch_dynamic_etf_events()
+            cache_set("etf_events", etf)
+
+            # Chat context hazırla
+            ctx = build_chat_context()
+            cache_set("chat_context", ctx)
+        except Exception as e:
+            print("[refresh_loop] error:", e)
+        time.sleep(CHAT_REFRESH_SEC)
+
+# ---- Top 500 Market Cap -> Binance 4h/500 klines dataset ----
+# _fetch_exchange_info, get_binance_usdt_map, coingecko_top_by_marketcap → app.core.binance_client (FAZ 3)
+
+def fetch_4h_klines_for_symbols(symbols: List[str], limit_candles=500):
+    res = {}
+    for i, sb in enumerate(symbols):
+        try:
+            df = binance_klines(sb, interval=TOP4H_INTERVAL, limit=limit_candles)
+            rows = []
+            for _, r in df.iterrows():
+                rows.append([
+                    int(r["open_time"]),
+                    float(r["open"]),
+                    float(r["high"]),
+                    float(r["low"]),
+                    float(r["close"]),
+                    float(r["volume"]),
+                    int(r["close_time"]),
+                ])
+            res[sb] = rows
+        except Exception:
+            continue
+        if (i + 1) % 10 == 0:
+            time.sleep(0.1)
+    return res
+
+def build_top_coins_4h_dataset(max_symbols=TOP4H_MAX_SYMBOLS, klines=TOP4H_KLINES):
+    cg_list = coingecko_top_by_marketcap(limit=max_symbols)
+    usdt_map = get_binance_usdt_map()
+
+    mapped = []
+    for c in cg_list:
+        base_sym = (c.get("symbol") or "").upper()
+        name = c.get("name")
+        rank = c.get("market_cap_rank")
+        cg_id = c.get("id")
+        mcap = c.get("market_cap")
+        px = c.get("current_price")
+        ch24 = (c.get("price_change_percentage_24h") or 0)
+
+        binance_symbol = usdt_map.get(base_sym)
+        if not binance_symbol:
+            aliases = {"WBTC": "BTC", "WETH": "ETH"}
+            alt = aliases.get(base_sym)
+            if alt and alt in usdt_map:
+                binance_symbol = usdt_map[alt]
+
+        if binance_symbol:
+            mapped.append({
+                "cg_id": cg_id,
+                "name": name,
+                "ticker": base_sym,
+                "rank": rank,
+                "market_cap": mcap,
+                "price": px,
+                "change24_pct": ch24,
+                "binance_symbol": binance_symbol
+            })
+
+    symbols = [m["binance_symbol"] for m in mapped]
+    kmap = fetch_4h_klines_for_symbols(symbols, limit_candles=klines)
+
+    final = []
+    for m in mapped:
+        sb = m["binance_symbol"]
+        if sb in kmap:
+            final.append({
+                **m,
+                "klines_4h": kmap[sb]
+            })
+
+    payload = {
+        "generated_at": utcnow().isoformat(),
+        "interval": TOP4H_INTERVAL,
+        "candles": klines,
+        "total_requested": len(mapped),
+        "total_with_klines": len(final),
+        "rows": final
+    }
+    return payload
+
+def refresh_top4h_loop():
+    """15 dk'da bir, top-500 market cap -> 4h/500 klines dataset hazırlar."""
+    while True:
+        try:
+            dataset = build_top_coins_4h_dataset(
+                max_symbols=TOP4H_MAX_SYMBOLS,
+                klines=TOP4H_KLINES
+            )
+            cache_set("top_coins_4h_dataset", dataset)
+        except Exception as e:
+            print("[refresh_top4h_loop] error:", e)
+        time.sleep(TOP4H_REFRESH_SEC)
+
+# ollama_generate → app.core.ollama_client (FAZ 3)
+
+# -------------------- Flask Routes --------------------
+
+@app.route("/apk/BullWatch.apk")
+def apk_download():
+    # APK distribution is OFF by default.
+    # Enable only for trusted/private network clients with: BULLWATCH_ENABLE_APK=1
+    if not _apk_download_enabled(request):
+        abort(404)
+
+    apk_path = Path(__file__).resolve().parent / "private_downloads" / "BullWatch.apk"
+    if not apk_path.exists():
+        abort(404)
+
+    return send_file(
+        apk_path,
+        as_attachment=True,
+        download_name="BullWatch.apk",
+        mimetype="application/vnd.android.package-archive",
+        max_age=0,
+    )
+
+def start_background_jobs() -> None:
+    """Start BullWatch background refresh loops (idempotent).
+
+    Needed when running behind combined_server.py (imported as module).
+    """
+    global _BG_STARTED
+    with _BG_LOCK:
+        if _BG_STARTED:
+            return
+        _BG_STARTED = True
+
+    try:
+        cache_set(THRESHOLDS_KEY, DEFAULT_THRESHOLDS.copy())
+    except Exception:
+        pass
+
+    try:
+        cache_set("chat_context", {"generated_at": utcnow().isoformat(), "status": "warming_up"})
+        warm_chat_context_async()
+    except Exception:
+        pass
+
+    # Register jobs (once) then start via JobManager
+    try:
+        job_manager.register_thread("bullwatch:ticker_ws", binance_ticker_ws_loop)
+        job_manager.register_thread("bullwatch:refresh", refresh_loop)
+        job_manager.register_thread("bullwatch:refresh_top4h", refresh_top4h_loop)
+    except Exception:
+        # ignore duplicate registration or unexpected errors
+        pass
+
+    job_manager.start_all()
+
+@app.route("/api/etf_events")
+def api_etf_events():
+    try:
+        return jsonify({"ok":True,"data":fetch_dynamic_etf_events()})
+    except Exception as e:
+        return jsonify({"ok":False,"error":str(e)}),500
+
+
+@app.route("/api/top_coins_4h")
+def api_top_coins_4h():
+    try:
+        limit = int(request.args.get("limit", "100"))  # 500 da verilebilir
+        compact = request.args.get("compact", "false").lower() == "true"
+        ds = cache_get_or_set(
+            "top_coins_4h_dataset", TOP4H_REFRESH_SEC + 30,
+            build_top_coins_4h_dataset,
+            max_symbols=TOP4H_MAX_SYMBOLS,
+            klines=TOP4H_KLINES,
+        )
+
+        rows = ds.get("rows", [])[:limit]
+        if compact:
+            comp = []
+            for r in rows:
+                comp.append([
+                    r.get("rank"),
+                    r.get("ticker"),
+                    r.get("binance_symbol"),
+                    safe_float(r.get("market_cap")),
+                    safe_float(r.get("price")),
+                    safe_float(r.get("change24_pct")),
+                    r.get("klines_4h"),
+                ])
+            return jsonify({"ok": True, "data": {
+                "generated_at": ds.get("generated_at"),
+                "interval": ds.get("interval"),
+                "candles": ds.get("candles"),
+                "count": len(comp),
+                "rows": comp
+            }})
+        else:
+            return jsonify({"ok": True, "data": {
+                "generated_at": ds.get("generated_at"),
+                "interval": ds.get("interval"),
+                "candles": ds.get("candles"),
+                "count": len(rows),
+                "rows": rows
+            }})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# FAZ 6 — /api/chat route moved to app.blueprints.chat.routes
+
+# -------------------- Main --------------------
+if __name__ == "__main__":
+    # İlk thresholds yükle
+    cache_set(THRESHOLDS_KEY, DEFAULT_THRESHOLDS.copy())
+
+    # chat_context'i startup'ta senkron çekme (network/timeout yüzünden açılışı kilitlemesin)
+    cache_set("chat_context", {"generated_at": utcnow().isoformat(), "status": "warming_up"})
+    warm_chat_context_async()
+
+    # Background thread'leri başlat
+    threading.Thread(target=binance_ticker_ws_loop, daemon=True).start()
+    threading.Thread(target=refresh_loop, daemon=True).start()
+    threading.Thread(target=refresh_top4h_loop, daemon=True).start()
+
+    debug = os.getenv("BULLWATCH_DEBUG", "0") == "1"
+    app.run(debug=debug, use_reloader=False, port=34000, host="0.0.0.0")

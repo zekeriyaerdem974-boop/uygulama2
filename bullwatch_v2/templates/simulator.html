@@ -1,0 +1,254 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}{{ t('sidebar.simulator', 'Simülatör') }} • ZKR Analiz Pro{% endblock %}
+{% block page_title %}{{ t('sidebar.simulator', 'Simülatör') }}{% endblock %}
+{% block topbar_title %}<span data-i18n="sidebar.simulator">Paper Trading</span>{% endblock %}
+{% block body_class %}simulator-page-body{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/simulator.css') }}">
+{% endblock %}
+
+{% block header_actions %}
+<button id="sim-refresh-btn" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Yenile" title="Pozisyonları güncelle">
+  <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+</button>
+<button id="sim-reset-btn" class="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors" aria-label="Sıfırla" title="Hesabı sıfırla">
+  <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="sim-container">
+
+  <!-- ═══════════════ DISCLAIMER ═══════════════ -->
+  <div class="sim-disclaimer">
+    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+    <span data-i18n="simulator.disclaimer">Paper Trading — Gerçek para kullanılmaz. Yatırım tavsiyesi değildir.</span>
+    <span class="sim-demo-badge" data-i18n="simulator.demo">DEMO</span>
+  </div>
+
+  <!-- ═══════════════ ACCOUNT BAR ═══════════════ -->
+  <section class="sim-account-bar">
+    <div class="sim-acc-item">
+      <span class="sim-acc-label" data-i18n="simulator.balance">Bakiye</span>
+      <span class="sim-acc-value" id="sim-balance">$100,000.00</span>
+    </div>
+    <div class="sim-acc-divider"></div>
+    <div class="sim-acc-item">
+      <span class="sim-acc-label" data-i18n="simulator.equity">Equity</span>
+      <span class="sim-acc-value" id="sim-equity">$100,000.00</span>
+    </div>
+    <div class="sim-acc-divider"></div>
+    <div class="sim-acc-item">
+      <span class="sim-acc-label" data-i18n="simulator.available">Kullanılabilir</span>
+      <span class="sim-acc-value" id="sim-available">$100,000.00</span>
+    </div>
+    <div class="sim-acc-divider"></div>
+    <div class="sim-acc-item">
+      <span class="sim-acc-label" data-i18n="simulator.unrealized_pnl">Gerçekleşmemiş PnL</span>
+      <span class="sim-acc-value" id="sim-unrealized-pnl">$0.00</span>
+    </div>
+    <div class="sim-acc-divider"></div>
+    <div class="sim-acc-item">
+      <span class="sim-acc-label" data-i18n="simulator.realized_pnl">Gerçekleşen PnL</span>
+      <span class="sim-acc-value" id="sim-realized-pnl">$0.00</span>
+    </div>
+  </section>
+
+  <!-- ═══════════════ MAIN TRADING AREA ═══════════════ -->
+  <div class="sim-trading-grid">
+
+    <!-- LEFT: Order Book -->
+    <section class="sim-orderbook-panel">
+      <div class="sim-panel-header">
+        <span class="sim-panel-title" data-i18n="simulator.order_book">Emir Defteri</span>
+        <span class="sim-panel-badge" id="sim-ob-spread">Spread: —</span>
+      </div>
+      <div class="sim-ob-header-row">
+        <span>Fiyat</span>
+        <span>Miktar</span>
+        <span>Toplam</span>
+      </div>
+      <div class="sim-ob-asks" id="sim-ob-asks"></div>
+      <div class="sim-ob-mid" id="sim-ob-mid">
+        <span class="sim-ob-mid-price" id="sim-mid-price">—</span>
+        <span class="sim-ob-mid-label">Orta Fiyat</span>
+      </div>
+      <div class="sim-ob-bids" id="sim-ob-bids"></div>
+    </section>
+
+    <!-- RIGHT: Trade Panel -->
+    <section class="sim-trade-panel">
+      <div class="sim-panel-header">
+        <span class="sim-panel-title" data-i18n="simulator.place_order">Emir Ver</span>
+      </div>
+
+      <!-- Symbol + Market Row -->
+      <div class="sim-tp-row">
+        <div class="sim-tp-field sim-tp-field-grow">
+          <label class="sim-tp-label">Sembol</label>
+          <input type="text" id="sim-symbol" class="sim-tp-input" placeholder="BTCUSDT" value="BTCUSDT" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="sim-tp-field">
+          <label class="sim-tp-label">Pazar</label>
+          <select id="sim-market" class="sim-tp-select">
+            <option value="crypto">Kripto</option>
+            <option value="stocks">Hisse</option>
+            <option value="bist">BIST</option>
+            <option value="forex">Forex</option>
+            <option value="commodities">Emtia</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live Price -->
+      <div class="sim-tp-price-display">
+        <span class="sim-tp-price-label">Canlı Fiyat</span>
+        <span class="sim-tp-price-value{% if initial_price %} loaded{% endif %}" id="sim-live-price">{% if initial_price %}{{ "${:,.2f}".format(initial_price) }}{% else %}—{% endif %}</span>
+      </div>
+
+      <!-- Buy / Sell Toggle -->
+      <div class="sim-side-toggle">
+        <button class="sim-side-btn sim-side-buy active" data-side="buy">Long (Al)</button>
+        <button class="sim-side-btn sim-side-sell" data-side="sell">Short (Sat)</button>
+      </div>
+
+      <!-- Order Type Tabs -->
+      <div class="sim-otype-tabs">
+        <button class="sim-otype-tab active" data-type="market">Market</button>
+        <button class="sim-otype-tab" data-type="limit">Limit</button>
+        <button class="sim-otype-tab" data-type="stop_limit">Stop-Limit</button>
+      </div>
+
+      <!-- Price Inputs (shown for limit/stop-limit) -->
+      <div class="sim-tp-prices hidden" id="sim-price-fields">
+        <div class="sim-tp-field" id="sim-stop-price-wrap" style="display:none">
+          <label class="sim-tp-label">Stop Fiyat</label>
+          <input type="number" id="sim-stop-price" class="sim-tp-input" placeholder="0.00" step="any" min="0" />
+        </div>
+        <div class="sim-tp-field">
+          <label class="sim-tp-label">Fiyat</label>
+          <input type="number" id="sim-limit-price" class="sim-tp-input" placeholder="0.00" step="any" min="0" />
+        </div>
+      </div>
+
+      <!-- Quantity -->
+      <div class="sim-tp-field">
+        <label class="sim-tp-label">Miktar</label>
+        <input type="number" id="sim-quantity" class="sim-tp-input" placeholder="0.01" step="any" min="0" />
+      </div>
+
+      <!-- Amount Presets -->
+      <div class="sim-tp-presets">
+        <button class="sim-preset-btn" data-pct="25">25%</button>
+        <button class="sim-preset-btn" data-pct="50">50%</button>
+        <button class="sim-preset-btn" data-pct="75">75%</button>
+        <button class="sim-preset-btn" data-pct="100">100%</button>
+      </div>
+
+      <!-- FAZ 63B: Preset preview -->
+      <div class="sim-preset-preview" id="sim-preset-preview"></div>
+
+      <!-- Estimated Cost -->
+      <div class="sim-tp-estimate">
+        <span class="sim-tp-est-label">Tahmini Maliyet</span>
+        <span class="sim-tp-est-value" id="sim-est-cost">$0.00</span>
+      </div>
+
+      <!-- Execute Button -->
+      <button id="sim-execute-btn" class="sim-execute-btn sim-execute-buy">
+        Long Aç — Market
+      </button>
+
+      <!-- Trade Feedback -->
+      <div id="sim-trade-msg" class="sim-trade-msg hidden"></div>
+    </section>
+
+  </div><!-- /sim-trading-grid -->
+
+  <!-- ═══════════════ TABS: Positions / Orders / History ═══════════════ -->
+  <section class="sim-tabs-section">
+    <div class="sim-tab-bar">
+      <button class="sim-tab-btn active" data-tab="positions">
+        Pozisyonlar
+        <span class="sim-tab-count" id="sim-tab-pos-count">0</span>
+      </button>
+      <button class="sim-tab-btn" data-tab="orders">
+        Açık Emirler
+        <span class="sim-tab-count" id="sim-tab-ord-count">0</span>
+      </button>
+      <button class="sim-tab-btn" data-tab="closed">Kapanmış</button>
+      <button class="sim-tab-btn" data-tab="history">Geçmiş</button>
+    </div>
+
+    <!-- Open Positions -->
+    <div class="sim-tab-pane active" id="sim-pane-positions">
+      <div id="sim-positions-open" class="sim-positions-list">
+        <div class="sim-empty-state" id="sim-empty-positions">
+          <div class="sim-empty-icon">📊</div>
+          <div class="sim-empty-title">Henüz işlem yapmadın</div>
+          <div class="sim-empty-desc">Simülasyon ile trading pratiği yap</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Open Orders -->
+    <div class="sim-tab-pane" id="sim-pane-orders">
+      <div id="sim-orders-list" class="sim-orders-list">
+        <div class="sim-empty-state">
+          <div class="sim-empty-icon">📋</div>
+          <div class="sim-empty-title">Bekleyen emir yok</div>
+          <div class="sim-empty-desc">Limit veya Stop-Limit emri girin</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Closed Positions -->
+    <div class="sim-tab-pane" id="sim-pane-closed">
+      <div id="sim-positions-closed" class="sim-positions-list">
+        <div class="sim-empty-state">
+          <div class="sim-empty-icon">📁</div>
+          <div class="sim-empty-title">Kapanmış pozisyon yok</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trade History -->
+    <div class="sim-tab-pane" id="sim-pane-history">
+      <div id="sim-trades-list" class="sim-trades-list">
+        <div class="sim-empty-state">
+          <div class="sim-empty-icon">📜</div>
+          <div class="sim-empty-title">İşlem geçmişi boş</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ═══════════════ RESET CONFIRM MODAL ═══════════════ -->
+<div id="sim-reset-modal" class="sim-modal hidden">
+  <div class="sim-modal-backdrop"></div>
+  <div class="sim-modal-content">
+    <div class="sim-modal-icon">⚠️</div>
+    <h3 class="sim-modal-title">Hesabı Sıfırla</h3>
+    <p class="sim-modal-text">Tüm pozisyonlar, emirler ve işlem geçmişi silinecek. Bakiye başlangıç değerine dönecek. Bu işlem geri alınamaz.</p>
+    <div class="sim-modal-buttons">
+      <button id="sim-reset-cancel" class="sim-btn sim-btn-secondary">İptal</button>
+      <button id="sim-reset-confirm" class="sim-btn sim-btn-danger">Sıfırla</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ TOAST CONTAINER ═══════════════ -->
+<div id="sim-toast-container" class="sim-toast-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // FAZ 64: Pass server-side price to JS for immediate use
+  window.__SIM_INITIAL_PRICE__ = {{ initial_price|default(0)|tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/simulator.js') }}?v=64c"></script>
+{% endblock %}

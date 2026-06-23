@@ -1,0 +1,197 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Strategy Builder — ZKR Analiz{% endblock %}
+{% block page_title %}Strategy Builder{% endblock %}
+{% block topbar_title %}Strategy Builder{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/strategy_builder.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="sb-container">
+
+  <!-- ══════════ TEMPLATES ══════════ -->
+  <section class="sb-panel">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+      Hazır Şablonlar
+    </h2>
+    <div class="sb-templates-grid" id="sb-templates"></div>
+  </section>
+
+  <!-- ══════════ CONTROL BAR ══════════ -->
+  <section class="sb-panel">
+    <div class="sb-top-bar">
+      <div class="sb-field">
+        <label for="sb-symbol">Sembol</label>
+        <input type="text" id="sb-symbol" class="sb-input" value="BTCUSDT" placeholder="BTCUSDT" autocomplete="off" />
+      </div>
+      <div class="sb-field">
+        <label for="sb-market">Piyasa</label>
+        <select id="sb-market" class="sb-input">
+          <option value="crypto" selected>Kripto</option>
+          <option value="stocks">Hisse</option>
+          <option value="bist">BIST</option>
+          <option value="forex">Forex</option>
+          <option value="commodities">Emtia</option>
+        </select>
+      </div>
+      <div class="sb-field">
+        <label for="sb-interval">Zaman Dilimi</label>
+        <select id="sb-interval" class="sb-input">
+          <option value="1h">1 Saat</option>
+          <option value="4h">4 Saat</option>
+          <option value="1d" selected>1 Gün</option>
+        </select>
+      </div>
+      <div class="sb-field">
+        <label for="sb-limit">Mum Sayısı</label>
+        <select id="sb-limit" class="sb-input">
+          <option value="200">200</option>
+          <option value="500" selected>500</option>
+          <option value="1000">1000</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ EDITOR + PREVIEW ══════════ -->
+  <section class="sb-panel">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+      Strateji Editörü
+    </h2>
+
+    <!-- Indicator Helper Chips -->
+    <div class="sb-indicator-chips" id="sb-indicator-chips" style="margin-bottom:10px;"></div>
+
+    <div class="sb-editor-wrap">
+      <!-- Code Editor -->
+      <div class="sb-editor-col">
+        <textarea id="sb-code" class="sb-code-area" placeholder='strategy "My Strategy"
+
+entry:
+  EMA20 crosses above EMA50
+
+exit:
+  EMA20 crosses below EMA50
+
+risk:
+  stop_loss 2%
+  take_profit 4%' spellcheck="false"></textarea>
+
+        <!-- Validation -->
+        <div id="sb-validation" style="display:none;"></div>
+      </div>
+
+      <!-- Parsed Preview -->
+      <div class="sb-editor-col">
+        <div class="sb-parsed-preview" id="sb-parsed-preview">
+          <div style="text-align:center;opacity:0.3;padding-top:60px;">
+            <div style="font-size:40px;margin-bottom:8px;">📊</div>
+            <div>Strateji yazarak başlayın veya<br>bir şablon seçin</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="sb-btn-row" style="margin-top:12px;">
+      <button class="sb-btn sb-btn-outline" id="sb-parse-btn" onclick="SB.parseCode()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Kontrol Et
+      </button>
+      <button class="sb-btn sb-btn-primary" id="sb-run-btn" onclick="SB.runStrategy()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Stratejiyi Çalıştır
+      </button>
+      <button class="sb-btn sb-btn-green" id="sb-save-btn" onclick="SB.saveStrategy()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+        Kaydet
+      </button>
+      <!-- FAZ 28 — Activate Strategy for Live Signals -->
+      <button class="sb-btn sb-btn-live" id="sb-activate-btn" onclick="SB.activateStrategy()" title="Stratejiyi canlı sinyaller için aktifleştir">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        Canlı Aktifleştir
+      </button>
+      <!-- FAZ 29 — Publish to Marketplace -->
+      <button class="sb-btn sb-btn-publish" id="sb-publish-btn" onclick="SB.publishStrategy()" title="Stratejiyi Marketplace'te yayınla">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+        Yayınla
+      </button>
+    </div>
+
+    <!-- FAZ 28 — Live Status Indicator -->
+    <div id="sb-live-status" class="sb-live-status" style="display:none;"></div>
+
+    <div id="sb-status" class="sb-status"></div>
+  </section>
+
+  <!-- ══════════ SAVED STRATEGIES ══════════ -->
+  <section class="sb-panel" id="sb-saved-section" style="display:none;">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+      Kayıtlı Stratejiler
+    </h2>
+    <div class="sb-saved-list" id="sb-saved-list"></div>
+  </section>
+
+  <!-- ══════════ CHART (LightweightCharts) ══════════ -->
+  <section class="sb-panel" id="sb-chart-section" style="display:none;">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+      Grafik & Sinyaller
+      <span class="sb-badge" id="sb-marker-count">0 sinyal</span>
+    </h2>
+    <div class="sb-chart-container" id="sb-chart"></div>
+  </section>
+
+  <!-- ══════════ METRICS ══════════ -->
+  <section class="sb-panel" id="sb-metrics-section" style="display:none;">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+      Performans Metrikleri
+    </h2>
+    <div class="sb-metrics-grid" id="sb-metrics-grid"></div>
+  </section>
+
+  <!-- ══════════ EQUITY CURVE ══════════ -->
+  <section class="sb-panel" id="sb-equity-section" style="display:none;">
+    <h2 class="sb-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Equity Curve
+    </h2>
+    <canvas id="sb-equity-chart" height="200"></canvas>
+  </section>
+
+  <!-- ══════════ TRADE LIST ══════════ -->
+  <section class="sb-panel" id="sb-trades-section" style="display:none;">
+    <h2 class="sb-section-title">
+      İşlemler <span class="sb-badge" id="sb-trade-count">0</span>
+    </h2>
+    <div class="sb-table-wrap">
+      <table class="sb-table">
+        <thead>
+          <tr>
+            <th>Giriş</th>
+            <th>Çıkış</th>
+            <th>Miktar</th>
+            <th>Bar</th>
+            <th>Çıkış Nedeni</th>
+            <th>PnL</th>
+            <th>PnL %</th>
+          </tr>
+        </thead>
+        <tbody id="sb-trades-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/strategy_builder.js') }}"></script>
+{% endblock %}

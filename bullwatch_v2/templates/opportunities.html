@@ -1,0 +1,187 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}AI Fırsatlar • ZKR Analiz Pro Terminal{% endblock %}
+{% block page_title %}AI Smart Alerts & Fırsatlar{% endblock %}
+{% block topbar_title %}Opportunities{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/opportunities.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MARKET OPPORTUNITY DASHBOARD                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+
+<!-- Filters & Controls -->
+<section class="opp-controls" style="margin-bottom:20px;">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <div class="opp-filter-chips" id="opp-market-filters">
+      <button class="pro-chip active" data-market="all">Tümü</button>
+      <button class="pro-chip" data-market="crypto">Kripto</button>
+      <button class="pro-chip" data-market="stocks">Hisse</button>
+      <button class="pro-chip" data-market="forex">Forex</button>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button id="btn-scan-now" class="pro-btn-primary pro-btn-sm" style="background:var(--accent);color:#fff;border:0;cursor:pointer;" title="Şimdi Tara">
+        <svg style="width:14px;height:14px;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Tara
+      </button>
+      <button id="btn-manage-alerts" class="pro-btn-ghost pro-btn-sm" style="background:var(--bg-tertiary);color:var(--text-primary);border:1px solid var(--border);cursor:pointer;" title="Smart Alerts">
+        <svg style="width:14px;height:14px;margin-right:4px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+        Alarmlar
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Row -->
+<section class="opp-stats" style="margin-bottom:20px;">
+  <div class="pro-grid-4" id="opp-stat-cards">
+    <div class="pro-stat-card hover-lift">
+      <div class="pro-stat-label">Aktif Fırsat</div>
+      <div class="pro-stat-value" style="color:var(--accent);" id="stat-total">0</div>
+    </div>
+    <div class="pro-stat-card hover-lift">
+      <div class="pro-stat-label">Yüksek Güvenilirlik</div>
+      <div class="pro-stat-value" style="color:var(--success);" id="stat-high-conf">0</div>
+    </div>
+    <div class="pro-stat-card hover-lift">
+      <div class="pro-stat-label">Aktif Alarm</div>
+      <div class="pro-stat-value" style="color:var(--warning);" id="stat-alerts">0</div>
+    </div>
+    <div class="pro-stat-card hover-lift">
+      <div class="pro-stat-label">Yeni Bildirim</div>
+      <div class="pro-stat-value" style="color:var(--info);" id="stat-notifs">0</div>
+    </div>
+  </div>
+</section>
+
+<!-- Event Type Filters -->
+<section style="margin-bottom:20px;">
+  <div class="opp-event-chips" id="opp-event-filters" style="display:flex;gap:6px;flex-wrap:wrap;">
+    <button class="pro-chip active" data-event="all">Tümü</button>
+    <button class="pro-chip" data-event="volume_spike">📊 Hacim</button>
+    <button class="pro-chip" data-event="momentum_shift">🚀 Momentum</button>
+    <button class="pro-chip" data-event="volatility_spike">⚡ Volatilite</button>
+    <button class="pro-chip" data-event="rsi_extreme">📉 RSI</button>
+    <button class="pro-chip" data-event="breakout">💎 Kırılım</button>
+    <button class="pro-chip" data-event="whale_activity">🐋 Büyük Hacim</button>
+    <button class="pro-chip" data-event="sector_rotation">🔄 Sektör</button>
+    <button class="pro-chip" data-event="fng_extreme">😱 FnG</button>
+    <button class="pro-chip" data-event="price_anomaly">🔍 Anomali</button>
+  </div>
+</section>
+
+<!-- Opportunities Grid -->
+<section style="margin-bottom:24px;">
+  <div class="pro-section-header">
+    <span class="pro-section-title">🎯 Tespit Edilen Fırsatlar</span>
+    <span style="font-size:11px;color:var(--text-dim);" id="opp-last-scan">—</span>
+  </div>
+  <div id="opp-grid" class="opp-grid" style="min-height:200px;">
+    <div class="opp-loading">
+      <div class="opp-spinner"></div>
+      <span style="color:var(--text-dim);font-size:13px;">Fırsatlar taranıyor...</span>
+    </div>
+  </div>
+</section>
+
+<!-- Smart Alerts Panel (shown on click) -->
+<section id="alerts-panel" style="display:none;margin-bottom:24px;">
+  <div class="pro-section-header" style="margin-bottom:12px;">
+    <span class="pro-section-title">🔔 Smart Alerts</span>
+    <button id="btn-create-alert" class="pro-btn-primary pro-btn-sm" style="cursor:pointer;">
+      + Yeni Alarm
+    </button>
+  </div>
+
+  <!-- Create Alert Form -->
+  <div id="alert-form" class="pro-card" style="display:none;margin-bottom:16px;">
+    <div class="pro-card-body" style="padding:16px;">
+      <h4 style="margin:0 0 12px;font-size:14px;font-weight:600;">Yeni Smart Alert</h4>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Alarm Tipi</label>
+          <select id="alert-type" class="pro-input" style="width:100%;">
+            <option value="opportunity_any">Herhangi bir fırsat</option>
+            <option value="opportunity_symbol">Belirli sembol</option>
+            <option value="confidence_high">Yüksek güvenilirlik (≥80)</option>
+            <option value="event_volume_spike">Hacim artışı</option>
+            <option value="event_momentum_shift">Momentum değişimi</option>
+            <option value="event_volatility_spike">Volatilite artışı</option>
+            <option value="event_rsi_extreme">RSI aşırı bölge</option>
+            <option value="event_breakout">Kırılım hareketi</option>
+            <option value="event_whale_activity">Büyük hacim</option>
+            <option value="market_crypto">Kripto piyasası</option>
+            <option value="market_stocks">Hisse piyasası</option>
+            <option value="market_forex">Forex piyasası</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Alarm Adı</label>
+          <input id="alert-name" class="pro-input" style="width:100%;" placeholder="Örn: BTC Hacim Alarmı" />
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Sembol (opsiyonel)</label>
+          <input id="alert-symbol" class="pro-input" style="width:100%;" placeholder="Örn: BTCUSDT" />
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Min. Güvenilirlik</label>
+          <input id="alert-confidence" class="pro-input" style="width:100%;" type="number" value="50" min="0" max="100" />
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Piyasa (opsiyonel)</label>
+          <select id="alert-market" class="pro-input" style="width:100%;">
+            <option value="">Tümü</option>
+            <option value="crypto">Kripto</option>
+            <option value="stocks">Hisse</option>
+            <option value="forex">Forex</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:4px;">Cooldown (dk)</label>
+          <input id="alert-cooldown" class="pro-input" style="width:100%;" type="number" value="60" min="5" max="1440" />
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button id="btn-save-alert" class="pro-btn-primary pro-btn-sm" style="cursor:pointer;">Kaydet</button>
+        <button id="btn-cancel-alert" class="pro-btn-ghost pro-btn-sm" style="cursor:pointer;">İptal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerts List -->
+  <div id="alerts-list" style="min-height:80px;">
+    <div style="text-align:center;padding:24px;color:var(--text-dim);font-size:13px;">Yükleniyor...</div>
+  </div>
+</section>
+
+<!-- Notifications Panel (overlay/inline) -->
+<section id="notifs-panel" style="display:none;margin-bottom:24px;">
+  <div class="pro-section-header" style="margin-bottom:12px;">
+    <span class="pro-section-title">📬 Bildirimler</span>
+    <button id="btn-mark-all-read" class="pro-btn-ghost pro-btn-sm" style="cursor:pointer;font-size:11px;">
+      Tümünü Okundu İşaretle
+    </button>
+  </div>
+  <div id="notifs-list" style="min-height:60px;">
+    <div style="text-align:center;padding:24px;color:var(--text-dim);font-size:13px;">Yükleniyor...</div>
+  </div>
+</section>
+
+<!-- Legal Disclaimer -->
+<section style="margin-top:24px;">
+  <div class="pro-legal-footer" style="padding:16px;border-radius:8px;background:var(--bg-tertiary);font-size:12px;color:var(--text-dim);line-height:1.6;">
+    ⚠️ Bu sayfa yatırım tavsiyesi içermez. Tüm veriler bilgilendirme amaçlıdır. 
+    Tespit edilen fırsatlar sadece teknik analiz gözlemlerine dayanır ve kesinlikle 
+    alım/satım önerisi olarak yorumlanmamalıdır.
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/opportunities.js') }}"></script>
+{% endblock %}

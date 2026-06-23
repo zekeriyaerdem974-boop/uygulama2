@@ -1,0 +1,8 @@
+prefix=/home/zkr-kripto2/Masaüstü/uygulama/bullwatch_v2/env_311
+includedir=${prefix}/include
+
+Name: FixesProto
+Description: X Fixes extension headers
+Version: 6.1
+Cflags: -I${includedir}
+Requires: xextproto >= 7.0.99.1

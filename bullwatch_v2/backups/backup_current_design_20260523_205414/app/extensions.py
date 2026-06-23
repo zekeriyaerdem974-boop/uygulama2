@@ -1,0 +1,38 @@
+"""Extension singletons for ZKR Analiz.
+
+Provides shared service instances used by the legacy monolith and
+new blueprint modules.  Instantiated once at import time; they do
+NOT require a Flask app to construct.
+
+Currently managed here:
+  - job_manager  (core.job_manager.JobManager)
+  - market_data  (core.market_data.MarketDataService)
+
+Still initialized directly in legacy_monolith.py (will migrate later):
+  - Flask-CORS   — CORS(app)
+  - Flask-Sock   — Sock(app)   (flask-sock 0.7.x requires app at init)
+"""
+from __future__ import annotations
+
+from core.job_manager import JobManager
+from core.market_data import MarketDataService
+from flask_socketio import SocketIO
+
+# ---- Singletons (app-independent) ----
+job_manager = JobManager()
+market_data = MarketDataService()
+socketio = SocketIO(cors_allowed_origins="*")
+
+
+def init_extensions(app) -> None:
+    """Register singletons on the Flask app.
+
+    Called by create_app() after the legacy monolith is loaded.
+    Ensures blueprints can find services via ``current_app.extensions``.
+    Uses ``setdefault`` so that if the monolith already registered them,
+    the same objects are kept (no duplication).
+    """
+    app.extensions.setdefault("job_manager", job_manager)
+    app.extensions.setdefault("market_data", market_data)
+    app.extensions.setdefault("socketio", socketio)
+    socketio.init_app(app)

@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+from flask import Blueprint, current_app, jsonify, request
+
+
+bp = Blueprint("market", __name__, url_prefix="/api/market")
+
+
+def _svc():
+    return current_app.extensions["market_data"]
+
+
+@bp.get("/symbols")
+def api_symbols():
+    symbols = _svc().get_symbols()
+    return jsonify({"ok": True, "symbols": symbols, "count": len(symbols)})
+
+
+@bp.get("/klines")
+def api_klines():
+    symbol = (request.args.get("symbol") or "BTCUSDT").upper()
+    interval = request.args.get("interval") or "15m"
+    limit = int(request.args.get("limit") or "500")
+
+    rows = _svc().get_klines(symbol, interval, limit)
+    # Lightweight-charts friendly shape
+    candles = [
+        {
+            "time": int(r["open_time"] // 1000),
+            "open": r["open"],
+            "high": r["high"],
+            "low": r["low"],
+            "close": r["close"],
+        }
+        for r in rows
+    ]
+    volume = [
+        {
+            "time": int(r["open_time"] // 1000),
+            "value": r["volume"],
+        }
+        for r in rows
+    ]
+
+    return jsonify(
+        {
+            "ok": True,
+            "symbol": symbol,
+            "interval": interval,
+            "candles": candles,
+            "volume": volume,
+        }
+    )

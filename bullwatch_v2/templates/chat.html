@@ -1,0 +1,48 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Sohbet • ZKR Analiz Pro{% endblock %}
+{% block page_title %}Sohbet{% endblock %}
+{% block topbar_title %}AI Copilot{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-2">
+  <span class="text-xs text-neutral-400 hidden sm:inline">Model:</span>
+  <input id="model" class="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs w-40 outline-none focus:border-bull-blue/50 transition-colors" value="llama3.1:8b-instruct-q6_K" />
+</div>
+{% endblock %}
+
+{% block content %}
+<section class="px-4 pt-4">
+  <!-- Model & web search controls -->
+  <div class="flex items-center gap-3 mb-3">
+    <label class="text-xs flex items-center gap-2 text-neutral-400">
+      <input id="use-web" type="checkbox" class="accent-bull-blue w-4 h-4" />
+      Web araması
+    </label>
+    <span class="text-[10px] text-neutral-600">(TAVILY_API_KEY)</span>
+  </div>
+
+  <!-- Chat messages area -->
+  <div id="chat-box" class="h-[calc(100vh-280px)] overflow-y-auto space-y-4 p-4 bg-white/[0.02] rounded-2xl border border-white/5 scrollbar-hide"></div>
+
+  <!-- Input area -->
+  <div class="mt-3 flex gap-2">
+    <textarea id="user-input" rows="2"
+      class="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-sm outline-none focus:border-bull-blue/50 transition-colors resize-none placeholder-neutral-500"
+      placeholder="Kripto verilerine sorular sor…"></textarea>
+    <button id="send-btn"
+      class="px-5 py-2 rounded-xl bg-bull-blue text-white font-semibold text-sm hover:bg-bull-blue/80 transition-colors shadow-lg shadow-bull-blue/20 self-end">
+      Gönder
+    </button>
+  </div>
+
+  <p class="mt-3 mb-2 text-[11px] text-neutral-600">
+    Yerel LLM: <span class="text-neutral-400">Ollama</span> • 
+    Arama: <span class="text-neutral-400">TAVILY_API_KEY</span> (opsiyonel)
+  </p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "d6296c16-d",
+    "activation_id": "38826b7a-d3c",
+    "user_id": "8ac28e6d-eed",
+    "strategy_id": "rsi_signal_test",
+    "strategy_name": "RSI Signal Test",
+    "symbol": "BTCUSDT",
+    "market": "crypto",
+    "interval": "1m",
+    "signal_type": "BUY",
+    "price": 70889.38,
+    "candle_time": 1773447240,
+    "created_at": 1773447300,
+    "created_at_iso": "2026-03-14T00:15:00.165371+00:00"
+  },
+  {
+    "id": "ac6ae08d-b",
+    "activation_id": "38826b7a-d3c",
+    "user_id": "8ac28e6d-eed",
+    "strategy_id": "rsi_signal_test",
+    "strategy_name": "RSI Signal Test",
+    "symbol": "BTCUSDT",
+    "market": "crypto",
+    "interval": "1m",
+    "signal_type": "BUY",
+    "price": 70839.93,
+    "candle_time": 1773447180,
+    "created_at": 1773447240,
+    "created_at_iso": "2026-03-14T00:14:00.179285+00:00"
+  },
+  {
+    "id": "6524cfcb-9",
+    "activation_id": "38826b7a-d3c",
+    "user_id": "8ac28e6d-eed",
+    "strategy_id": "rsi_signal_test",
+    "strategy_name": "RSI Signal Test",
+    "symbol": "BTCUSDT",
+    "market": "crypto",
+    "interval": "1m",
+    "signal_type": "BUY",
+    "price": 70828.23,
+    "candle_time": 1773447120,
+    "created_at": 1773447180,
+    "created_at_iso": "2026-03-14T00:13:00.189003+00:00"
+  },
+  {
+    "id": "83e14f49-d",
+    "activation_id": "38826b7a-d3c",
+    "user_id": "8ac28e6d-eed",
+    "strategy_id": "rsi_signal_test",
+    "strategy_name": "RSI Signal Test",
+    "symbol": "BTCUSDT",
+    "market": "crypto",
+    "interval": "1m",
+    "signal_type": "BUY",
+    "price": 70826.04,
+    "candle_time": 1773447060,
+    "created_at": 1773447120,
+    "created_at_iso": "2026-03-14T00:12:00.161037+00:00"
+  }
+]

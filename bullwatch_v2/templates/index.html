@@ -1,0 +1,195 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Boğa Ne Zaman? • ZKR Analiz v2{% endblock %}
+{% block content %}
+<section class="mb-6">
+    <div class="overflow-hidden rounded-xl border border-neutral-800">
+      <div class="bg-neutral-900 px-4 py-2 text-sm flex items-center justify-between">
+        <div class="font-medium">Canlı Piyasa (Binance Spot)</div>
+        <div class="text-neutral-400">Throttle: 1s • Max 40 çift</div>
+      </div>
+      <div class="relative bg-neutral-950">
+        <div id="ticker-marquee" class="whitespace-nowrap will-change-transform py-2"></div>
+      </div>
+    </div>
+  </section>
+
+  {% if show_apk %}
+  <section class="mb-6">
+    <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold">Mobil Uygulama (Android APK)</h2>
+          <p class="mt-1 text-sm text-neutral-300">ZKR Analiz’ı telefona uygulama gibi kur.</p>
+          <p class="mt-2 text-xs text-neutral-400">Not: Android “Bilinmeyen uygulamalar” izni isteyebilir.</p>
+        </div>
+        <div class="flex flex-col items-end gap-2">
+          <a
+            id="apk-link"
+            class="text-sm px-4 py-2 rounded-xl border border-neutral-700 hover:bg-neutral-800"
+            href="{{ url_for('apk_download') }}"
+            download
+          >İndir (ZKR Analiz.apk)</a>
+          <button
+            id="toggle-qr"
+            class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800"
+            type="button"
+          >QR Göster</button>
+        </div>
+      </div>
+
+      <div id="apk-qr-wrap" class="hidden mt-4">
+        <div class="flex flex-col md:flex-row gap-4 items-start">
+          <div class="rounded-xl border border-neutral-800 bg-neutral-950 p-4">
+            <div id="apk-qr" class="w-[180px] h-[180px]"></div>
+            <div class="mt-2 text-xs text-neutral-400">Kamerayla okut → indir</div>
+          </div>
+          <div class="text-sm text-neutral-300">
+            <div class="font-medium text-neutral-200 mb-2">Kurulum</div>
+            <ol class="list-decimal ml-5 space-y-1 text-neutral-300">
+              <li>Linkten APK indir</li>
+              <li>İzin istenirse “Bilinmeyen uygulamalar”ı aç</li>
+              <li>Kur ve aç</li>
+            </ol>
+            <div class="mt-3 text-xs text-neutral-400 break-all">Link: <span id="apk-url">—</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="col-span-1 lg:col-span-2">
+    <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold">BTC Göstergeleri</h2>
+        <button id="refresh-btc" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Yenile</button>
+      </div>
+      <div id="btc-stats" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+      <p class="mt-3 text-xs text-neutral-400">Kaynak: Binance 1D klines</p>
+    </div>
+  </div>
+  <div>
+    <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+      <h2 class="text-lg font-semibold mb-4">Fear & Greed Index</h2>
+      <div id="fng-card" class="space-y-2">
+        <div class="text-4xl font-bold" id="fng-value">--</div>
+        <div class="text-sm text-neutral-300" id="fng-class">--</div>
+        <div class="text-xs text-neutral-500" id="fng-time">--</div>
+      </div>
+      <p class="mt-3 text-xs text-neutral-400">Kaynak: alternative.me</p>
+    </div>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Açık Faiz (Futures OI)</h2>
+      <button id="refresh-oi" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Yenile</button>
+    </div>
+    <div id="oi-card" class="space-y-2 text-sm"></div>
+    <p class="mt-3 text-xs text-neutral-400">Kaynak: Binance Futures API</p>
+  </div>
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <h2 class="text-lg font-semibold mb-4">Stablecoin 24s Netflow (Proxy)</h2>
+    <div id="stable-card" class="space-y-2 text-sm"></div>
+    <p class="mt-3 text-xs text-neutral-400">Kaynak: DefiLlama</p>
+  </div>
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">BTC Hash-rate (30g)</h2>
+      <button id="refresh-hash" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Yenile</button>
+    </div>
+    <div id="hash-card" class="space-y-2 text-sm"></div>
+    <p class="mt-3 text-xs text-neutral-400">Kaynak: Blockchain.com Charts</p>
+  </div>
+</section>
+
+<section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Coinbase Premium (BTC)</h2>
+      <button id="refresh-premium" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Yenile</button>
+    </div>
+    <div id="premium-card" class="space-y-2 text-sm"></div>
+    <p class="mt-3 text-xs text-neutral-400">API key yoksa bilgi notu gösterilir</p>
+  </div>
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">ETF Tarihleri & Sayaçlar</h2>
+      <button id="refresh-etf" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Yenile</button>
+    </div>
+    <div id="etf-list" class="space-y-3 text-sm"></div>
+  </div>
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Boğa Tahmini</h2>
+      <div class="flex gap-2">
+        <button id="scan-coins" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">USDT Top 60 tara</button>
+        <button id="refresh-est" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Hesapla</button>
+      </div>
+    </div>
+    <div id="estimate" class="space-y-2 text-sm mb-4"></div>
+    <ul id="checklist" class="space-y-2 text-sm"></ul>
+    <div id="scan-summary" class="mt-3 text-xs text-neutral-400"></div>
+  </div>
+</section>
+
+<section class="mt-6">
+  <div class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold">Potansiyel Pump Coinler</h2>
+      <div class="flex gap-2">
+        <!-- JS, sol tarafa dinamik "Eşikler" butonu ekleyecek -->
+        <button id="refresh-pumps" class="text-xs px-3 py-1 rounded-lg border border-neutral-700 hover:bg-neutral-800">Güncelle</button>
+      </div>
+    </div>
+    <!-- Eşik paneli JS ile, bu başlığın altına dinamik eklenecek -->
+    <div id="pumps" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    <p class="mt-3 text-xs text-neutral-400">Kriter: 24s hacim liderleri, 200D üstü, 7g momentum, 24s pozitif değişim.</p>
+  </div>
+</section>
+
+{% if show_apk %}
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+  (function () {
+    const apkPath = "{{ url_for('apk_download') }}";
+    const apkUrl = window.location.origin + apkPath;
+
+    const urlEl = document.getElementById('apk-url');
+    if (urlEl) urlEl.textContent = apkUrl;
+
+    const toggle = document.getElementById('toggle-qr');
+    const wrap = document.getElementById('apk-qr-wrap');
+    const qr = document.getElementById('apk-qr');
+
+    let rendered = false;
+    function show() {
+      wrap.classList.remove('hidden');
+      toggle.textContent = 'QR Gizle';
+      if (!rendered && window.QRCode && qr) {
+        qr.innerHTML = '';
+        new QRCode(qr, { text: apkUrl, width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+        rendered = true;
+      }
+    }
+
+    function hide() {
+      wrap.classList.add('hidden');
+      toggle.textContent = 'QR Göster';
+    }
+
+    if (toggle && wrap) {
+      toggle.addEventListener('click', function () {
+        if (wrap.classList.contains('hidden')) show();
+        else hide();
+      });
+    }
+  })();
+</script>
+{% endif %}
+
+<script type="module" src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

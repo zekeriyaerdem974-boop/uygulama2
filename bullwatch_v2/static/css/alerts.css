@@ -1,0 +1,466 @@
+/* ═══════════════════════════════════════════════════════════════════
+   alerts.css — ZKR Analiz v2 Alert System Styles (FAZ 20)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Page Layout ───────────────────────────────────────────────────── */
+.alerts-page {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.alerts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.alerts-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.alerts-count {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin-left: 12px;
+}
+
+.alerts-btn-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: rgba(41,121,255,0.15);
+  color: #2979FF;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alerts-btn-create:hover {
+  background: rgba(41,121,255,0.25);
+  transform: translateY(-1px);
+}
+
+/* ── Create Form ───────────────────────────────────────────────────── */
+.alert-form-wrap {
+  margin-bottom: 24px;
+  animation: fadeDown 0.2s ease-out;
+}
+.alert-form-wrap.hidden { display: none; }
+
+@keyframes fadeDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alert-form {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.alert-form-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.alert-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.alert-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+}
+
+.alert-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.alert-input:focus {
+  border-color: #2979FF;
+}
+.alert-input option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.alert-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.alert-btn-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.6);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alert-btn-cancel:hover { background: rgba(255,255,255,0.1); }
+
+.alert-btn-save {
+  padding: 8px 20px;
+  border-radius: 8px;
+  background: #2979FF;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alert-btn-save:hover { background: #448AFF; }
+
+/* ── Tabs ──────────────────────────────────────────────────────────── */
+.alerts-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.alerts-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alerts-tab.active {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+.alerts-tab:hover:not(.active) {
+  color: rgba(255,255,255,0.7);
+}
+
+/* ── Table ─────────────────────────────────────────────────────────── */
+.alerts-table-wrap {
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.alerts-table-wrap.hidden { display: none; }
+
+.alerts-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.alerts-table thead th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.4);
+  text-align: left;
+  background: rgba(255,255,255,0.03);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.alerts-table tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.alerts-table tbody tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.alert-empty-row td {
+  text-align: center;
+  color: rgba(255,255,255,0.3);
+  padding: 40px 16px;
+  font-size: 14px;
+}
+
+/* ── Status Badges ─────────────────────────────────────────────────── */
+.alert-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.alert-status.active {
+  background: rgba(0,200,83,0.12);
+  color: #00C853;
+}
+.alert-status.triggered {
+  background: rgba(255,214,0,0.12);
+  color: #FFD600;
+}
+.alert-status.inactive {
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.4);
+}
+
+/* ── Delete Button ─────────────────────────────────────────────────── */
+.alert-btn-delete {
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,23,68,0.1);
+  border: 1px solid rgba(255,23,68,0.2);
+  color: #FF1744;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alert-btn-delete:hover {
+  background: rgba(255,23,68,0.2);
+}
+
+/* ── Condition Labels ──────────────────────────────────────────────── */
+.alert-condition {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.alert-condition .cond-icon {
+  font-size: 14px;
+}
+
+/* ── Toast Notifications ───────────────────────────────────────────── */
+.alert-toast-container {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.alert-toast {
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 420px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: rgba(20,20,20,0.95);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,214,0,0.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 16px rgba(255,214,0,0.1);
+  animation: toastIn 0.3s ease-out;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.alert-toast.removing {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px) scale(0.95); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0) scale(1); }
+  to { opacity: 0; transform: translateX(40px) scale(0.95); }
+}
+
+.alert-toast .toast-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.alert-toast .toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.alert-toast .toast-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFD600;
+}
+
+.alert-toast .toast-msg {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin-top: 2px;
+}
+
+.alert-toast .toast-time {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  margin-top: 4px;
+}
+
+.alert-toast .toast-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.3);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.alert-toast .toast-close:hover { color: rgba(255,255,255,0.6); }
+
+/* ── Trade Page: Alert Panel Overlay ───────────────────────────────── */
+.trade-alert-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 380px;
+  background: rgba(15,15,15,0.98);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 24px;
+  z-index: 10000;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: fadeDown 0.2s ease-out;
+}
+.trade-alert-panel.hidden { display: none; }
+
+.trade-alert-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 9999;
+}
+.trade-alert-backdrop.hidden { display: none; }
+
+/* ── Trade Page: Alert Icon ────────────────────────────────────────── */
+.alert-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,214,0,0.08);
+  border: 1px solid rgba(255,214,0,0.15);
+  color: #FFD600;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.alert-icon-btn:hover {
+  background: rgba(255,214,0,0.15);
+  border-color: rgba(255,214,0,0.3);
+}
+.alert-icon-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.alert-icon-btn .alert-badge {
+  background: #FF1744;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  border-radius: 8px;
+  min-width: 16px;
+  text-align: center;
+  line-height: 16px;
+}
+
+/* ── Context Menu ──────────────────────────────────────────────────── */
+.chart-context-menu {
+  position: fixed;
+  z-index: 10001;
+  background: rgba(20,20,20,0.98);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 4px;
+  min-width: 180px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: fadeDown 0.15s ease-out;
+}
+.chart-context-menu.hidden { display: none; }
+
+.ctx-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s;
+}
+.ctx-menu-item:hover {
+  background: rgba(255,255,255,0.06);
+}
+.ctx-menu-item .ctx-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+}
+
+/* ── Alert Box Compact — FAZ 53 ────────────────────────────────── */
+.alert-box {
+  max-height: 120px;
+  overflow: auto;
+  font-size: 13px;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .alert-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .alerts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .trade-alert-panel {
+    width: calc(100vw - 32px);
+    max-width: 380px;
+  }
+}

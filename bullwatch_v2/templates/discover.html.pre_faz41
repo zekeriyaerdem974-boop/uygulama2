@@ -1,0 +1,665 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Home • BullWatch AI Terminal{% endblock %}
+{% block page_title %}Home{% endblock %}
+
+{% block header_actions %}
+<button id="btn-search" class="t-btn-icon" aria-label="Search">
+  <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+</button>
+<button id="btn-notifications" class="t-btn-icon" style="position:relative;" aria-label="Notifications">
+  <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+  <span style="position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--danger);border-radius:50%;"></span>
+</button>
+{% endblock %}
+
+{% block header %}
+<header class="t-header">
+  <h1 class="t-header-title">Home</h1>
+  <div class="t-header-actions">
+    <button id="btn-search" class="t-btn-icon" aria-label="Search">
+      <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+    </button>
+    <button id="btn-notifications" class="t-btn-icon" style="position:relative;" aria-label="Notifications">
+      <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <span style="position:absolute;top:6px;right:6px;width:7px;height:7px;background:var(--danger);border-radius:50%;"></span>
+    </button>
+  </div>
+
+  <!-- Search overlay -->
+  <div id="search-overlay" style="display:none;position:absolute;inset:0;background:var(--bg-primary);z-index:60;padding:12px 16px;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="btn-search-close" class="t-btn-icon">
+        <svg style="width:18px;height:18px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <input id="search-input" type="text" placeholder="Search symbols, news, analysts..." class="t-input" style="flex:1;" autocomplete="off" />
+    </div>
+    <div id="search-results" style="margin-top:8px;max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</header>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/copilot.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/opportunities.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MARKET SNAPSHOT — Ticker Cards                              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-section-header">
+    <span class="t-section-title">
+      <svg style="width:18px;height:18px;color:var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+      Market Snapshot
+    </span>
+    <a href="/screener" class="t-section-action">All Markets →</a>
+  </div>
+  <div class="t-grid-3" id="market-snapshot">
+    <div class="t-ticker-card" onclick="location.href='/trade?s=BTCUSDT'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">BTC</div>
+          <div class="t-ticker-name">Bitcoin</div>
+        </div>
+        <span class="t-badge t-badge-neutral">CRYPTO</span>
+      </div>
+      <div class="t-ticker-price" id="snap-btc-price">—</div>
+      <div class="t-ticker-change" id="snap-btc-change">—</div>
+    </div>
+    <div class="t-ticker-card" onclick="location.href='/trade?s=ETHUSDT'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">ETH</div>
+          <div class="t-ticker-name">Ethereum</div>
+        </div>
+        <span class="t-badge t-badge-neutral">CRYPTO</span>
+      </div>
+      <div class="t-ticker-price" id="snap-eth-price">—</div>
+      <div class="t-ticker-change" id="snap-eth-change">—</div>
+    </div>
+    <div class="t-ticker-card" onclick="location.href='/trade?s=XAUUSD'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">GOLD</div>
+          <div class="t-ticker-name">Gold Spot</div>
+        </div>
+        <span class="t-badge t-badge-neutral">COMMODITY</span>
+      </div>
+      <div class="t-ticker-price" id="snap-gold-price">—</div>
+      <div class="t-ticker-change" id="snap-gold-change">—</div>
+    </div>
+    <div class="t-ticker-card" onclick="location.href='/trade?s=SPY'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">SP500</div>
+          <div class="t-ticker-name">S&amp;P 500</div>
+        </div>
+        <span class="t-badge t-badge-neutral">INDEX</span>
+      </div>
+      <div class="t-ticker-price" id="snap-sp-price">—</div>
+      <div class="t-ticker-change" id="snap-sp-change">—</div>
+    </div>
+    <div class="t-ticker-card" onclick="location.href='/trade?s=DX'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">DXY</div>
+          <div class="t-ticker-name">Dollar Index</div>
+        </div>
+        <span class="t-badge t-badge-neutral">FOREX</span>
+      </div>
+      <div class="t-ticker-price" id="snap-dxy-price">—</div>
+      <div class="t-ticker-change" id="snap-dxy-change">—</div>
+    </div>
+    <div class="t-ticker-card" onclick="location.href='/trade?s=SOLUSDT'">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="t-ticker-symbol">SOL</div>
+          <div class="t-ticker-name">Solana</div>
+        </div>
+        <span class="t-badge t-badge-neutral">CRYPTO</span>
+      </div>
+      <div class="t-ticker-price" id="snap-sol-price">—</div>
+      <div class="t-ticker-change" id="snap-sol-change">—</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- AI COPILOT QUICK — Ask AI about markets                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-card-static" style="padding:20px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#8B5CF6);display:flex;align-items:center;justify-content:center;">
+        <svg style="width:18px;height:18px;color:#fff;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:600;color:var(--text-primary);">AI Copilot</div>
+        <div style="font-size:11px;color:var(--text-dim);">Ask anything about markets</div>
+      </div>
+      <a href="/chat" class="t-btn t-btn-ghost" style="margin-left:auto;font-size:12px;">Open Terminal →</a>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="t-chat-suggest-btn" id="discoverAiBtn" data-prompt="Bugün piyasada ne öne çıkıyor? Özetle.">📊 Market Summary</button>
+      <button class="t-chat-suggest-btn" data-prompt="En önemli haberleri özetle">📰 News Brief</button>
+      <button class="t-chat-suggest-btn" data-prompt="En çok hareket edenleri yorumla">🚀 Top Movers</button>
+    </div>
+    <div id="discoverAiOutput" style="display:none;margin-top:12px;padding:12px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;font-size:13px;color:var(--text-secondary);line-height:1.6;"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- AI MARKET RADAR — Insight Cards                             -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-section-header">
+    <span class="t-section-title">
+      <svg style="width:18px;height:18px;color:var(--success);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546"/></svg>
+      AI Market Radar
+    </span>
+    <a href="/market-radar" class="t-section-action">Full Radar →</a>
+  </div>
+  <div class="t-grid-4" id="radar-insights">
+    <div class="t-insight-card">
+      <div class="t-insight-icon" style="background:var(--success-bg);">📈</div>
+      <div class="t-insight-label">Bullish Sectors</div>
+      <div class="t-insight-value" id="radar-bullish">Loading...</div>
+    </div>
+    <div class="t-insight-card">
+      <div class="t-insight-icon" style="background:var(--danger-bg);">📉</div>
+      <div class="t-insight-label">Bearish Sectors</div>
+      <div class="t-insight-value" id="radar-bearish">Loading...</div>
+    </div>
+    <div class="t-insight-card">
+      <div class="t-insight-icon" style="background:var(--warning-bg);">📊</div>
+      <div class="t-insight-label">News Analyzed</div>
+      <div class="t-insight-value" id="radar-total">—</div>
+    </div>
+    <div class="t-insight-card">
+      <div class="t-insight-icon" style="background:rgba(59,130,246,0.12);">🎯</div>
+      <div class="t-insight-label">Market Sentiment</div>
+      <div class="t-insight-value" id="radar-sentiment">Neutral</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- AI MARKET OPPORTUNITIES — FAZ 40                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-section-header">
+    <span class="t-section-title">
+      🎯 AI Market Opportunities
+    </span>
+    <a href="/opportunities" class="t-section-action">Tümünü Gör →</a>
+  </div>
+  <div id="disc-opportunities" style="min-height:80px;">
+    <div style="text-align:center;padding:20px;color:var(--text-dim);font-size:12px;">Fırsatlar yükleniyor...</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- QUICK ACCESS — Feature Cards Grid                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-section-header">
+    <span class="t-section-title">Quick Access</span>
+  </div>
+  <div class="t-grid-4" id="quick-access-grid">
+    <a href="/simulator" class="t-card" style="text-decoration:none;">
+      <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+        <div style="font-size:28px;margin-bottom:8px;">📊</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Simulator</div>
+        <div style="font-size:11px;color:var(--text-dim);" id="discover-sim-stats">Virtual Trading</div>
+      </div>
+    </a>
+    <a href="/marketplace" class="t-card" style="text-decoration:none;">
+      <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+        <div style="font-size:28px;margin-bottom:8px;">🏪</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Marketplace</div>
+        <div style="font-size:11px;color:var(--text-dim);">Strategies & Signals</div>
+      </div>
+    </a>
+    <a href="/mentors" class="t-card" style="text-decoration:none;">
+      <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+        <div style="font-size:28px;margin-bottom:8px;">🎓</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Mentors</div>
+        <div style="font-size:11px;color:var(--text-dim);">Expert Analysts</div>
+      </div>
+    </a>
+    <a href="/leaderboard" class="t-card" style="text-decoration:none;">
+      <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+        <div style="font-size:28px;margin-bottom:8px;">🏆</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Leaderboard</div>
+        <div style="font-size:11px;color:var(--text-dim);" id="disc-leaderboard-preview">Top Performers</div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Feature-flagged cards row -->
+  <div class="t-grid-4" style="margin-top:16px;">
+    <div id="disc-live-rooms-card" style="display:none;">
+      <a href="/rooms" class="t-card" style="text-decoration:none;display:block;">
+        <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+          <div style="font-size:28px;margin-bottom:8px;">🔴</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Live Rooms</div>
+          <div style="font-size:11px;color:var(--text-dim);">Real-time Sessions</div>
+        </div>
+      </a>
+    </div>
+    <div id="disc-courses-card" style="display:none;">
+      <a href="/courses" class="t-card" style="text-decoration:none;display:block;">
+        <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+          <div style="font-size:28px;margin-bottom:8px;">📚</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Courses</div>
+          <div style="font-size:11px;color:var(--text-dim);">Learn & Grow</div>
+        </div>
+      </a>
+    </div>
+    <div id="disc-subscription-card" style="display:none;">
+      <a href="/pricing" class="t-card" style="text-decoration:none;display:block;">
+        <div class="t-card-body" style="text-align:center;padding:20px 14px;">
+          <div style="font-size:28px;margin-bottom:8px;">💎</div>
+          <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Plans</div>
+          <div style="font-size:11px;color:var(--text-dim);">Free / Pro / Pro+</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TRENDING ANALYSES & TOP ANALYSTS                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <!-- Trending Analyses -->
+    <div class="t-card-static">
+      <div class="t-card-header">
+        <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">🔥 Trending Analyses</span>
+        <a href="/feed" class="t-section-action">See All →</a>
+      </div>
+      <div class="t-card-body" id="disc-trending-analyses" style="min-height:120px;">
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+      </div>
+    </div>
+    <!-- Top Analysts -->
+    <div class="t-card-static">
+      <div class="t-card-header">
+        <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">⭐ Top Analysts</span>
+        <a href="/mentors" class="t-section-action">All →</a>
+      </div>
+      <div class="t-card-body" id="disc-top-analysts" style="min-height:120px;">
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MARKET LIST — Category Chips + Featured + List              -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-card-static">
+    <div class="t-card-header">
+      <span style="font-size:15px;font-weight:600;">Market Overview</span>
+      <div style="display:flex;gap:6px;">
+        <button id="sort-change" class="t-chip" style="padding:4px 12px;font-size:11px;">% Change</button>
+        <button id="sort-volume" class="t-chip" style="padding:4px 12px;font-size:11px;">Volume</button>
+      </div>
+    </div>
+    <div style="padding:12px 20px 8px;">
+      <div id="category-chips" style="display:flex;gap:8px;overflow-x:auto;" class="scrollbar-hide">
+        <button class="t-chip active" data-cat="kripto">Crypto</button>
+        <button class="t-chip" data-cat="bist">BIST</button>
+        <button class="t-chip" data-cat="commodities">Commodities</button>
+        <button class="t-chip" data-cat="forex">Forex</button>
+        <button class="t-chip" data-cat="stocks">US Stocks</button>
+      </div>
+    </div>
+    <!-- Featured cards -->
+    <div style="padding:0 20px 12px;">
+      <div id="featured-cards" class="t-grid-2" style="margin-top:8px;">
+        <div class="t-skeleton t-skeleton-card"></div>
+        <div class="t-skeleton t-skeleton-card"></div>
+        <div class="t-skeleton t-skeleton-card"></div>
+        <div class="t-skeleton t-skeleton-card"></div>
+      </div>
+    </div>
+    <!-- Market list -->
+    <div style="padding:0 20px 12px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;" id="section-title">Popular Crypto</h3>
+      <div id="market-list">
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+        <div class="t-skeleton t-skeleton-row"></div>
+      </div>
+    </div>
+    <div class="t-card-footer" style="text-align:center;">
+      <a href="/screener" class="t-section-action" id="btn-see-all">View All Markets →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TOP MOVERS                                                  -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section style="margin-bottom:24px;">
+  <div class="t-section-header">
+    <span class="t-section-title">🚀 Top Movers</span>
+    <div style="display:flex;gap:4px;">
+      <button id="movers-up" class="t-chip active" style="padding:4px 12px;font-size:12px;">↑ Gainers</button>
+      <button id="movers-down" class="t-chip" style="padding:4px 12px;font-size:12px;">↓ Losers</button>
+    </div>
+  </div>
+  <div id="movers-scroll" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;" class="scrollbar-hide">
+    <div class="t-skeleton" style="min-width:160px;height:100px;border-radius:12px;"></div>
+    <div class="t-skeleton" style="min-width:160px;height:100px;border-radius:12px;"></div>
+    <div class="t-skeleton" style="min-width:160px;height:100px;border-radius:12px;"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- NEWS FEED                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="section-news" style="margin-bottom:24px;">
+  <div class="t-card-static">
+    <div class="t-card-header">
+      <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">
+        <svg style="width:16px;height:16px;color:var(--accent);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+        News Feed
+      </span>
+    </div>
+    <div style="padding:12px 20px 8px;">
+      <div id="news-chips" style="display:flex;gap:8px;overflow-x:auto;" class="scrollbar-hide">
+        <button class="t-chip active" data-news="crypto" style="padding:4px 12px;font-size:11px;">Crypto</button>
+        <button class="t-chip" data-news="bist" style="padding:4px 12px;font-size:11px;">BIST</button>
+        <button class="t-chip" data-news="stocks" style="padding:4px 12px;font-size:11px;">Stocks</button>
+        <button class="t-chip" data-news="forex" style="padding:4px 12px;font-size:11px;">Forex</button>
+        <button class="t-chip" data-news="commodities" style="padding:4px 12px;font-size:11px;">Commodities</button>
+        <button class="t-chip" data-news="etf" style="padding:4px 12px;font-size:11px;">ETF/SEC</button>
+        <button class="t-chip" data-news="kap" style="padding:4px 12px;font-size:11px;">KAP</button>
+        <button class="t-chip" data-news="macro" style="padding:4px 12px;font-size:11px;">Macro</button>
+        <button class="t-chip" data-news="market" style="padding:4px 12px;font-size:11px;">General</button>
+      </div>
+    </div>
+    <div class="t-card-body" id="news-feed">
+      <div class="t-skeleton t-skeleton-row"></div>
+      <div class="t-skeleton t-skeleton-row"></div>
+      <div class="t-skeleton t-skeleton-row"></div>
+    </div>
+  </div>
+</section>
+
+<!-- News Detail Modal -->
+<div id="news-detail-modal" class="news-modal-overlay" style="display:none">
+  <div class="news-modal-container">
+    <div class="news-modal-header">
+      <button id="news-modal-back" class="news-modal-back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <span id="news-modal-source" class="news-modal-source"></span>
+      <a id="news-modal-external" class="news-modal-ext-btn" href="#" target="_blank" rel="noopener noreferrer">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+      </a>
+    </div>
+    <div class="news-modal-body">
+      <div id="news-modal-sentiment" class="news-modal-badge"></div>
+      <h1 id="news-modal-title" class="news-modal-title"></h1>
+      <div id="news-modal-meta" class="news-modal-meta"></div>
+      <div id="news-modal-symbols" class="news-modal-symbols"></div>
+      <div id="news-modal-image-wrap" class="news-modal-image-wrap" style="display:none">
+        <img id="news-modal-image" class="news-modal-image" alt="" />
+      </div>
+      <p id="news-modal-summary" class="news-modal-summary"></p>
+      <!-- FAZ 37 — AI Impact Panel -->
+      <div id="news-modal-impact" style="display:none;margin-top:16px;padding:14px;border-radius:12px;background:var(--bg-surface);border:1px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;">
+          <span style="font-size:1rem;">📡</span>
+          <span style="font-weight:600;color:var(--text-primary);font-size:.9rem;">AI Market Impact</span>
+          <span id="news-impact-confidence" style="margin-left:auto;font-size:.7rem;padding:2px 8px;border-radius:99px;font-weight:600;"></span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <div style="font-size:.7rem;color:var(--success);font-weight:600;margin-bottom:4px;">📈 Bullish</div>
+            <div id="news-impact-bullish-sectors" style="font-size:.78rem;color:var(--text-muted);margin-bottom:4px;"></div>
+            <div id="news-impact-bullish-assets" style="font-size:.78rem;color:var(--text-primary);"></div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:var(--danger);font-weight:600;margin-bottom:4px;">📉 Bearish</div>
+            <div id="news-impact-bearish-sectors" style="font-size:.78rem;color:var(--text-muted);margin-bottom:4px;"></div>
+            <div id="news-impact-bearish-assets" style="font-size:.78rem;color:var(--text-primary);"></div>
+          </div>
+        </div>
+        <div id="news-impact-summary" style="margin-top:10px;font-size:.78rem;color:var(--text-dim);border-top:1px solid var(--border);padding-top:8px;"></div>
+        <div id="news-impact-horizon" style="margin-top:6px;font-size:.7rem;color:var(--accent);"></div>
+      </div>
+      <a id="news-modal-readmore" class="news-modal-readmore" href="#" target="_blank" rel="noopener noreferrer">
+        Go to Source →
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- ECONOMIC CALENDAR                                           -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section id="section-calendar" style="margin-bottom:24px;">
+  <div class="t-card-static">
+    <div class="t-card-header">
+      <span style="font-size:15px;font-weight:600;display:flex;align-items:center;gap:6px;">📅 Economic Calendar</span>
+      <span style="font-size:12px;color:var(--text-dim);" id="cal-date"></span>
+    </div>
+    <div class="t-card-body" id="calendar-feed">
+      <div class="t-skeleton t-skeleton-row"></div>
+      <div class="t-skeleton t-skeleton-row"></div>
+      <div class="t-skeleton t-skeleton-row"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section style="margin-bottom:16px;">
+  {% include "legal_disclaimer.html" %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/copilot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/discover.js') }}"></script>
+<script>
+// ═══ FAZ 38 — Market Snapshot Loader (batch) ═══
+(function(){
+  var items = [
+    {id:'btc', key:'crypto:BTCUSDT'},
+    {id:'eth', key:'crypto:ETHUSDT'},
+    {id:'gold', key:'commodities:GC=F'},
+    {id:'sp',  key:'stocks:SPY'},
+    {id:'dxy', key:'forex:DX=F'},
+    {id:'sol', key:'crypto:SOLUSDT'}
+  ];
+  var query = items.map(function(s){return s.key;}).join(',');
+  fetch('/api/snapshot?items='+encodeURIComponent(query))
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok||!d.data) return;
+      items.forEach(function(s){
+        var t=d.data[s.key];
+        if(!t) return;
+        var pEl=document.getElementById('snap-'+s.id+'-price');
+        var cEl=document.getElementById('snap-'+s.id+'-change');
+        if(pEl && t.lastPrice){
+          var p=parseFloat(t.lastPrice);
+          pEl.textContent='$'+p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        }
+        if(cEl && t.priceChangePercent!==undefined){
+          var c=parseFloat(t.priceChangePercent);
+          var sign=c>=0?'+':'';
+          cEl.textContent=sign+c.toFixed(2)+'%';
+          cEl.style.color=c>=0?'var(--success)':'var(--danger)';
+        }
+      });
+    }).catch(function(){});
+})();
+
+// ═══ FAZ 22 — Simulator stats ═══
+(function(){
+  var el=document.getElementById("discover-sim-stats");
+  if(!el) return;
+  fetch("/api/simulator/summary")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok) return;
+      var bal=(d.account?.current_balance||100000).toLocaleString("en-US",{style:"currency",currency:"USD"});
+      var pos=d.open_positions_count||0;
+      el.textContent=bal+' · '+pos+' positions';
+    }).catch(function(){});
+})();
+
+// ═══ FAZ 35 — Top analysts ═══
+(function(){
+  var el=document.getElementById("disc-top-analysts");
+  if(!el) return;
+  fetch("/api/reputation/top-analysts?limit=5")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok||!d.analysts||d.analysts.length===0){
+        el.innerHTML='<div style="color:var(--text-dim);font-size:13px;">No ranked analysts yet</div>';
+        return;
+      }
+      var trustColors={'Beginner Analyst':'var(--text-dim)','Trusted Analyst':'var(--accent)','Top Analyst':'var(--warning)','Elite Mentor':'var(--danger)'};
+      el.innerHTML=d.analysts.map(function(a,i){
+        var tc=trustColors[a.trust_level]||'var(--text-dim)';
+        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">'+
+          '<span style="color:var(--text-dim);font-size:12px;width:20px;">#'+(i+1)+'</span>'+
+          '<a href="/mentor/'+encodeURIComponent(a.username)+'" style="color:var(--text-primary);font-weight:500;font-size:13px;">@'+a.username+'</a>'+
+          '<span class="t-badge" style="background:rgba(255,255,255,0.05);color:'+tc+';font-size:10px;">'+a.trust_level+'</span>'+
+          '<span style="color:var(--warning);margin-left:auto;font-weight:600;font-size:13px;">'+a.score+'</span>'+
+        '</div>';
+      }).join('');
+    }).catch(function(){el.innerHTML='<div style="color:var(--text-dim);font-size:13px;">Failed to load</div>';});
+})();
+
+// ═══ FAZ 36 — Trending Analyses ═══
+(function(){
+  var el=document.getElementById("disc-trending-analyses");
+  if(!el) return;
+  fetch("/api/analysis/trending?limit=5")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok||!d.analyses||d.analyses.length===0){
+        el.innerHTML='<a href="/trade" style="color:var(--accent);font-size:13px;">Share your first analysis →</a>';
+        return;
+      }
+      el.innerHTML=d.analyses.map(function(a,i){
+        var dir=a.direction==='long'?'📈':a.direction==='short'?'📉':'📊';
+        return '<a href="/analysis/'+a.id+'" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);color:var(--text-primary);text-decoration:none;font-size:13px;">'+
+          '<span style="color:var(--text-dim);font-size:12px;width:20px;">#'+(i+1)+'</span>'+
+          '<span style="font-weight:500;">@'+a.username+'</span>'+
+          '<span class="t-tag">'+((a.symbol)||'')+'</span>'+
+          '<span>'+dir+'</span>'+
+          '<span style="color:var(--warning);margin-left:auto;font-size:12px;">❤️ '+a.likes_count+'</span>'+
+        '</a>';
+      }).join('');
+    }).catch(function(){el.innerHTML='<div style="color:var(--text-dim);font-size:13px;">Failed to load</div>';});
+})();
+
+// ═══ FAZ 36 — Feature flag checks ═══
+(function(){
+  var cards={courses:'disc-courses-card',live_rooms:'disc-live-rooms-card',subscriptions:'disc-subscription-card'};
+  fetch("/api/analysis/features")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok) return;
+      var featureMap={};
+      (d.features||[]).forEach(function(f){featureMap[f.name]=!!f.enabled;});
+      Object.keys(cards).forEach(function(name){
+        var el=document.getElementById(cards[name]);
+        if(el&&featureMap[name]) el.style.display='block';
+      });
+    }).catch(function(){});
+})();
+
+// ═══ FAZ 37 — Market Radar widget ═══
+(function(){
+  fetch("/api/news/radar?hours=24&limit=20")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok||!d.radar) return;
+      var r=d.radar;
+      var bEl=document.getElementById('radar-bullish');
+      var sEl=document.getElementById('radar-bearish');
+      var tEl=document.getElementById('radar-total');
+      var mEl=document.getElementById('radar-sentiment');
+      if(bEl){
+        var bulls=(r.top_bullish_sectors||[]).slice(0,3).map(function(s){return s[0];}).join(', ');
+        bEl.textContent=bulls||'—';
+        bEl.style.color='var(--success)';
+      }
+      if(sEl){
+        var bears=(r.top_bearish_sectors||[]).slice(0,3).map(function(s){return s[0];}).join(', ');
+        sEl.textContent=bears||'—';
+        sEl.style.color='var(--danger)';
+      }
+      if(tEl) tEl.textContent=(r.total_analyzed||0)+' articles';
+      if(mEl){
+        var bull=(r.top_bullish_sectors||[]).length;
+        var bear=(r.top_bearish_sectors||[]).length;
+        if(bull>bear){mEl.textContent='Bullish';mEl.style.color='var(--success)';}
+        else if(bear>bull){mEl.textContent='Bearish';mEl.style.color='var(--danger)';}
+        else{mEl.textContent='Neutral';mEl.style.color='var(--warning)';}
+      }
+    }).catch(function(){});
+
+// ═══ FAZ 40 — AI Market Opportunities (Discover Widget) ═══
+(function(){
+  var el=document.getElementById("disc-opportunities");
+  if(!el) return;
+  fetch("/api/opportunities/trending?limit=5")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(!d.ok||!d.data||!d.data.length){
+        el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:12px;">Henüz fırsat tespit edilmedi</div>';
+        return;
+      }
+      var html="";
+      d.data.forEach(function(opp){
+        var confColor=opp.confidence>=80?"var(--success)":opp.confidence>=60?"var(--warning)":"var(--text-dim)";
+        var bgColor=(opp.color||"#64748b")+"15";
+        html+='<a href="/opportunities" class="opp-discover-card" style="text-decoration:none;">';
+        html+='<div class="opp-discover-icon">'+(opp.icon||"🔍")+'</div>';
+        html+='<div class="opp-discover-content">';
+        html+='<div class="opp-discover-desc">'+escH(opp.description)+'</div>';
+        html+='<div class="opp-discover-meta">';
+        html+='<span>'+escH(opp.market)+'</span>';
+        html+='<span style="color:'+confColor+'">%'+opp.confidence+' güvenilirlik</span>';
+        html+='</div>';
+        html+='</div>';
+        html+='<span class="opp-discover-badge" style="background:'+bgColor+';color:'+(opp.color||"#64748b")+';">'+escH(opp.label||opp.event_type)+'</span>';
+        html+='</a>';
+      });
+      el.innerHTML=html;
+    })
+    .catch(function(){
+      el.innerHTML='<div style="text-align:center;padding:16px;color:var(--text-dim);font-size:12px;">Fırsatlar yüklenemedi</div>';
+    });
+  function escH(s){
+    if(!s)return"";
+    var d=document.createElement("div");
+    d.textContent=String(s);
+    return d.innerHTML;
+  }
+})();
+})();
+</script>
+{% endblock %}

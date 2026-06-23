@@ -1,0 +1,7 @@
+prefix=/home/zkr-kripto2/Masaüstü/uygulama/bullwatch_v2/env_311
+includedir=${prefix}/include
+ 
+Name: DRI2Proto
+Description: DRI2 extension headers
+Version: 2.8
+Cflags: -I${includedir}

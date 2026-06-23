@@ -1,0 +1,173 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Yakında — ZKR Analiz{% endblock %}
+{% block topbar_title %}Yakında{% endblock %}
+
+{% block page_title %}Yakında{% endblock %}
+
+{% block header_actions %}
+{% if not coming_soon %}
+<button onclick="CR.openCreateModal()" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors">
+  + Kurs Oluştur
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Course Page Styles ─────────────────────────── */
+.cr-tabs{display:flex;gap:6px;padding:12px 16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.cr-tab{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;background:#1a1a1a;color:#999;border:1px solid #222;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.cr-tab.active{background:linear-gradient(135deg,#10b98122,#059b6922);color:#34d399;border-color:#10b98144;}
+
+.cr-filter-bar{display:flex;gap:8px;padding:0 16px 8px;overflow-x:auto;}
+.cr-filter{padding:5px 12px;border-radius:16px;font-size:11px;background:#1a1a1a;color:#888;border:1px solid #222;cursor:pointer;white-space:nowrap;}
+.cr-filter.active{color:#60a5fa;border-color:#60a5fa44;background:#60a5fa11;}
+
+.cr-level-bar{display:flex;gap:8px;padding:0 16px 12px;overflow-x:auto;}
+.cr-level{padding:5px 12px;border-radius:16px;font-size:11px;background:#1a1a1a;color:#888;border:1px solid #222;cursor:pointer;white-space:nowrap;}
+.cr-level.active{color:#a78bfa;border-color:#a78bfa44;background:#a78bfa11;}
+
+.cr-section-title{font-size:14px;font-weight:600;color:#e5e5e5;padding:16px 16px 8px;display:flex;align-items:center;gap:8px;}
+
+.cr-card{background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:16px;margin:0 16px 12px;transition:border-color .2s;cursor:pointer;text-decoration:none;display:block;color:inherit;}
+.cr-card:hover{border-color:#10b98133;}
+.cr-card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.cr-thumb{width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.cr-card-info{flex:1;min-width:0;}
+.cr-card-title{font-size:15px;font-weight:600;color:#f5f5f5;margin-bottom:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.cr-card-mentor{font-size:12px;color:#888;display:flex;align-items:center;gap:4px;}
+.cr-card-desc{font-size:12px;color:#777;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+.cr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.cr-badge{font-size:11px;padding:3px 8px;border-radius:10px;background:#1a1a1a;border:1px solid #272727;}
+.cr-badge.level-beginner{color:#4ade80;border-color:#4ade8033;}
+.cr-badge.level-intermediate{color:#fbbf24;border-color:#fbbf2433;}
+.cr-badge.level-advanced{color:#f97316;border-color:#f9731633;}
+.cr-badge.market{color:#60a5fa;border-color:#60a5fa33;}
+.cr-badge.free{color:#4ade80;border-color:#4ade8033;}
+.cr-badge.paid{color:#fbbf24;border-color:#fbbf2433;}
+.cr-badge.subscription{color:#f97316;border-color:#f9731633;}
+
+.cr-stats{display:flex;gap:16px;font-size:12px;color:#888;}
+.cr-stat-val{font-weight:600;color:#e5e5e5;}
+
+.cr-card-actions{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #1a1a1a;}
+.cr-btn{padding:7px 18px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .2s;}
+.cr-btn-primary{background:linear-gradient(135deg,#10b981,#059669);color:#fff;}
+.cr-btn-primary:hover{filter:brightness(1.1);}
+.cr-btn-outline{background:transparent;color:#10b981;border:1px solid #10b98144;}
+
+.cr-empty{text-align:center;padding:40px 16px;color:#666;font-size:14px;}
+.cr-loading{text-align:center;padding:20px;color:#666;font-size:13px;}
+
+/* ── Create Course Modal ───────────────────────────── */
+.cr-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+.cr-modal-overlay.open{opacity:1;pointer-events:auto;}
+.cr-modal{background:#111;border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px;border:1px solid #222;border-bottom:none;}
+.cr-modal h3{font-size:16px;font-weight:700;color:#f5f5f5;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.cr-modal label{display:block;font-size:12px;color:#888;margin-bottom:4px;margin-top:12px;}
+.cr-modal input,.cr-modal textarea,.cr-modal select{width:100%;padding:10px 12px;background:#0a0a0a;border:1px solid #272727;border-radius:10px;color:#e5e5e5;font-size:13px;outline:none;}
+.cr-modal input:focus,.cr-modal textarea:focus,.cr-modal select:focus{border-color:#10b98166;}
+.cr-modal textarea{resize:vertical;min-height:80px;}
+.cr-modal-actions{display:flex;gap:10px;margin-top:20px;}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if coming_soon %}
+<div class="coming-soon-page">
+  <div class="cs-icon">🔒</div>
+  <h2 class="cs-title">Yeni Özellik Yakında</h2>
+  <p class="cs-subtitle">Bu bölüm şu anda geliştirme aşamasındadır. Çok yakında sizlerle buluşacak!</p>
+  <div class="cs-shimmer"></div>
+  <button class="cs-btn" onclick="if(window.BW&&BW.i18n)BW.i18n.toast('Haberdar edileceksiniz!','info');else alert('Haberdar edileceksiniz!')">🔔 Haberdar Et</button>
+</div>
+{% else %}
+<!-- Tabs -->
+<div class="cr-tabs">
+  <button class="cr-tab active" data-tab="all" onclick="CR.switchTab('all')">📚 Tümü</button>
+  <button class="cr-tab" data-tab="free" onclick="CR.switchTab('free')">🆓 Ücretsiz</button>
+  <button class="cr-tab" data-tab="paid" onclick="CR.switchTab('paid')">💎 Premium</button>
+  <button class="cr-tab" data-tab="crypto" onclick="CR.switchTab('crypto')">₿ Kripto</button>
+  <button class="cr-tab" data-tab="bist" onclick="CR.switchTab('bist')">📊 BIST</button>
+  <button class="cr-tab" data-tab="stocks" onclick="CR.switchTab('stocks')">📈 Hisse</button>
+  <button class="cr-tab" data-tab="forex" onclick="CR.switchTab('forex')">💱 Forex</button>
+</div>
+
+<!-- Level Filters -->
+<div class="cr-level-bar">
+  <button class="cr-level active" data-level="" onclick="CR.setLevel('')">Tümü</button>
+  <button class="cr-level" data-level="beginner" onclick="CR.setLevel('beginner')">🟢 Başlangıç</button>
+  <button class="cr-level" data-level="intermediate" onclick="CR.setLevel('intermediate')">🟡 Orta</button>
+  <button class="cr-level" data-level="advanced" onclick="CR.setLevel('advanced')">🔴 İleri</button>
+</div>
+
+<!-- Sort Filters -->
+<div class="cr-filter-bar">
+  <button class="cr-filter active" data-sort="newest" onclick="CR.setSort('newest')">🆕 Yeni</button>
+  <button class="cr-filter" data-sort="popular" onclick="CR.setSort('popular')">🔥 Popüler</button>
+  <button class="cr-filter" data-sort="rating" onclick="CR.setSort('rating')">⭐ Puan</button>
+</div>
+
+<!-- Course List -->
+<div id="crList"></div>
+
+<!-- Create Course Modal -->
+<div class="cr-modal-overlay" id="crCreateModal">
+  <div class="cr-modal">
+    <h3>📚 Yeni Kurs Oluştur</h3>
+
+    <label>Kurs Başlığı *</label>
+    <input id="crTitle" placeholder="Ör: Kripto Trading'e Giriş" maxlength="120" />
+
+    <label>Açıklama</label>
+    <textarea id="crDesc" placeholder="Kurs hakkında detaylı bilgi…" maxlength="2000"></textarea>
+
+    <label>Seviye</label>
+    <select id="crLevel">
+      <option value="beginner">Başlangıç</option>
+      <option value="intermediate">Orta</option>
+      <option value="advanced">İleri</option>
+    </select>
+
+    <label>Market</label>
+    <select id="crMarket">
+      <option value="">Genel</option>
+      <option value="crypto">Kripto</option>
+      <option value="bist">BIST</option>
+      <option value="stocks">Hisse</option>
+      <option value="forex">Forex</option>
+      <option value="commodities">Emtia</option>
+    </select>
+
+    <label>Fiyat Modeli</label>
+    <select id="crPricing">
+      <option value="free">Ücretsiz</option>
+      <option value="paid">Ücretli</option>
+      <option value="subscription">Abonelik</option>
+    </select>
+
+    <label>Fiyat (₺) <span style="color:#666">(ücretli ise)</span></label>
+    <input id="crPrice" type="number" value="0" min="0" step="10" />
+
+    <label>Kapak Görseli URL <span style="color:#666">(opsiyonel)</span></label>
+    <input id="crThumb" placeholder="https://..." />
+
+    <div class="cr-modal-actions">
+      <button class="cr-btn cr-btn-primary" style="flex:1" onclick="CR.submitCourse()">Oluştur</button>
+      <button class="cr-btn cr-btn-outline" onclick="CR.closeCreateModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section class="px-4 pb-4">
+  {% include "legal_disclaimer.html" %}
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/courses.js"></script>
+{% endblock %}

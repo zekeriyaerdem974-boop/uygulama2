@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Telefon Simülasyonu{% endblock %}
+
+{% block content %}
+<style>
+  :root{
+    --bg:#0b1220;
+    --panel:#0f1a2d;
+    --border:#1b2a44;
+    --text:#e7eefc;
+    --muted:#9bb0d1;
+    --accent:#7c5cff;
+  }
+  .sim-wrap{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start;}
+  .sim-card{background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:14px; color:var(--text);}
+  .sim-controls{min-width:320px; max-width:460px;}
+  .sim-controls h2{margin:0 0 10px 0; font-size:16px;}
+  .sim-controls p{margin:0 0 12px 0; color:var(--muted); font-size:13px;}
+  .sim-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .sim-btn{padding:9px 10px; border:1px solid var(--border); background:rgba(255,255,255,.03); color:var(--text); border-radius:10px; cursor:pointer; font-size:13px;}
+  .sim-btn:hover{border-color:rgba(124,92,255,.55)}
+
+  .phone{
+    width: 390px; height: 844px; /* iPhone 14-ish */
+    border-radius: 44px;
+    background: #0a0f1a;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 30px 80px rgba(0,0,0,.55);
+    position: relative;
+    overflow: hidden;
+  }
+  .phone::before{
+    content:"";
+    position:absolute;
+    top:12px; left:50%; transform:translateX(-50%);
+    width: 150px; height: 28px;
+    border-radius: 18px;
+    background: rgba(255,255,255,.08);
+  }
+  .phone-inner{position:absolute; top:54px; left:14px; right:14px; bottom:14px; border-radius:36px; overflow:hidden; background:#000;}
+  .phone-iframe{border:0; width:100%; height:100%;}
+
+  @media (max-width: 880px){
+    .phone{width: 360px; height: 780px;}
+  }
+</style>
+
+<div class="sim-wrap">
+  <div class="sim-card sim-controls">
+    <h2>Telefon Simülasyonu</h2>
+    <p>Bu ekran Flutter uygulamasını birebir çalıştırmaz; ama tek porttaki birleşik arayüzün telefonda nasıl görüneceğini simüle eder.</p>
+    <div class="sim-row">
+      <button class="sim-btn" data-url="/tv?mobile=1">TV (Mobil)</button>
+      <button class="sim-btn" data-url="/orderflow/">Orderflow</button>
+      <button class="sim-btn" data-url="/likidasyon/">Likidasyon</button>
+      <button class="sim-btn" data-url="/alpha/">Alpha</button>
+      <button class="sim-btn" data-url="/chat">Chat</button>
+    </div>
+    <div style="margin-top:12px; color:var(--muted); font-size:13px;">
+      Tek port: <b>34000</b> • Mount'lar: <code>/orderflow</code>, <code>/likidasyon</code>, <code>/alpha</code>
+    </div>
+  </div>
+
+  <div class="phone" aria-label="Phone simulator">
+    <div class="phone-inner">
+      <iframe class="phone-iframe" id="phoneFrame" src="/tv?mobile=1" title="Mobile Simulation"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+  const frame = document.getElementById('phoneFrame');
+  document.querySelectorAll('[data-url]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      frame.src = btn.dataset.url;
+    });
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,638 @@
+{% extends "layout_terminal.html" %}
+{% block title %}{{ t('settings.title', 'Settings') }} • ZKR Analiz Pro{% endblock %}
+{% block topbar_title %}<span data-i18n="settings.title">{{ t('settings.title', 'Settings') }}</span>{% endblock %}
+{% block topbar_right %}
+  <div class="pro-badge-accent" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;background:rgba(99,102,241,.15);color:#818cf8;">⚙️</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Settings Layout ─────────────────────────────────────── */
+.settings-wrap{display:flex;gap:24px;padding:16px 0;min-height:calc(100vh - 80px)}
+.settings-nav{width:220px;flex-shrink:0;position:sticky;top:80px;align-self:flex-start}
+.settings-nav-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;color:var(--text-secondary);font-size:13px;transition:all .2s;border:none;background:none;width:100%;text-align:left}
+.settings-nav-item:hover{background:rgba(255,255,255,.05);color:var(--text-primary)}
+.settings-nav-item.active{background:rgba(99,102,241,.15);color:#818cf8;font-weight:600}
+.settings-nav-item .nav-icon{width:18px;text-align:center;font-size:15px}
+.settings-content{flex:1;min-width:0;max-width:720px}
+.settings-card{background:var(--card-bg);border:1px solid var(--border-color);border-radius:12px;padding:24px;margin-bottom:20px;display:none}
+.settings-card.active{display:block}
+.settings-card h3{font-size:16px;font-weight:700;color:var(--text-primary);margin:0 0 16px}
+.settings-card p.desc{font-size:12px;color:var(--text-secondary);margin:0 0 16px;line-height:1.5}
+
+/* ── Form elements ───────────────────────────────────────── */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;color:var(--text-secondary);margin-bottom:6px;font-weight:500}
+.form-group select,.form-group input[type="text"],.form-group input[type="password"]{width:100%;padding:10px 12px;background:var(--input-bg,rgba(255,255,255,.05));border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary);font-size:13px;outline:none}
+.form-group select:focus,.form-group input:focus{border-color:#818cf8}
+.form-row{display:flex;gap:16px;flex-wrap:wrap}
+.form-row .form-group{flex:1;min-width:200px}
+
+/* ── Toggle switch ───────────────────────────────────────── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:13px;color:var(--text-primary)}
+.toggle-desc{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.toggle-switch{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-switch .slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:22px;cursor:pointer;transition:.3s}
+.toggle-switch .slider:before{content:"";position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-switch input:checked+.slider{background:#818cf8}
+.toggle-switch input:checked+.slider:before{transform:translateX(18px)}
+
+/* ── Checkboxes (market prefs) ───────────────────────────── */
+.checkbox-grid{display:flex;flex-wrap:wrap;gap:10px}
+.checkbox-item{display:flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--text-primary)}
+.checkbox-item:hover{border-color:#818cf8}
+.checkbox-item.selected{border-color:#818cf8;background:rgba(99,102,241,.1)}
+.checkbox-item input{display:none}
+
+/* ── Language grid ───────────────────────────────────────── */
+.lang-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.lang-option{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border-color);border-radius:10px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--text-primary)}
+.lang-option:hover{border-color:#818cf8;background:rgba(99,102,241,.05)}
+.lang-option.selected{border-color:#818cf8;background:rgba(99,102,241,.12);font-weight:600}
+.lang-option .flag{font-size:20px}
+.lang-option .lang-name{display:flex;flex-direction:column}
+.lang-option .lang-native{font-size:11px;color:var(--text-secondary);font-weight:400}
+.lang-option.selected::after{content:'✓';position:absolute;top:8px;right:10px;font-size:16px;color:#818cf8;font-weight:700}
+.lang-option{position:relative}
+
+/* ── Theme cards ─────────────────────────────────────────── */
+.theme-grid{display:flex;gap:12px;flex-wrap:wrap}
+.theme-card{padding:16px 20px;border:2px solid var(--border-color);border-radius:10px;cursor:pointer;text-align:center;min-width:100px;transition:all .2s}
+.theme-card:hover{border-color:#818cf8}
+.theme-card.selected{border-color:#818cf8;background:rgba(99,102,241,.1)}
+.theme-card .theme-icon{font-size:24px;margin-bottom:6px}
+.theme-card .theme-name{font-size:12px;color:var(--text-primary);font-weight:600}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-settings{padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .2s}
+.btn-primary{background:#818cf8;color:#fff}
+.btn-primary:hover{background:#6366f1}
+.btn-danger{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.btn-danger:hover{background:rgba(239,68,68,.25)}
+.btn-secondary{background:rgba(255,255,255,.05);color:var(--text-primary);border:1px solid var(--border-color)}
+.btn-secondary:hover{background:rgba(255,255,255,.1)}
+.btn-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+/* ── Visibility radio ────────────────────────────────────── */
+.visibility-options{display:flex;gap:10px;flex-wrap:wrap}
+.vis-option{padding:8px 16px;border:1px solid var(--border-color);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-secondary);transition:all .2s}
+.vis-option:hover{border-color:#818cf8}
+.vis-option.selected{border-color:#818cf8;background:rgba(99,102,241,.1);color:#818cf8;font-weight:600}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.settings-toast{position:fixed;bottom:24px;right:24px;padding:12px 20px;background:#10b981;color:#fff;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.settings-toast.show{opacity:1;transform:translateY(0)}
+
+/* ── RTL ─────────────────────────────────────────────────── */
+body.rtl .settings-nav{order:2}
+body.rtl .settings-content{order:1}
+body.rtl .toggle-row{flex-direction:row-reverse}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media(max-width:768px){
+  .settings-wrap{flex-direction:column}
+  .settings-nav{width:100%;position:static;display:flex;overflow-x:auto;gap:4px;padding-bottom:8px}
+  .settings-nav-item{white-space:nowrap;padding:8px 12px}
+  .form-row{flex-direction:column}
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-wrap">
+  <!-- Navigation -->
+  <nav class="settings-nav" id="settingsNav">
+    <button class="settings-nav-item active" data-section="profile"><span class="nav-icon">👤</span> <span data-i18n="settings.profile">Profile</span></button>
+    <button class="settings-nav-item" data-section="language"><span class="nav-icon">🌐</span> <span data-i18n="settings.language">Language & Region</span></button>
+    <button class="settings-nav-item" data-section="appearance"><span class="nav-icon">🎨</span> <span data-i18n="settings.appearance">Appearance</span></button>
+    <button class="settings-nav-item" data-section="notifications"><span class="nav-icon">🔔</span> <span data-i18n="settings.notifications">Notifications</span></button>
+    <button class="settings-nav-item" data-section="markets"><span class="nav-icon">📊</span> <span data-i18n="settings.market_prefs">Market Preferences</span></button>
+    <button class="settings-nav-item" data-section="ai"><span class="nav-icon">🤖</span> <span data-i18n="settings.ai_prefs">AI Preferences</span></button>
+    <button class="settings-nav-item" data-section="privacy"><span class="nav-icon">🔒</span> <span data-i18n="settings.privacy">Privacy</span></button>
+    <button class="settings-nav-item" data-section="security"><span class="nav-icon">🛡️</span> <span data-i18n="settings.security">Security</span></button>
+    <button class="settings-nav-item" data-section="subscription"><span class="nav-icon">💎</span> <span data-i18n="settings.subscription">Subscription</span></button>
+    <button class="settings-nav-item" data-section="invite"><span class="nav-icon">🎁</span> <span data-i18n="settings.invite_rewards">Invite & Rewards</span></button>
+    <button class="settings-nav-item" data-section="data"><span class="nav-icon">💾</span> <span data-i18n="settings.data_management">Data Management</span></button>
+  </nav>
+
+  <!-- Content Panels -->
+  <div class="settings-content">
+
+    <!-- PROFILE -->
+    <div class="settings-card active" id="sec-profile">
+      <h3 data-i18n="settings.profile">Profile</h3>
+      <p class="desc" data-i18n="settings.profile_desc">Manage your profile information.</p>
+      <div class="form-group">
+        <label data-i18n="settings.username">Username</label>
+        <input type="text" id="settUsername" readonly>
+      </div>
+      <div class="form-group">
+        <label data-i18n="settings.email">Email</label>
+        <input type="text" id="settEmail" readonly>
+      </div>
+    </div>
+
+    <!-- LANGUAGE & REGION -->
+    <div class="settings-card" id="sec-language">
+      <h3 data-i18n="settings.language">Language & Region</h3>
+      <p class="desc" data-i18n="settings.lang_desc">Choose your preferred language and regional settings.</p>
+      <div class="form-group">
+        <label data-i18n="settings.language_label">Language</label>
+        <div class="lang-grid" id="langGrid">
+          {% for lang in languages %}
+          <div class="lang-option" data-lang="{{ lang.code }}">
+            <span class="flag">{{ lang.flag }}</span>
+            <span class="lang-name">
+              {{ lang.name }}
+              <span class="lang-native">{{ lang.native }}</span>
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="settings.timezone_label">Timezone</label>
+          <select id="settTimezone">
+            <option value="UTC">UTC</option>
+            <option value="Europe/Istanbul">Europe/Istanbul</option>
+            <option value="Europe/London">Europe/London</option>
+            <option value="Europe/Berlin">Europe/Berlin</option>
+            <option value="Europe/Paris">Europe/Paris</option>
+            <option value="Europe/Moscow">Europe/Moscow</option>
+            <option value="America/New_York">America/New_York</option>
+            <option value="America/Chicago">America/Chicago</option>
+            <option value="America/Los_Angeles">America/Los_Angeles</option>
+            <option value="America/Sao_Paulo">America/Sao_Paulo</option>
+            <option value="Asia/Dubai">Asia/Dubai</option>
+            <option value="Asia/Shanghai">Asia/Shanghai</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Asia/Kolkata">Asia/Kolkata</option>
+            <option value="Australia/Sydney">Australia/Sydney</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="settings.date_format_label">Date Format</label>
+          <select id="settDateFormat">
+            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+            <option value="DD.MM.YYYY">DD.MM.YYYY</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label data-i18n="settings.number_format_label">Number Format</label>
+          <select id="settNumberFormat">
+            <option value="standard" data-i18n="settings.number_standard">1,234.56 (Standard)</option>
+            <option value="european" data-i18n="settings.number_european">1.234,56 (European)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label data-i18n="settings.currency_label">Currency Display</label>
+          <select id="settCurrency">
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="TRY">TRY (₺)</option>
+            <option value="BRL">BRL (R$)</option>
+            <option value="RUB">RUB (₽)</option>
+            <option value="CNY">CNY (¥)</option>
+          </select>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-settings btn-primary" onclick="saveRegion()" data-i18n="settings.save">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- APPEARANCE -->
+    <div class="settings-card" id="sec-appearance">
+      <h3 data-i18n="settings.appearance">Appearance</h3>
+      <p class="desc" data-i18n="settings.appearance_desc">Customize your visual experience.</p>
+      <div class="form-group">
+        <label data-i18n="settings.theme_label">Theme</label>
+        <div class="theme-grid" id="themeGrid">
+          <div class="theme-card" data-theme="dark">
+            <div class="theme-icon">🌙</div>
+            <div class="theme-name" data-i18n="settings.theme_dark">Dark</div>
+          </div>
+          <div class="theme-card" data-theme="dark_pro">
+            <div class="theme-icon">🌑</div>
+            <div class="theme-name" data-i18n="settings.theme_dark_pro">Dark Pro</div>
+          </div>
+          <div class="theme-card" data-theme="system">
+            <div class="theme-icon">💻</div>
+            <div class="theme-name" data-i18n="settings.theme_system">System</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="settings-card" id="sec-notifications">
+      <h3 data-i18n="settings.notifications">Notifications</h3>
+      <p class="desc" data-i18n="settings.notif_desc">Control how and when you receive notifications.</p>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_enabled">Enable Notifications</div><div class="toggle-desc" data-i18n="settings.notif_master_desc">Master toggle for all notifications</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifEnabled"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_email">Email Notifications</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifEmail"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_push">Push Notifications</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifPush"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_ai_brief">AI Brief Updates</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifAiBrief"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_opportunities">Opportunity Alerts</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifOpps"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_portfolio_risk">Portfolio Risk Alerts</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifRisk"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_mentor">Mentor Activity</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifMentor"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_courses">Course Updates</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifCourses"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_live_rooms">Live Room Notifications</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifLive"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.notif_referral">Referral Rewards</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="notifReferral"><span class="slider"></span></label>
+      </div>
+      <div class="btn-row">
+        <button class="btn-settings btn-primary" onclick="saveNotifications()" data-i18n="settings.save">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- MARKET PREFERENCES -->
+    <div class="settings-card" id="sec-markets">
+      <h3 data-i18n="settings.market_prefs">Market Preferences</h3>
+      <p class="desc" data-i18n="settings.markets_desc">Select which markets you follow. This personalizes your Discover page.</p>
+      <div class="checkbox-grid" id="marketGrid">
+        <label class="checkbox-item" data-market="crypto"><input type="checkbox" value="crypto"> 🪙 <span data-i18n="settings.market_crypto">Crypto</span></label>
+        <label class="checkbox-item" data-market="stocks"><input type="checkbox" value="stocks"> 📈 <span data-i18n="settings.market_stocks">Stocks</span></label>
+        <label class="checkbox-item" data-market="bist"><input type="checkbox" value="bist"> 🏛️ <span data-i18n="settings.market_bist">BIST</span></label>
+        <label class="checkbox-item" data-market="forex"><input type="checkbox" value="forex"> 💱 <span data-i18n="settings.market_forex">Forex</span></label>
+        <label class="checkbox-item" data-market="commodities"><input type="checkbox" value="commodities"> 🛢️ <span data-i18n="settings.market_commodities">Commodities</span></label>
+      </div>
+      <div class="btn-row">
+        <button class="btn-settings btn-primary" onclick="saveMarkets()" data-i18n="settings.save">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- AI PREFERENCES -->
+    <div class="settings-card" id="sec-ai">
+      <h3 data-i18n="settings.ai_prefs">AI Preferences</h3>
+      <p class="desc" data-i18n="settings.ai_desc">Configure AI agent behavior and briefing settings.</p>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.ai_brief_notif">AI Brief Notifications</div><div class="toggle-desc" data-i18n="settings.ai_brief_notif_desc">Get notified when a new AI brief is available</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="aiBriefNotif"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- PRIVACY -->
+    <div class="settings-card" id="sec-privacy">
+      <h3 data-i18n="settings.privacy">Privacy</h3>
+      <p class="desc" data-i18n="settings.privacy_desc">Control who can see your data.</p>
+      <div class="form-group">
+        <label data-i18n="settings.profile_visibility">Profile Visibility</label>
+        <div class="visibility-options" data-field="profile_visibility">
+          <div class="vis-option" data-val="public" data-i18n="settings.visibility_public">Public</div>
+          <div class="vis-option" data-val="friends" data-i18n="settings.visibility_friends">Friends Only</div>
+          <div class="vis-option" data-val="private" data-i18n="settings.visibility_private">Private</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label data-i18n="settings.portfolio_visibility">Portfolio Visibility</label>
+        <div class="visibility-options" data-field="portfolio_visibility">
+          <div class="vis-option" data-val="public" data-i18n="settings.visibility_public">Public</div>
+          <div class="vis-option" data-val="friends" data-i18n="settings.visibility_friends">Friends Only</div>
+          <div class="vis-option" data-val="private" data-i18n="settings.visibility_private">Private</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label data-i18n="settings.analysis_visibility">Analysis Visibility</label>
+        <div class="visibility-options" data-field="analysis_visibility">
+          <div class="vis-option" data-val="public" data-i18n="settings.visibility_public">Public</div>
+          <div class="vis-option" data-val="friends" data-i18n="settings.visibility_friends">Friends Only</div>
+          <div class="vis-option" data-val="private" data-i18n="settings.visibility_private">Private</div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <div><div class="toggle-label" data-i18n="settings.search_indexing">Search Indexing</div><div class="toggle-desc" data-i18n="settings.search_indexing_desc">Allow your profile to appear in search results</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="searchIndexing"><span class="slider"></span></label>
+      </div>
+      <div class="btn-row">
+        <button class="btn-settings btn-primary" onclick="savePrivacy()" data-i18n="settings.save">Save Changes</button>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="settings-card" id="sec-security">
+      <h3 data-i18n="settings.security">Security</h3>
+      <p class="desc" data-i18n="settings.security_desc">Protect your account.</p>
+      <div class="form-group">
+        <label data-i18n="settings.change_password">Change Password</label>
+        <input type="password" id="secCurrentPw" data-i18n-placeholder="settings.current_password" placeholder="Current Password" style="margin-bottom:8px">
+        <input type="password" id="secNewPw" data-i18n-placeholder="settings.new_password" placeholder="New Password" style="margin-bottom:8px">
+        <input type="password" id="secConfirmPw" data-i18n-placeholder="settings.confirm_password" placeholder="Confirm New Password">
+      </div>
+      <div class="btn-row">
+        <button class="btn-settings btn-secondary" onclick="changePassword()" data-i18n="settings.change_password">Change Password</button>
+      </div>
+      <div class="toggle-row" style="margin-top:16px">
+        <div><div class="toggle-label" data-i18n="settings.enable_2fa">Two-Factor Authentication</div><div class="toggle-desc" data-i18n="common.coming_soon">Coming soon</div></div>
+        <label class="toggle-switch"><input type="checkbox" id="sec2fa" disabled><span class="slider"></span></label>
+      </div>
+      <div class="btn-row" style="margin-top:16px">
+        <button class="btn-settings btn-danger" onclick="logoutAll()" data-i18n="settings.logout_all">Logout All Devices</button>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION -->
+    <div class="settings-card" id="sec-subscription">
+      <h3 data-i18n="settings.subscription">Subscription</h3>
+      <p class="desc" data-i18n="settings.subscription_desc">View your current plan and manage billing.</p>
+      <div style="padding:20px;text-align:center;color:var(--text-secondary);font-size:13px" data-i18n="settings.subscription_info">
+        Your current plan details will appear here.
+      </div>
+    </div>
+
+    <!-- INVITE & REWARDS -->
+    <div class="settings-card" id="sec-invite">
+      <h3 data-i18n="settings.invite_rewards">Invite & Rewards</h3>
+      <p class="desc" data-i18n="settings.invite_desc">Share ZKR Analiz and earn rewards.</p>
+      <div class="btn-row">
+        <a href="/invite" class="btn-settings btn-primary" style="text-decoration:none" data-i18n="settings.go_invite">Go to Invite Page</a>
+      </div>
+    </div>
+
+    <!-- DATA MANAGEMENT -->
+    <div class="settings-card" id="sec-data">
+      <h3 data-i18n="settings.data_management">Data Management</h3>
+      <p class="desc" data-i18n="settings.data_desc">Export or delete your personal data.</p>
+      <div class="btn-row">
+        <button class="btn-settings btn-secondary" onclick="exportData()" data-i18n="settings.export_data">Export My Data</button>
+        <button class="btn-settings btn-danger" onclick="confirmDeleteAccount()" data-i18n="settings.delete_account">Delete Account</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="settings-toast" id="settingsToast"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/i18n.js"></script>
+<script>
+(function(){
+  'use strict';
+
+  let _settings = {};
+
+  // ── Navigation ──────────────────────────────────────────
+  document.querySelectorAll('.settings-nav-item').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.settings-card').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      const sec = document.getElementById('sec-' + this.dataset.section);
+      if (sec) sec.classList.add('active');
+    });
+  });
+
+  // ── Toast ───────────────────────────────────────────────
+  window.showToast = function(msg, duration) {
+    const t = document.getElementById('settingsToast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration || 2500);
+  };
+
+  // ── Load settings ───────────────────────────────────────
+  async function loadSettings() {
+    try {
+      const r = await fetch('/api/settings/me');
+      const d = await r.json();
+      if (d.ok) {
+        _settings = d.settings;
+        populateUI();
+      }
+    } catch(e) { console.warn('Settings load failed:', e); }
+  }
+
+  function populateUI() {
+    const s = _settings;
+    // Profile
+    document.getElementById('settUsername').value = '{{ current_user.username if current_user else "" }}';
+    document.getElementById('settEmail').value = s.email || '{{ current_user.id if current_user else "" }}';
+
+    // Language
+    document.querySelectorAll('.lang-option').forEach(el => {
+      el.classList.toggle('selected', el.dataset.lang === s.language_code);
+    });
+
+    // Timezone / Region
+    setSelectVal('settTimezone', s.timezone);
+    setSelectVal('settDateFormat', s.date_format);
+    setSelectVal('settNumberFormat', s.number_format);
+    setSelectVal('settCurrency', s.currency_display);
+
+    // Theme
+    document.querySelectorAll('.theme-card').forEach(el => {
+      el.classList.toggle('selected', el.dataset.theme === s.theme);
+    });
+
+    // Notifications
+    setCheck('notifEnabled', s.notifications_enabled);
+    setCheck('notifEmail', s.email_notifications);
+    setCheck('notifPush', s.push_notifications);
+    setCheck('notifAiBrief', s.ai_brief_notifications);
+    setCheck('notifOpps', s.opportunity_alerts);
+    setCheck('notifRisk', s.portfolio_risk_alerts);
+    setCheck('notifMentor', s.mentor_activity_notifications);
+    setCheck('notifCourses', s.course_update_notifications);
+    setCheck('notifLive', s.live_room_notifications);
+    setCheck('notifReferral', s.referral_reward_notifications);
+
+    // Markets
+    const mprefs = s.market_preferences || [];
+    document.querySelectorAll('#marketGrid .checkbox-item').forEach(el => {
+      const m = el.dataset.market;
+      const cb = el.querySelector('input');
+      cb.checked = mprefs.includes(m);
+      el.classList.toggle('selected', cb.checked);
+    });
+
+    // AI
+    setCheck('aiBriefNotif', s.ai_brief_notifications);
+
+    // Privacy
+    document.querySelectorAll('.visibility-options').forEach(group => {
+      const field = group.dataset.field;
+      group.querySelectorAll('.vis-option').forEach(opt => {
+        opt.classList.toggle('selected', opt.dataset.val === s[field]);
+      });
+    });
+    setCheck('searchIndexing', s.search_indexing);
+
+    // Security
+    setCheck('sec2fa', s.two_factor_enabled);
+  }
+
+  function setSelectVal(id, val) {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  }
+  function setCheck(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!val;
+  }
+
+  // ── Language selection ──────────────────────────────────
+  document.querySelectorAll('.lang-option').forEach(el => {
+    el.addEventListener('click', async function() {
+      const lang = this.dataset.lang;
+      document.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+      const ok = await BW.i18n.setLanguage(lang);
+      if (ok) {
+        showToast(BW.i18n.t('settings.saved', 'Language updated'));
+      }
+    });
+  });
+
+  // ── Theme selection ─────────────────────────────────────
+  document.querySelectorAll('.theme-card').forEach(el => {
+    el.addEventListener('click', async function() {
+      const theme = this.dataset.theme;
+      document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+      this.classList.add('selected');
+      await postJSON('/api/settings/theme', { theme });
+      showToast(BW.i18n.t('settings.theme_updated', 'Theme updated'));
+    });
+  });
+
+  // ── Market checkboxes ───────────────────────────────────
+  document.querySelectorAll('#marketGrid .checkbox-item').forEach(el => {
+    el.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT') return;
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      this.classList.toggle('selected', cb.checked);
+    });
+  });
+
+  // ── Visibility options ──────────────────────────────────
+  document.querySelectorAll('.vis-option').forEach(el => {
+    el.addEventListener('click', function() {
+      this.parentElement.querySelectorAll('.vis-option').forEach(o => o.classList.remove('selected'));
+      this.classList.add('selected');
+    });
+  });
+
+  // ── Save functions ──────────────────────────────────────
+  window.saveRegion = async function() {
+    await postJSON('/api/settings/update', {
+      timezone: document.getElementById('settTimezone').value,
+      date_format: document.getElementById('settDateFormat').value,
+      number_format: document.getElementById('settNumberFormat').value,
+      currency_display: document.getElementById('settCurrency').value,
+    });
+    showToast(BW.i18n.t('settings.region_saved', 'Region settings saved'));
+  };
+
+  window.saveNotifications = async function() {
+    await postJSON('/api/settings/notifications', {
+      notifications_enabled: document.getElementById('notifEnabled').checked,
+      email_notifications: document.getElementById('notifEmail').checked,
+      push_notifications: document.getElementById('notifPush').checked,
+      ai_brief_notifications: document.getElementById('notifAiBrief').checked,
+      opportunity_alerts: document.getElementById('notifOpps').checked,
+      portfolio_risk_alerts: document.getElementById('notifRisk').checked,
+      mentor_activity_notifications: document.getElementById('notifMentor').checked,
+      course_update_notifications: document.getElementById('notifCourses').checked,
+      live_room_notifications: document.getElementById('notifLive').checked,
+      referral_reward_notifications: document.getElementById('notifReferral').checked,
+    });
+    showToast(BW.i18n.t('settings.notif_saved', 'Notification settings saved'));
+  };
+
+  window.saveMarkets = async function() {
+    const markets = [];
+    document.querySelectorAll('#marketGrid .checkbox-item input:checked').forEach(cb => {
+      markets.push(cb.value);
+    });
+    await postJSON('/api/settings/update', { market_preferences: markets });
+    showToast(BW.i18n.t('settings.markets_saved', 'Market preferences saved'));
+  };
+
+  window.savePrivacy = async function() {
+    const updates = { search_indexing: document.getElementById('searchIndexing').checked };
+    document.querySelectorAll('.visibility-options').forEach(group => {
+      const sel = group.querySelector('.vis-option.selected');
+      if (sel) updates[group.dataset.field] = sel.dataset.val;
+    });
+    await postJSON('/api/settings/update', updates);
+    showToast(BW.i18n.t('settings.privacy_saved', 'Privacy settings saved'));
+  };
+
+  window.changePassword = function() { showToast(BW.i18n.t('settings.pw_coming', 'Password change: coming soon')); };
+  window.logoutAll = function() { showToast(BW.i18n.t('settings.logged_out_all', 'Logged out from all devices')); };
+
+  window.exportData = async function() {
+    try {
+      const r = await fetch('/api/settings/export');
+      const d = await r.json();
+      if (d.ok) {
+        const blob = new Blob([JSON.stringify(d.export, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'zkr_analiz_data.json'; a.click();
+        URL.revokeObjectURL(url);
+        showToast(BW.i18n.t('settings.data_exported', 'Data exported'));
+      }
+    } catch(e) { showToast(BW.i18n.t('settings.export_failed', 'Export failed')); }
+  };
+
+  window.confirmDeleteAccount = function() {
+    if (!confirm(BW.i18n.t('settings.delete_warning', 'Are you sure you want to delete your account? This cannot be undone.'))) return;
+    postJSON('/api/settings/delete-account', { confirm: 'DELETE' }).then(() => {
+      showToast(BW.i18n.t('settings.delete_requested', 'Account deletion requested'));
+    });
+  };
+
+  async function postJSON(url, body) {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    return r.json();
+  }
+
+  // ── Init ────────────────────────────────────────────────
+  loadSettings();
+  BW.i18n.load('{{ user_lang }}');
+})();
+</script>
+{% endblock %}

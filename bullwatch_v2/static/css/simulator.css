@@ -1,0 +1,896 @@
+/* ═══════════════════════════════════════════════════════════════════
+   simulator.css — ZKR Analiz v2 Advanced Trading Simulator (FAZ 57)
+   Exchange-style UI with order book, trade panel, live PnL
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Page Container ─────────────────────────────────────────────── */
+.sim-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 12px 120px;
+}
+
+/* ── Disclaimer ─────────────────────────────────────────────────── */
+.sim-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 12px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(255,215,0,0.06);
+  border: 1px solid rgba(255,215,0,0.12);
+  color: rgba(255,215,0,0.8);
+  font-size: 11px;
+  line-height: 1.3;
+}
+.sim-demo-badge {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(59,130,246,0.15);
+  color: #3B82F6;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ACCOUNT BAR
+   ══════════════════════════════════════════════════════════════════ */
+.sim-account-bar {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.sim-acc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 14px;
+  white-space: nowrap;
+  min-width: 0;
+}
+.sim-acc-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sim-acc-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.sim-acc-value.positive { color: #16C784; }
+.sim-acc-value.negative { color: #FF4D6D; }
+.sim-acc-divider {
+  width: 1px;
+  height: 30px;
+  background: rgba(255,255,255,0.06);
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TRADING GRID (Order Book + Trade Panel)
+   ══════════════════════════════════════════════════════════════════ */
+.sim-trading-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sim-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sim-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+}
+.sim-panel-badge {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Order Book ─────────────────────────────────────────────────── */
+.sim-orderbook-panel {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.sim-ob-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 6px 14px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.sim-ob-header-row span:last-child { text-align: right; }
+.sim-ob-header-row span:nth-child(2) { text-align: center; }
+
+.sim-ob-asks, .sim-ob-bids {
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-ob-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3px 14px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  position: relative;
+  transition: background 0.15s;
+}
+.sim-ob-row:hover { background: rgba(255,255,255,0.03); }
+
+.sim-ob-bar-bg {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  pointer-events: none;
+  opacity: 0.08;
+}
+.sim-ob-ask .sim-ob-bar-bg { background: #FF4D6D; }
+.sim-ob-bid .sim-ob-bar-bg { background: #16C784; }
+
+.sim-ob-price { font-weight: 500; }
+.sim-ob-ask .sim-ob-price { color: #FF4D6D; }
+.sim-ob-bid .sim-ob-price { color: #16C784; }
+.sim-ob-qty { text-align: center; color: rgba(255,255,255,0.6); }
+.sim-ob-total { text-align: right; color: rgba(255,255,255,0.35); }
+
+.sim-ob-mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.sim-ob-mid-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3B82F6;
+  font-variant-numeric: tabular-nums;
+}
+.sim-ob-mid-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TRADE PANEL
+   ══════════════════════════════════════════════════════════════════ */
+.sim-trade-panel {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sim-tp-row {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px;
+  margin-top: 10px;
+}
+
+.sim-tp-field { display: flex; flex-direction: column; gap: 3px; }
+.sim-tp-field-grow { flex: 1; min-width: 0; }
+
+.sim-tp-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.sim-tp-input {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.2s;
+}
+.sim-tp-input:focus { border-color: rgba(59,130,246,0.5); }
+.sim-tp-input::placeholder { color: rgba(255,255,255,0.2); }
+
+.sim-tp-select {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #fff;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  min-width: 90px;
+  transition: border-color 0.2s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='rgba(255,255,255,0.3)'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 14px;
+}
+.sim-tp-select:focus { border-color: rgba(59,130,246,0.5); }
+.sim-tp-select option { background: #1a1a1a; color: #fff; }
+
+/* Live Price Display */
+.sim-tp-price-display {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 10px 14px 0;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+}
+.sim-tp-price-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+.sim-tp-price-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.5);
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s;
+}
+.sim-tp-price-value.loaded { color: #3B82F6; }
+.sim-tp-price-value.flash-up { color: #16C784 !important; }
+.sim-tp-price-value.flash-down { color: #FF4D6D !important; }
+
+/* Side Toggle */
+.sim-side-toggle {
+  display: flex;
+  gap: 0;
+  margin: 10px 14px 0;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  padding: 3px;
+}
+.sim-side-btn {
+  flex: 1;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: rgba(255,255,255,0.4);
+}
+.sim-side-buy.active {
+  background: rgba(22,199,132,0.15);
+  color: #16C784;
+}
+.sim-side-sell.active {
+  background: rgba(255,77,109,0.15);
+  color: #FF4D6D;
+}
+.sim-side-btn:not(.active):hover {
+  color: rgba(255,255,255,0.6);
+}
+
+/* Order Type Tabs */
+.sim-otype-tabs {
+  display: flex;
+  gap: 0;
+  margin: 8px 14px 0;
+}
+.sim-otype-tab {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.sim-otype-tab:hover { color: rgba(255,255,255,0.6); }
+.sim-otype-tab.active {
+  color: #3B82F6;
+  border-bottom-color: #3B82F6;
+}
+
+/* Price Fields */
+.sim-tp-prices {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px;
+  margin-top: 8px;
+}
+.sim-tp-prices .sim-tp-field { flex: 1; }
+.sim-tp-prices.hidden { display: none; }
+
+/* Quantity field in trade panel */
+.sim-trade-panel > .sim-tp-field {
+  padding: 0 14px;
+  margin-top: 8px;
+}
+
+/* Presets */
+.sim-tp-presets {
+  display: flex;
+  gap: 6px;
+  margin: 8px 14px 0;
+}
+.sim-preset-btn {
+  flex: 1;
+  padding: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sim-preset-btn:hover {
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.06);
+}
+.sim-preset-btn.active {
+  color: #16C784;
+  background: rgba(22,199,132,0.1);
+  border-color: rgba(22,199,132,0.3);
+}
+.sim-execute-sell ~ .sim-tp-presets .sim-preset-btn.active,
+.sim-side-sell.active ~ * .sim-preset-btn.active {
+  color: #FF4D6D;
+  background: rgba(255,77,109,0.1);
+  border-color: rgba(255,77,109,0.3);
+}
+
+/* FAZ 63B: Preset preview text */
+.sim-preset-preview {
+  margin: 4px 14px 0;
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  min-height: 14px;
+  transition: opacity 0.2s;
+  opacity: 0;
+}
+.sim-preset-preview.visible {
+  opacity: 1;
+  color: rgba(255,255,255,0.4);
+}
+
+/* Estimate */
+.sim-tp-estimate {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 14px 0;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+.sim-tp-est-label { font-size: 11px; color: rgba(255,255,255,0.3); }
+.sim-tp-est-value { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+/* Execute Button */
+.sim-execute-btn {
+  margin: 10px 14px 14px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+.sim-execute-buy {
+  background: rgba(22,199,132,0.15);
+  color: #16C784;
+  border: 1px solid rgba(22,199,132,0.25);
+}
+.sim-execute-buy:hover {
+  background: rgba(22,199,132,0.25);
+  transform: translateY(-1px);
+}
+.sim-execute-sell {
+  background: rgba(255,77,109,0.15);
+  color: #FF4D6D;
+  border: 1px solid rgba(255,77,109,0.25);
+}
+.sim-execute-sell:hover {
+  background: rgba(255,77,109,0.25);
+  transform: translateY(-1px);
+}
+.sim-execute-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Trade Message */
+.sim-trade-msg {
+  margin: 0 14px 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  animation: fadeDown 0.2s ease-out;
+}
+.sim-trade-msg.hidden { display: none; }
+.sim-trade-msg.success {
+  background: rgba(22,199,132,0.08);
+  border: 1px solid rgba(22,199,132,0.15);
+  color: #16C784;
+}
+.sim-trade-msg.error {
+  background: rgba(255,77,109,0.08);
+  border: 1px solid rgba(255,77,109,0.15);
+  color: #FF4D6D;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   TABS SECTION
+   ══════════════════════════════════════════════════════════════════ */
+.sim-tabs-section { margin-bottom: 24px; }
+
+.sim-tab-bar {
+  display: flex;
+  gap: 0;
+  background: rgba(255,255,255,0.02);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 12px;
+}
+.sim-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.35);
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sim-tab-btn:hover { color: rgba(255,255,255,0.5); }
+.sim-tab-btn.active {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+}
+.sim-tab-count {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(59,130,246,0.15);
+  color: #3B82F6;
+}
+
+.sim-tab-pane { display: none; }
+.sim-tab-pane.active { display: block; }
+
+/* ── Position Cards ─────────────────────────────────────────────── */
+.sim-positions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sim-position-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+  transition: all 0.2s;
+}
+.sim-position-card:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.sim-pos-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sim-pos-symbol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sim-pos-symbol-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+.sim-pos-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.sim-pos-badge.long, .sim-pos-badge.buy {
+  background: rgba(22,199,132,0.15);
+  color: #16C784;
+}
+.sim-pos-badge.short, .sim-pos-badge.sell {
+  background: rgba(255,77,109,0.15);
+  color: #FF4D6D;
+}
+.sim-pos-market {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  background: rgba(255,255,255,0.04);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.sim-pos-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.sim-pos-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sim-pos-stat-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.sim-pos-stat-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.7);
+  font-variant-numeric: tabular-nums;
+}
+
+.sim-pos-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sim-pos-time {
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+}
+.sim-pos-pnl {
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.sim-pos-pnl.positive { color: #16C784; }
+.sim-pos-pnl.negative { color: #FF4D6D; }
+.sim-pos-pnl.neutral { color: rgba(255,255,255,0.4); }
+
+.sim-btn-close {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sim-btn-close:hover {
+  background: rgba(255,77,109,0.12);
+  color: #FF4D6D;
+  border-color: rgba(255,77,109,0.2);
+}
+
+/* ── Order Cards ────────────────────────────────────────────────── */
+.sim-orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sim-order-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.sim-order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sim-order-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sim-order-symbol {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.sim-order-type-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(59,130,246,0.12);
+  color: #3B82F6;
+  text-transform: uppercase;
+}
+.sim-btn-cancel {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(255,255,255,0.04);
+  color: rgba(255,255,255,0.4);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sim-btn-cancel:hover {
+  color: #FF4D6D;
+  border-color: rgba(255,77,109,0.2);
+}
+.sim-order-details {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Trade History ──────────────────────────────────────────────── */
+.sim-trades-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sim-trade-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+.sim-trade-item:hover { background: rgba(255,255,255,0.04); }
+
+.sim-trade-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sim-trade-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.sim-trade-icon.buy {
+  background: rgba(22,199,132,0.1);
+  color: #16C784;
+}
+.sim-trade-icon.sell {
+  background: rgba(255,77,109,0.1);
+  color: #FF4D6D;
+}
+.sim-trade-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sim-trade-symbol {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+.sim-trade-note {
+  font-size: 10px;
+  color: rgba(255,255,255,0.25);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-trade-right { text-align: right; }
+.sim-trade-notional {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+}
+.sim-trade-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.2);
+}
+
+/* ── Empty States ───────────────────────────────────────────────── */
+.sim-empty-state {
+  padding: 40px 16px;
+  text-align: center;
+}
+.sim-empty-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+.sim-empty-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 4px;
+}
+.sim-empty-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.25);
+}
+
+/* ── Toast Notifications ────────────────────────────────────────── */
+.sim-toast-container {
+  position: fixed;
+  top: 70px;
+  right: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+.sim-toast {
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s ease;
+  max-width: 340px;
+}
+.sim-toast.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+.sim-toast-success {
+  background: rgba(22,199,132,0.12);
+  border: 1px solid rgba(22,199,132,0.2);
+  color: #16C784;
+}
+.sim-toast-error {
+  background: rgba(255,77,109,0.12);
+  border: 1px solid rgba(255,77,109,0.2);
+  color: #FF4D6D;
+}
+.sim-toast-info {
+  background: rgba(59,130,246,0.12);
+  border: 1px solid rgba(59,130,246,0.2);
+  color: #3B82F6;
+}
+
+/* ── Modal ──────────────────────────────────────────────────────── */
+.sim-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.sim-modal.hidden { display: none; }
+.sim-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+}
+.sim-modal-content {
+  position: relative;
+  background: #0B0B0F;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 380px;
+  width: 100%;
+  text-align: center;
+  animation: fadeUp 0.2s ease-out;
+}
+.sim-modal-icon { font-size: 36px; margin-bottom: 12px; }
+.sim-modal-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.sim-modal-text { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.5; margin-bottom: 20px; }
+.sim-modal-buttons { display: flex; gap: 12px; }
+
+.sim-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; flex: 1; }
+.sim-btn-secondary { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.08); }
+.sim-btn-secondary:hover { background: rgba(255,255,255,0.1); }
+.sim-btn-danger { background: rgba(255,77,109,0.15); color: #FF4D6D; border: 1px solid rgba(255,77,109,0.25); }
+.sim-btn-danger:hover { background: rgba(255,77,109,0.25); }
+
+/* ── Animations ─────────────────────────────────────────────────── */
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ═══ FAZ 23: Journal Prompt ═══ */
+.sim-journal-prompt { margin: 10px 14px; animation: fadeDown 0.25s ease; }
+.sim-journal-prompt-inner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; }
+.sim-journal-prompt-text { flex: 1; font-size: 13px; color: #ccc; }
+.sim-btn-journal { padding: 6px 14px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: transform 0.1s; }
+.sim-btn-journal:hover { transform: translateY(-1px); }
+.sim-btn-journal-dismiss { background: none; border: none; color: #888; font-size: 14px; cursor: pointer; padding: 4px; }
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sim-trading-grid {
+    grid-template-columns: 1fr;
+  }
+  .sim-account-bar {
+    gap: 0;
+    padding: 8px 10px;
+  }
+  .sim-acc-item { padding: 0 8px; }
+  .sim-acc-value { font-size: 12px; }
+  .sim-acc-label { font-size: 9px; }
+  .sim-pos-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .sim-container { padding: 0 8px 100px; }
+  .sim-account-bar { flex-wrap: wrap; gap: 4px; }
+  .sim-acc-divider { display: none; }
+  .sim-acc-item { padding: 4px 8px; flex: 1; min-width: 45%; }
+  .sim-tab-btn { font-size: 11px; padding: 8px 6px; }
+  .sim-ob-row { font-size: 11px; padding: 2px 10px; }
+  .sim-tp-row { flex-direction: column; gap: 6px; }
+  .sim-order-details { flex-direction: column; gap: 4px; }
+  .sim-toast-container { right: 8px; left: 8px; }
+  .sim-toast { max-width: none; }
+}

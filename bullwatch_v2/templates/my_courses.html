@@ -1,0 +1,66 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Yakında — ZKR Analiz{% endblock %}
+{% block topbar_title %}Yakında{% endblock %}
+
+{% block page_title %}Yakında{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── My Courses Styles ───────────────────────────── */
+.mc-card{background:#111;border:1px solid #1e1e1e;border-radius:14px;padding:16px;margin:0 16px 12px;transition:border-color .2s;text-decoration:none;display:block;color:inherit;}
+.mc-card:hover{border-color:#10b98133;}
+.mc-card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.mc-thumb{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.mc-card-info{flex:1;min-width:0;}
+.mc-card-title{font-size:14px;font-weight:600;color:#f5f5f5;margin-bottom:2px;}
+.mc-card-mentor{font-size:12px;color:#888;}
+
+.mc-progress-bar{height:6px;background:#1a1a1a;border-radius:3px;margin:10px 0 6px;overflow:hidden;}
+.mc-progress-fill{height:100%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:3px;transition:width .3s;}
+
+.mc-progress-row{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
+.mc-progress-pct{color:#34d399;font-weight:600;}
+.mc-progress-status{color:#888;}
+.mc-status-completed{color:#34d399;}
+.mc-status-active{color:#60a5fa;}
+
+.mc-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
+.mc-badge{font-size:10px;padding:2px 7px;border-radius:8px;background:#1a1a1a;border:1px solid #272727;}
+.mc-badge.level-beginner{color:#4ade80;border-color:#4ade8033;}
+.mc-badge.level-intermediate{color:#fbbf24;border-color:#fbbf2433;}
+.mc-badge.level-advanced{color:#f97316;border-color:#f9731633;}
+
+.mc-empty{text-align:center;padding:60px 16px;color:#666;font-size:14px;}
+.mc-empty-icon{font-size:48px;margin-bottom:16px;}
+.mc-empty a{color:#10b981;text-decoration:none;}
+.mc-empty a:hover{text-decoration:underline;}
+.mc-loading{text-align:center;padding:40px;color:#666;font-size:14px;}
+
+.mc-stats{display:flex;gap:12px;padding:12px 16px;margin-bottom:4px;}
+.mc-stat-box{flex:1;background:#111;border:1px solid #1e1e1e;border-radius:12px;padding:12px;text-align:center;}
+.mc-stat-val{font-size:20px;font-weight:700;color:#f5f5f5;}
+.mc-stat-label{font-size:11px;color:#888;margin-top:2px;}
+</style>
+{% endblock %}
+
+{% block content %}
+{% if coming_soon %}
+<div class="coming-soon-page">
+  <div class="cs-icon">🔒</div>
+  <h2 class="cs-title">Yeni Özellik Yakında</h2>
+  <p class="cs-subtitle">Bu bölüm şu anda geliştirme aşamasındadır. Çok yakında sizlerle buluşacak!</p>
+  <div class="cs-shimmer"></div>
+  <button class="cs-btn" onclick="if(window.BW&&BW.i18n)BW.i18n.toast('Haberdar edileceksiniz!','info');else alert('Haberdar edileceksiniz!')">🔔 Haberdar Et</button>
+</div>
+{% else %}
+<div id="mcStats"></div>
+<div id="mcList">
+  <div class="mc-loading">Yükleniyor…</div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/my_courses.js"></script>
+{% endblock %}

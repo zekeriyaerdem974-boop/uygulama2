@@ -1,0 +1,315 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Invite & Earn • ZKR Analiz{% endblock %}
+{% block page_title %}Invite & Earn{% endblock %}
+{% block topbar_title %}Invite & Earn{% endblock %}
+
+{% block extra_head %}
+<style>
+  .inv-wrap { max-width: 720px; margin: 0 auto; padding: 16px; }
+
+  /* Hero */
+  .inv-hero { text-align: center; padding: 32px 16px 24px; }
+  .inv-hero h1 { font-size: 26px; font-weight: 800; background: linear-gradient(135deg, #00C853, #2979FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+  .inv-hero p { color: #6b7280; font-size: 13px; }
+
+  /* Invite Code Card */
+  .inv-code-card { background: rgba(41,121,255,0.06); border: 1px solid rgba(41,121,255,0.15); border-radius: 16px; padding: 24px; text-align: center; margin-bottom: 20px; }
+  .inv-code-label { font-size: 12px; color: #6b7280; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+  .inv-code { font-size: 32px; font-weight: 800; color: #2979FF; font-family: 'JetBrains Mono', monospace; letter-spacing: 4px; margin-bottom: 12px; }
+  .inv-link-row { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; }
+  .inv-link-input { flex: 1; background: none; border: none; color: #e5e7eb; font-size: 13px; font-family: 'JetBrains Mono', monospace; outline: none; }
+  .inv-copy-btn { background: #2979FF; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .inv-copy-btn:hover { background: #1565C0; }
+
+  /* Share Buttons */
+  .inv-share-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .inv-share-btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .inv-share-btn:hover { transform: translateY(-1px); }
+  .inv-share-twitter { background: rgba(29,155,240,0.12); color: #1DA1F2; }
+  .inv-share-telegram { background: rgba(0,136,204,0.12); color: #0088CC; }
+  .inv-share-whatsapp { background: rgba(37,211,102,0.12); color: #25D366; }
+
+  /* Stats Grid */
+  .inv-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .inv-stat-card { background: #111; border-radius: 14px; padding: 18px 14px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+  .inv-stat-num { font-size: 28px; font-weight: 800; color: #e5e7eb; }
+  .inv-stat-label { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+  /* Rewards */
+  .inv-rewards { margin-bottom: 20px; }
+  .inv-rewards h2 { font-size: 16px; font-weight: 700; color: #e5e7eb; margin-bottom: 12px; }
+  .inv-reward-tier { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #111; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 8px; transition: background 0.2s; }
+  .inv-reward-tier.unlocked { border-color: rgba(0,200,83,0.3); background: rgba(0,200,83,0.04); }
+  .inv-reward-icon { font-size: 22px; flex-shrink: 0; }
+  .inv-reward-info { flex: 1; }
+  .inv-reward-title { font-size: 14px; font-weight: 600; color: #e5e7eb; }
+  .inv-reward-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .inv-reward-badge { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 8px; flex-shrink: 0; }
+  .inv-reward-locked .inv-reward-badge { background: rgba(255,255,255,0.05); color: #6b7280; }
+  .inv-reward-unlocked .inv-reward-badge { background: rgba(0,200,83,0.15); color: #00C853; }
+
+  /* Progress Bar */
+  .inv-progress { margin-bottom: 20px; }
+  .inv-progress-bar { height: 8px; background: rgba(255,255,255,0.06); border-radius: 8px; overflow: hidden; margin-top: 8px; }
+  .inv-progress-fill { height: 100%; background: linear-gradient(90deg, #2979FF, #00C853); border-radius: 8px; transition: width 0.6s ease; }
+  .inv-progress-label { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; }
+
+  /* Leaderboard */
+  .inv-lb { margin-bottom: 20px; }
+  .inv-lb h2 { font-size: 16px; font-weight: 700; color: #e5e7eb; margin-bottom: 12px; }
+  .inv-lb-card { background: #111; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+  .inv-lb-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .inv-lb-row:last-child { border-bottom: none; }
+  .inv-lb-rank { width: 24px; font-size: 14px; font-weight: 700; color: #6b7280; text-align: center; }
+  .inv-lb-rank-1 { color: #FFD600; }
+  .inv-lb-rank-2 { color: #C0C0C0; }
+  .inv-lb-rank-3 { color: #CD7F32; }
+  .inv-lb-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #2979FF, #00C853); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: #fff; }
+  .inv-lb-name { flex: 1; font-size: 13px; font-weight: 600; color: #e5e7eb; }
+  .inv-lb-count { font-size: 14px; font-weight: 700; color: #00C853; }
+
+  /* Recent Activity */
+  .inv-recent { margin-bottom: 20px; }
+  .inv-recent h2 { font-size: 16px; font-weight: 700; color: #e5e7eb; margin-bottom: 12px; }
+  .inv-recent-card { background: #111; border-radius: 14px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+  .inv-recent-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 13px; color: #9ca3af; }
+  .inv-recent-row:last-child { border-bottom: none; }
+  .inv-recent-time { font-size: 11px; color: #6b7280; margin-left: auto; }
+
+  .inv-loading { text-align: center; padding: 40px; color: #6b7280; font-size: 14px; }
+  .inv-empty { text-align: center; padding: 40px; color: #6b7280; font-size: 13px; }
+
+  @media (max-width: 600px) {
+    .inv-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .inv-stat-num { font-size: 22px; }
+    .inv-code { font-size: 24px; }
+    .inv-share-row { flex-direction: column; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inv-wrap">
+  <!-- Hero -->
+  <div class="inv-hero">
+    <h1>🚀 Invite Friends & Earn Rewards</h1>
+    <p>Share your invite code and earn Pro trials, credits, and exclusive badges</p>
+  </div>
+
+  <!-- Invite Code -->
+  <div class="inv-code-card" id="invCodeCard">
+    <div class="inv-code-label">Your Invite Code</div>
+    <div class="inv-code" id="invCode">------</div>
+    <div class="inv-link-row">
+      <input type="text" class="inv-link-input" id="invLinkInput" value="" readonly />
+      <button class="inv-copy-btn" id="invCopyBtn" onclick="copyInviteLink()">Copy</button>
+    </div>
+    <div class="inv-share-row">
+      <a class="inv-share-btn inv-share-twitter" id="invShareTwitter" href="#" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        Twitter / X
+      </a>
+      <a class="inv-share-btn inv-share-telegram" id="invShareTelegram" href="#" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0h-.056zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+        Telegram
+      </a>
+      <a class="inv-share-btn inv-share-whatsapp" id="invShareWhatsApp" href="#" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp
+      </a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="inv-stats" id="invStats">
+    <div class="inv-stat-card">
+      <div class="inv-stat-num" id="statTotal">0</div>
+      <div class="inv-stat-label">Total Invites</div>
+    </div>
+    <div class="inv-stat-card">
+      <div class="inv-stat-num" id="statActive">0</div>
+      <div class="inv-stat-label">Active Users</div>
+    </div>
+    <div class="inv-stat-card">
+      <div class="inv-stat-num" id="statRewards">0</div>
+      <div class="inv-stat-label">Rewards Earned</div>
+    </div>
+  </div>
+
+  <!-- Progress to Next Reward -->
+  <div class="inv-progress" id="invProgress">
+    <div class="inv-progress-label">
+      <span id="progText">Next reward at <strong>1</strong> invite</span>
+      <span id="progPercent">0%</span>
+    </div>
+    <div class="inv-progress-bar">
+      <div class="inv-progress-fill" id="progFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Rewards Tiers -->
+  <div class="inv-rewards" id="invRewards">
+    <h2>🎁 Reward Tiers</h2>
+    <div id="rewardTierList">
+      <div class="inv-loading">Loading rewards…</div>
+    </div>
+  </div>
+
+  <!-- Top Inviters Leaderboard -->
+  <div class="inv-lb" id="invLeaderboard">
+    <h2>🏆 Top Inviters</h2>
+    <div class="inv-lb-card" id="lbBody">
+      <div class="inv-loading">Loading leaderboard…</div>
+    </div>
+  </div>
+
+  <!-- Recent Referrals -->
+  <div class="inv-recent" id="invRecent">
+    <h2>📋 Recent Referrals</h2>
+    <div class="inv-recent-card" id="recentBody">
+      <div class="inv-loading">Loading…</div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  const REWARD_TIERS = [
+    { min: 1, icon: '⭐', title: '3 Days Pro Trial', desc: 'Invite 1 friend' },
+    { min: 3, icon: '💎', title: '10 Credits', desc: 'Invite 3 friends' },
+    { min: 5, icon: '🔥', title: '25 Credits', desc: 'Invite 5 friends' },
+    { min: 10, icon: '🏅', title: 'Elite Analyst Badge', desc: 'Invite 10 friends' },
+    { min: 25, icon: '🚀', title: '50 Portfolio Credits', desc: 'Invite 25 friends' },
+    { min: 50, icon: '👑', title: 'Growth Champion Badge', desc: 'Invite 50 friends' }
+  ];
+
+  function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+  function rankIcon(i){ return i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1); }
+  function timeAgo(ts){
+    if(!ts) return '';
+    const d=new Date(ts), diff=Math.floor((Date.now()-d.getTime())/1000);
+    if(diff<60) return diff+'s ago';
+    if(diff<3600) return Math.floor(diff/60)+'m ago';
+    if(diff<86400) return Math.floor(diff/3600)+'h ago';
+    return Math.floor(diff/86400)+'d ago';
+  }
+
+  /* Load invite code */
+  async function loadCode(){
+    try {
+      const r = await fetch('/api/invite/code');
+      const d = await r.json();
+      if(d.ok && d.code){
+        document.getElementById('invCode').textContent = d.code;
+        const url = location.origin + '/invite/' + d.code;
+        document.getElementById('invLinkInput').value = url;
+        /* Social share links */
+        const text = encodeURIComponent('Join me on ZKR Analiz Pro! Use my invite code: ' + d.code);
+        document.getElementById('invShareTwitter').href = 'https://twitter.com/intent/tweet?text=' + text + '&url=' + encodeURIComponent(url);
+        document.getElementById('invShareTelegram').href = 'https://t.me/share/url?url=' + encodeURIComponent(url) + '&text=' + text;
+        document.getElementById('invShareWhatsApp').href = 'https://wa.me/?text=' + text + '%20' + encodeURIComponent(url);
+      }
+    } catch(e){ console.error('loadCode', e); }
+  }
+
+  /* Load stats */
+  async function loadStats(){
+    try {
+      const r = await fetch('/api/invite/stats');
+      const d = await r.json();
+      if(d.ok && d.data){
+        const s = d.data;
+        document.getElementById('statTotal').textContent = s.referrals || 0;
+        document.getElementById('statActive').textContent = s.successful_invites || 0;
+        document.getElementById('statRewards').textContent = s.rewards || 0;
+        updateProgress(s.referrals || 0);
+        renderRewardTiers(s.referrals || 0);
+      }
+    } catch(e){ console.error('loadStats', e); }
+  }
+
+  function updateProgress(count){
+    let nextTier = REWARD_TIERS.find(t => t.min > count);
+    if(!nextTier) nextTier = REWARD_TIERS[REWARD_TIERS.length - 1];
+    const prevMin = (REWARD_TIERS.find(t => t.min <= count) || {min:0}).min;
+    const range = nextTier.min - prevMin;
+    const prog = range > 0 ? Math.min(((count - prevMin) / range) * 100, 100) : 100;
+    document.getElementById('progText').innerHTML = count >= 50
+      ? 'All rewards unlocked!'
+      : 'Next reward at <strong>' + nextTier.min + '</strong> invites';
+    document.getElementById('progPercent').textContent = Math.round(prog) + '%';
+    document.getElementById('progFill').style.width = prog + '%';
+  }
+
+  function renderRewardTiers(count){
+    const el = document.getElementById('rewardTierList');
+    el.innerHTML = REWARD_TIERS.map(t => {
+      const unlocked = count >= t.min;
+      return `<div class="inv-reward-tier ${unlocked ? 'unlocked inv-reward-unlocked' : 'inv-reward-locked'}">
+        <div class="inv-reward-icon">${t.icon}</div>
+        <div class="inv-reward-info">
+          <div class="inv-reward-title">${esc(t.title)}</div>
+          <div class="inv-reward-desc">${esc(t.desc)}</div>
+        </div>
+        <span class="inv-reward-badge">${unlocked ? '✓ Unlocked' : t.min + ' invites'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  /* Load leaderboard */
+  async function loadLeaderboard(){
+    try {
+      const r = await fetch('/api/invite/top-inviters?limit=10');
+      const d = await r.json();
+      const el = document.getElementById('lbBody');
+      if(!d.ok || !d.data || d.data.length === 0){
+        el.innerHTML = '<div class="inv-empty">No inviters yet. Be the first!</div>';
+        return;
+      }
+      el.innerHTML = d.data.map((u, i) => `<div class="inv-lb-row">
+        <div class="inv-lb-rank ${i<3?'inv-lb-rank-'+(i+1):''}">${rankIcon(i)}</div>
+        <div class="inv-lb-avatar">${esc((u.username||u.user_id||'?')[0]).toUpperCase()}</div>
+        <div class="inv-lb-name">${esc(u.username||u.user_id)}</div>
+        <div class="inv-lb-count">${u.referrals || 0}</div>
+      </div>`).join('');
+    } catch(e){ console.error('loadLeaderboard', e); }
+  }
+
+  /* Load recent referrals */
+  async function loadRecent(){
+    try {
+      const r = await fetch('/api/invite/recent?limit=8');
+      const d = await r.json();
+      const el = document.getElementById('recentBody');
+      if(!d.ok || !d.data || d.data.length === 0){
+        el.innerHTML = '<div class="inv-empty">No referrals yet.</div>';
+        return;
+      }
+      el.innerHTML = d.data.map(ref => `<div class="inv-recent-row">
+        <span>👤 New user joined via invite</span>
+        <span class="inv-recent-time">${timeAgo(ref.created_at)}</span>
+      </div>`).join('');
+    } catch(e){ console.error('loadRecent', e); }
+  }
+
+  /* Init */
+  loadCode();
+  loadStats();
+  loadLeaderboard();
+  loadRecent();
+})();
+
+function copyInviteLink(){
+  const input = document.getElementById('invLinkInput');
+  if(!input.value) return;
+  navigator.clipboard.writeText(input.value).then(()=>{
+    const btn = document.getElementById('invCopyBtn');
+    btn.textContent = 'Copied!';
+    setTimeout(()=>{ btn.textContent = 'Copy'; }, 2000);
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.legacy_backup/
+.git/
+*.log
+nohup.out
+private_downloads/
+tests/

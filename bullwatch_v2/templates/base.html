@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="tr" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#06080D" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>{% block title %}ZKR Analiz Pro{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+  <link rel="icon" href="{{ url_for('static', filename='icon.svg') }}" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}" />
+</head>
+<body class="bg-neutral-950 text-neutral-100">
+  <header class="sticky top-0 z-50 backdrop-blur bg-neutral-900/80 border-b border-neutral-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="/" class="text-xl font-semibold tracking-tight">🐂 ZKR Analiz Pro</a>
+      <nav class="flex gap-4 text-sm items-center">
+        <a class="hover:text-white/90" href="/">Boğa Tahmini</a>
+        <a class="hover:text-white/90" href="/chat">GPT Sohbet</a>
+        {% if current_user %}
+          <span class="text-neutral-400">|</span>
+          <span class="text-green-400 text-xs font-medium">👤 {{ current_user.username }}</span>
+          <button onclick="fetch('/api/auth/logout',{method:'POST'}).then(()=>location.reload())"
+                  class="text-red-400 hover:text-red-300 text-xs">Çıkış</button>
+        {% else %}
+          <span class="text-neutral-400">|</span>
+          <a class="text-blue-400 hover:text-blue-300 text-xs font-medium" href="/login">Giriş</a>
+          <a class="text-green-400 hover:text-green-300 text-xs font-medium" href="/register">Kayıt</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="border-t border-neutral-800 py-6 text-center text-xs text-neutral-400">
+    <p>AI Market Intelligence Platform</p>
+    <div class="flex items-center justify-center gap-3 mt-2">
+      <a href="/disclaimer" class="hover:text-amber-400 transition-colors">Disclaimer</a>
+      <span class="text-neutral-600">•</span>
+      <a href="/disclaimer" class="hover:text-amber-400 transition-colors">Risk Warning</a>
+      <span class="text-neutral-600">•</span>
+      <a href="/disclaimer" class="hover:text-amber-400 transition-colors">Terms</a>
+    </div>
+    <p class="mt-2 text-neutral-600" style="font-size:10px;">Bu platform yatırım tavsiyesi vermez. Tüm içerikler bilgilendirme amaçlıdır.</p>
+  </footer>
+
+  <script>
+    (function () {
+      if (!('serviceWorker' in navigator)) return;
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}').catch(function () {});
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+/* ═══════════════════════════════════════════════
+   Trade Journal  –  journal.css
+   ═══════════════════════════════════════════════ */
+
+.jrn-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 12px 10px 80px;
+}
+
+/* ── Stats row ─────────────────────────────── */
+.jrn-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.jrn-stat-card {
+  background: #1a1d28;
+  border: 1px solid #2a2d3a;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.jrn-stat-label {
+  font-size: 11px;
+  color: #8a8e9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.jrn-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.jrn-stat-value.positive { color: #22c55e; }
+.jrn-stat-value.negative { color: #ef4444; }
+
+/* ── Panel ─────────────────────────────────── */
+.jrn-panel {
+  background: #1a1d28;
+  border: 1px solid #2a2d3a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.jrn-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.jrn-badge {
+  background: #3b82f6;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* ── Form grid ─────────────────────────────── */
+.jrn-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.jrn-field label {
+  display: block;
+  font-size: 11px;
+  color: #8a8e9a;
+  margin-bottom: 4px;
+}
+
+.jrn-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: #12141e;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.jrn-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.jrn-textarea {
+  height: 60px;
+  resize: vertical;
+}
+
+/* ── Emotion buttons ───────────────────────── */
+.jrn-emotion-row {
+  display: flex;
+  gap: 6px;
+}
+
+.jrn-emo-btn {
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+  background: #12141e;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.jrn-emo-btn:hover {
+  background: #252830;
+}
+
+.jrn-emo-btn.active {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.25);
+}
+
+/* ── Add button ────────────────────────────── */
+.jrn-add-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+
+.jrn-add-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+.jrn-add-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Table ─────────────────────────────────── */
+.jrn-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.jrn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.jrn-table thead th {
+  text-align: left;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8a8e9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #2a2d3a;
+}
+
+.jrn-table tbody td {
+  padding: 10px 6px;
+  border-bottom: 1px solid #1e2130;
+  color: #ccc;
+}
+
+.jrn-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.positive { color: #22c55e !important; }
+.negative { color: #ef4444 !important; }
+
+/* ── Icon buttons ──────────────────────────── */
+.jrn-icon-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.jrn-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.jrn-icon-btn.del:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* ── Modal ─────────────────────────────────── */
+.jrn-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.jrn-modal-content {
+  background: #1a1d28;
+  border: 1px solid #2a2d3a;
+  border-radius: 14px;
+  padding: 20px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.jrn-modal-content h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  color: #fff;
+}
+
+.jrn-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.jrn-modal-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.jrn-modal-btn.cancel {
+  background: #2a2d3a;
+  color: #ccc;
+}
+
+.jrn-modal-btn.save {
+  background: #3b82f6;
+  color: #fff;
+}
+
+/* ── Responsive ────────────────────────────── */
+@media (max-width: 600px) {
+  .jrn-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .jrn-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

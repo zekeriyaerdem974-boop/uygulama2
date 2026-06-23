@@ -1,0 +1,443 @@
+const TF = [
+  { key: '1m', label: '1m' },
+  { key: '5m', label: '5m' },
+  { key: '15m', label: '15m' },
+  { key: '1h', label: '1h' },
+  { key: '4h', label: '4h' },
+  { key: '1d', label: '1D' },
+];
+
+const els = {
+  tf: document.getElementById('tf'),
+  status: document.getElementById('status'),
+  watch: document.getElementById('watch'),
+  refreshWatch: document.getElementById('refreshWatch'),
+  symbolSearch: document.getElementById('symbolSearch'),
+  title: document.getElementById('title'),
+  sub: document.getElementById('sub'),
+  meta: document.getElementById('meta'),
+  lastPx: document.getElementById('lastPx'),
+  aiAnalyze: document.getElementById('aiAnalyze'),
+  aiClear: document.getElementById('aiClear'),
+  aiOut: document.getElementById('aiOut'),
+  refreshAll: document.getElementById('refreshAll'),
+  qty: document.getElementById('qty'),
+  buyBtn: document.getElementById('buyBtn'),
+  sellBtn: document.getElementById('sellBtn'),
+  chartMain: document.getElementById('chartMain'),
+  chartVol: document.getElementById('chartVol'),
+  chartRsi: document.getElementById('chartRsi'),
+  chartMacd: document.getElementById('chartMacd'),
+
+  alphaStatus: document.getElementById('alphaStatus'),
+  alphaUniverse: document.getElementById('alphaUniverse'),
+  alphaSelected: document.getElementById('alphaSelected'),
+
+  ofTrend: document.getElementById('ofTrend'),
+  ofVol: document.getElementById('ofVol'),
+  ofRatio: document.getElementById('ofRatio'),
+
+  liqChg: document.getElementById('liqChg'),
+  liqVol: document.getElementById('liqVol'),
+  liqRank: document.getElementById('liqRank'),
+};
+
+let currentSymbol = 'BTCUSDT';
+let currentTf = '15m';
+let watchRows = [];
+let lastMarket = null;
+let alphaPairs = null; // cached
+
+function fmt(n, d = 2) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return '—';
+  return x.toLocaleString(undefined, { maximumFractionDigits: d });
+}
+
+function pct(n) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return '—';
+  const s = x >= 0 ? '+' : '';
+  return `${s}${x.toFixed(2)}%`;
+}
+
+function setStatus(text) {
+  els.status.textContent = `Bağlantı: ${text}`;
+}
+
+function renderTf() {
+  els.tf.innerHTML = '';
+  for (const t of TF) {
+    const b = document.createElement('button');
+    b.textContent = t.label;
+    b.className = t.key === currentTf ? 'active' : '';
+    b.addEventListener('click', () => {
+      currentTf = t.key;
+      renderTf();
+      refreshFast()
+        .then(() => loadAlphaInfo({ includeStatus: false }))
+        .catch(e => setStatus(`err:${e.message}`));
+    });
+    els.tf.appendChild(b);
+  }
+}
+
+function renderWatch() {
+  els.watch.innerHTML = '';
+  const q = (els.symbolSearch.value || '').trim().toUpperCase();
+
+  const rows = watchRows
+    .filter(r => {
+      if (!q) return true;
+      const sym = (r.symbol || '').toUpperCase();
+      const base = (r.base || '').toUpperCase();
+      return sym.includes(q) || base.includes(q);
+    })
+    .slice(0, 180);
+
+  for (const r of rows) {
+    const sym = r.symbol;
+    const chg = Number(r.pct);
+
+    const el = document.createElement('div');
+    el.className = 'item' + (sym === currentSymbol ? ' active' : '');
+    el.dataset.sym = sym;
+
+    const left = document.createElement('div');
+    left.innerHTML = `<div class="sym">${sym}</div><div class="muted">${r.base || ''}</div>`;
+
+    const right = document.createElement('div');
+    const cls = Number.isFinite(chg) ? (chg >= 0 ? 'good' : 'bad') : '';
+    right.innerHTML = `<div class="chg ${cls}">${pct(chg)}</div><div class="muted">Vol: ${fmt(r.quoteVolume, 0)}</div>`;
+
+    el.appendChild(left);
+    el.appendChild(right);
+
+    el.addEventListener('click', () => {
+      currentSymbol = sym;
+      renderWatch();
+      refreshFast()
+        .then(() => loadAlphaInfo({ includeStatus: false }))
+        .catch(e => setStatus(`err:${e.message}`));
+    });
+
+    els.watch.appendChild(el);
+  }
+}
+
+async function fetchJson(url, opts) {
+  const r = await fetch(url, opts);
+  const txt = await r.text();
+  let js;
+  try { js = JSON.parse(txt); } catch { throw new Error(`invalid_json: ${txt.slice(0, 200)}`); }
+  if (!r.ok || js.ok === false) {
+    throw new Error(js.error || `http_${r.status}`);
+  }
+  return js;
+}
+
+async function loadWatch() {
+  // Unified watchlist from futures 24h tickers
+  setStatus('watchlist…');
+  const js = await fetchJson('/api/liquidation/symbols');
+  const items = js.items || [];
+  watchRows = items.filter(r => r.symbol && (r.symbol.endsWith('USDT')));
+
+  if (!watchRows.find(r => r.symbol === currentSymbol) && watchRows[0]) {
+    currentSymbol = watchRows[0].symbol;
+  }
+
+  renderWatch();
+  setStatus('ok');
+}
+
+let chartMain, seriesCandles, seriesVol;
+let chartVol, seriesVolPanel;
+let chartRsi, seriesRsi;
+let chartMacd, seriesMacd, seriesSignal, seriesHist;
+
+function initCharts() {
+  const common = {
+    layout: {
+      background: { color: '#000000' },
+      textColor: '#e7eefc',
+    },
+    grid: {
+      vertLines: { color: '#18243a' },
+      horzLines: { color: '#18243a' },
+    },
+    rightPriceScale: { borderColor: '#1b2a44' },
+    timeScale: { borderColor: '#1b2a44' },
+    crosshair: { mode: 1 },
+  };
+
+  chartMain = LightweightCharts.createChart(els.chartMain, {
+    ...common,
+    height: Math.max(340, Math.floor(window.innerHeight * 0.52)),
+  });
+  seriesCandles = chartMain.addCandlestickSeries({
+    upColor: '#2dd4bf', downColor: '#fb7185', borderVisible: false,
+    wickUpColor: '#2dd4bf', wickDownColor: '#fb7185',
+  });
+  seriesVol = chartMain.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    priceScaleId: '',
+    color: 'rgba(124,92,255,.35)',
+  });
+  seriesVol.priceScale().applyOptions({ scaleMargins: { top: 0.85, bottom: 0 } });
+
+  chartVol = LightweightCharts.createChart(els.chartVol, { ...common, height: 160 });
+  seriesVolPanel = chartVol.addHistogramSeries({
+    priceFormat: { type: 'volume' },
+    color: 'rgba(124,92,255,.35)',
+  });
+  chartVol.priceScale('right').applyOptions({ scaleMargins: { top: 0.15, bottom: 0.05 } });
+
+  chartRsi = LightweightCharts.createChart(els.chartRsi, { ...common, height: 160 });
+  seriesRsi = chartRsi.addLineSeries({ color: '#7c5cff', lineWidth: 2 });
+  chartRsi.priceScale('right').applyOptions({ scaleMargins: { top: 0.2, bottom: 0.2 } });
+
+  chartMacd = LightweightCharts.createChart(els.chartMacd, { ...common, height: 160 });
+  seriesMacd = chartMacd.addLineSeries({ color: '#2dd4bf', lineWidth: 2 });
+  seriesSignal = chartMacd.addLineSeries({ color: '#9bb0d1', lineWidth: 2 });
+  seriesHist = chartMacd.addHistogramSeries({ color: 'rgba(251,113,133,.5)' });
+
+  const sync = () => {
+    chartMain.timeScale().fitContent();
+    chartVol.timeScale().fitContent();
+    chartRsi.timeScale().fitContent();
+    chartMacd.timeScale().fitContent();
+  };
+  window.addEventListener('resize', () => {
+    chartMain.applyOptions({ width: els.chartMain.clientWidth, height: Math.max(340, Math.floor(window.innerHeight * 0.52)) });
+    chartVol.applyOptions({ width: els.chartVol.clientWidth, height: els.chartVol.clientHeight || 160 });
+    chartRsi.applyOptions({ width: els.chartRsi.clientWidth, height: els.chartRsi.clientHeight || 160 });
+    chartMacd.applyOptions({ width: els.chartMacd.clientWidth, height: els.chartMacd.clientHeight || 160 });
+    sync();
+  });
+
+  sync();
+}
+
+function renderHeader({ symbol, interval, candles }) {
+  const n = candles?.length || 0;
+  const last = candles && candles.length ? candles[candles.length - 1] : null;
+  els.title.textContent = `${symbol} • ${interval}`;
+  els.sub.textContent = `Candles: ${n}`;
+  els.meta.textContent = last ? `O:${fmt(last.open, 2)} H:${fmt(last.high, 2)} L:${fmt(last.low, 2)} C:${fmt(last.close, 2)}` : '—';
+  els.lastPx.textContent = last ? `Fiyat: ${fmt(last.close, 6)}` : 'Fiyat: —';
+}
+
+function colorizeVolume(candles, volume) {
+  const map = new Map();
+  for (const c of candles) {
+    map.set(c.time, c);
+  }
+  return volume.map(v => {
+    const c = map.get(v.time);
+    const up = c && Number(c.close) >= Number(c.open);
+    return {
+      ...v,
+      color: up ? 'rgba(45,212,191,.55)' : 'rgba(251,113,133,.55)',
+    };
+  });
+}
+
+async function loadMarket() {
+  setStatus('market…');
+  const params = new URLSearchParams({ symbol: currentSymbol, interval: currentTf, limit: '500' });
+  const js = await fetchJson(`/api/market/klines?${params.toString()}`);
+
+  const candles = js.candles || [];
+  const volume = colorizeVolume(candles, js.volume || []);
+
+  lastMarket = { symbol: js.symbol, interval: js.interval, candles, volume };
+  renderHeader(lastMarket);
+
+  seriesCandles.setData(candles);
+  seriesVol.setData(volume);
+  seriesVolPanel.setData(volume);
+
+  chartMain.timeScale().fitContent();
+  chartVol.timeScale().fitContent();
+  setStatus('ok');
+}
+
+async function loadIndicators() {
+  setStatus('indicators…');
+  const qs = new URLSearchParams({ symbol: currentSymbol, interval: currentTf, limit: '300' });
+  const [rsiJs, macdJs] = await Promise.all([
+    fetchJson(`/api/indicators/rsi?${qs.toString()}`),
+    fetchJson(`/api/indicators/macd?${qs.toString()}`),
+  ]);
+
+  seriesRsi.setData(rsiJs.rsi || []);
+  seriesMacd.setData(macdJs.macd || []);
+  seriesSignal.setData(macdJs.signal || []);
+  seriesHist.setData(macdJs.hist || []);
+
+  chartRsi.timeScale().fitContent();
+  chartMacd.timeScale().fitContent();
+  setStatus('ok');
+}
+
+function renderRightPanels() {
+  // Liquidation summary (from cached watchRows)
+  const idx = watchRows.findIndex(r => r.symbol === currentSymbol);
+  const row = idx >= 0 ? watchRows[idx] : null;
+  if (row) {
+    els.liqChg.textContent = pct(row.pct);
+    els.liqVol.textContent = fmt(row.quoteVolume, 0);
+    els.liqRank.textContent = `${idx + 1}/${watchRows.length}`;
+  } else {
+    els.liqChg.textContent = '—';
+    els.liqVol.textContent = '—';
+    els.liqRank.textContent = '—';
+  }
+
+  // Orderflow proxy from market candles
+  if (lastMarket?.candles?.length) {
+    const candles = lastMarket.candles;
+    const vols = lastMarket.volume || [];
+    const n = Math.min(30, vols.length);
+    const recent = vols.slice(-n).map(v => Number(v.value) || 0);
+    const avg = recent.reduce((a, b) => a + b, 0) / (recent.length || 1);
+    const now = recent.length ? recent[recent.length - 1] : 0;
+    const ratio = avg > 0 ? (now / avg) : NaN;
+    const first = candles[Math.max(0, candles.length - n)];
+    const last = candles[candles.length - 1];
+    const trendPct = first ? ((Number(last.close) - Number(first.open)) / Number(first.open)) * 100 : NaN;
+    els.ofTrend.textContent = Number.isFinite(trendPct) ? pct(trendPct) : '—';
+    els.ofVol.textContent = `${fmt(now, 0)} / avg ${fmt(avg, 0)}`;
+    els.ofRatio.textContent = Number.isFinite(ratio) ? `${ratio.toFixed(2)}x` : '—';
+  } else {
+    els.ofTrend.textContent = '—';
+    els.ofVol.textContent = '—';
+    els.ofRatio.textContent = '—';
+  }
+}
+
+async function loadAlphaInfo({ includeStatus = true } = {}) {
+  if (includeStatus) {
+    try {
+      const js = await fetchJson('/api/alpha/status?sample=0');
+      els.alphaStatus.textContent = js.ok ? 'ok' : 'err';
+      els.alphaUniverse.textContent = fmt(js.total_symbols, 0);
+    } catch {
+      els.alphaStatus.textContent = 'err';
+      els.alphaUniverse.textContent = '—';
+    }
+  }
+
+  if (!alphaPairs) {
+    try {
+      const js = await fetchJson('/api/alpha/symbols');
+      // endpoint returns {symbols: [ {pair, name, readable, ...}, ... ]}
+      alphaPairs = js.symbols || [];
+    } catch {
+      alphaPairs = [];
+    }
+  }
+
+  const match = alphaPairs.find(p => (p.pair || p.symbol) === currentSymbol);
+  if (match) {
+    els.alphaSelected.textContent = match.readable || match.pair || currentSymbol;
+  } else {
+    els.alphaSelected.textContent = '—';
+  }
+}
+
+async function refreshAll({ includeWatch = false, includeAlpha = true } = {}) {
+  if (includeWatch) {
+    await loadWatch();
+  }
+  await loadMarket();
+  await loadIndicators();
+  if (includeAlpha) {
+    await loadAlphaInfo({ includeStatus: true });
+  }
+  renderRightPanels();
+}
+
+async function refreshFast() {
+  await loadMarket();
+  await loadIndicators();
+  renderRightPanels();
+}
+
+async function aiAnalyze() {
+  if (!lastMarket) return;
+
+  els.aiOut.textContent = 'AI analiz hazırlanıyor…';
+  const last = lastMarket.candles?.length ? lastMarket.candles[lastMarket.candles.length - 1] : {};
+  const prompt = [
+    `Sembol: ${lastMarket.symbol}`,
+    `Timeframe: ${lastMarket.interval}`,
+    `Son fiyat: ${last.close}`,
+    `Son mum: O=${last.open} H=${last.high} L=${last.low} C=${last.close}`,
+    `Kısa bir teknik analiz yap: trend, destek/direnç, risk, olası senaryo. Finansal tavsiye verme; sadece analiz.`
+  ].join('\n');
+
+  const body = {
+    model: 'llama3.1:8b-instruct-q6_K',
+    messages: [{ role: 'user', content: prompt }]
+  };
+
+  try {
+    const js = await fetchJson('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    els.aiOut.textContent = js.data?.response || '—';
+  } catch (e) {
+    els.aiOut.textContent = `Hata: ${e?.message || e}`;
+  }
+}
+
+function wireUi() {
+  els.refreshWatch.addEventListener('click', () => loadWatch().catch(e => setStatus(`err:${e.message}`)));
+  els.symbolSearch.addEventListener('input', () => renderWatch());
+
+  els.refreshAll.addEventListener('click', () => refreshAll({ includeWatch: true, includeAlpha: true }).catch(e => setStatus(`err:${e.message}`)));
+
+  els.aiAnalyze.addEventListener('click', () => aiAnalyze());
+  els.aiClear.addEventListener('click', () => { els.aiOut.textContent = '—'; });
+
+  const placeOrder = (side) => {
+    const q = (els.qty.value || '').trim();
+    alert(`Bu sadece UI demo. Emir gönderilmedi.\n${side} ${currentSymbol} qty=${q}`);
+  };
+  els.buyBtn.addEventListener('click', () => placeOrder('AL'));
+  els.sellBtn.addEventListener('click', () => placeOrder('SAT'));
+}
+
+async function main() {
+  try {
+    setStatus('init…');
+    renderTf();
+    initCharts();
+    wireUi();
+    await loadWatch();
+    await refreshAll({ includeAlpha: true });
+
+    // Auto-refresh (fast)
+    setInterval(() => {
+      refreshFast().catch(() => {});
+    }, 5000);
+
+    // Less frequent refreshes
+    setInterval(() => {
+      loadAlphaInfo({ includeStatus: true }).catch(() => {});
+    }, 60000);
+    setInterval(() => {
+      loadWatch().catch(() => {});
+    }, 30000);
+
+    setStatus('ok');
+  } catch (e) {
+    setStatus(`err:${e?.message || e}`);
+  }
+}
+
+main();

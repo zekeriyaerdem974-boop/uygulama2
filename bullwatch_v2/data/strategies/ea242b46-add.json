@@ -1,0 +1,10 @@
+[
+  {
+    "id": "c32bcb9e0fa8",
+    "name": "IntegrationStrategy",
+    "code": "MACD > 0",
+    "user_id": "ea242b46-add",
+    "created_at": 1773720030,
+    "updated_at": 1773720030
+  }
+]

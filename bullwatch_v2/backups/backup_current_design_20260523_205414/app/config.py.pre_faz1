@@ -1,0 +1,57 @@
+"""Centralized configuration for BullWatch.
+
+Values are read from environment variables with sensible defaults.
+This module will be the single source of truth as modules are
+extracted from legacy_monolith.py in subsequent refactoring steps.
+"""
+from __future__ import annotations
+
+import os
+
+
+def _env_bool(key: str, default: bool = False) -> bool:
+    raw = os.getenv(key)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+class Config:
+    """Flask / BullWatch configuration."""
+
+    SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
+    DEBUG = _env_bool("BULLWATCH_DEBUG")
+
+    # --- Server ---
+    HOST = os.getenv("BULLWATCH_HOST", "0.0.0.0")
+    PORT = int(os.getenv("BULLWATCH_PORT", "34000"))
+
+    # --- Redis (optional cache backend) ---
+    REDIS_URL = os.getenv("REDIS_URL")
+
+    # --- Ollama LLM ---
+    OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://127.0.0.1:11434")
+
+    # --- Coinglass ---
+    COINGLASS_API_KEY = os.getenv("COINGLASS_API_KEY")
+
+    # --- Refresh intervals ---
+    CHAT_REFRESH_SEC = int(os.getenv("CHAT_REFRESH_SEC", "60"))
+    TOP4H_REFRESH_SEC = int(os.getenv("TOP4H_REFRESH_SEC", "900"))
+    TOP4H_MAX_SYMBOLS = int(os.getenv("TOP4H_MAX_SYMBOLS", "500"))
+    TOP4H_KLINES = int(os.getenv("TOP4H_KLINES", "500"))
+
+    # --- APK distribution ---
+    BULLWATCH_ENABLE_APK = _env_bool("BULLWATCH_ENABLE_APK")
+
+    # --- Flask dev niceties ---
+    TEMPLATES_AUTO_RELOAD = True
+    JSON_SORT_KEYS = False
+
+
+class TestConfig(Config):
+    """Overrides for pytest / CI."""
+
+    TESTING = True
+    DEBUG = False
+    SECRET_KEY = "test-secret"

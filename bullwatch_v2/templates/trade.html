@@ -1,0 +1,821 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}Trade Terminal • ZKR Analiz Pro{% endblock %}
+{% block topbar_title %}Trade{% endblock %}
+
+{% block body_class %}trade-page{% endblock %}
+{% block header %}{% endblock %}
+{% block main_class %}trade-main-wrap{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/trade.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/multichart.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chart_drawer.css') }}?v=3">
+{% endblock %}
+
+{% block content %}
+<div class="terminal" id="terminal">
+  <!-- ==================== MARKET TABS (FAZ 16) ==================== -->
+  <div class="market-tab-bar" id="marketTabBar">
+    <button class="market-tab active" data-market="crypto">
+      <span class="market-dot crypto-dot"></span>Crypto
+    </button>
+    <button class="market-tab" data-market="stocks">
+      <span class="market-dot stocks-dot"></span>US Stocks
+    </button>
+    <button class="market-tab" data-market="bist">
+      <span class="market-dot bist-dot"></span>BIST
+    </button>
+    <button class="market-tab" data-market="forex">
+      <span class="market-dot forex-dot"></span>Forex
+    </button>
+    <button class="market-tab" data-market="commodities">
+      <span class="market-dot comm-dot"></span>Commodities
+    </button>
+  </div>
+
+  <!-- ==================== TOP BAR ==================== -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <span class="dot"></span>
+      ZKR Analiz
+    </div>
+
+    <input id="symbolSearch" class="topbar-search" placeholder="Sembol ara…" autocomplete="off" spellcheck="false" />
+
+    <div class="tf-group" id="tfGroup"></div>
+
+    <button class="ai-btn" id="aiBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 2a4 4 0 014 4v1h1a3 3 0 013 3v1a3 3 0 01-3 3h-1v1a4 4 0 01-8 0v-1H7a3 3 0 01-3-3v-1a3 3 0 013-3h1V6a4 4 0 014-4z"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/></svg>
+      AI Analiz
+    </button>
+
+    <button class="alert-icon-btn" id="tradeAlertBtn" onclick="window.location.href='/alerts'" title="Alarmlar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      Alarmlar
+    </button>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="status-pill" id="statusPill">⏳ Bağlanıyor…</div>
+  </div>
+
+  <!-- ==================== MAIN GRID ==================== -->
+  <div class="main-grid">
+
+    <!-- ========== LEFT — Watchlist ========== -->
+    <aside class="panel-left">
+      <div class="wl-header">
+        <div>
+          <div class="wl-header-title">Watchlist <span class="market-badge" id="wlMarketBadge">Crypto</span></div>
+          <div class="wl-header-sub" id="wlCount">—</div>
+        </div>
+      </div>
+      <div class="wl-list" id="wlList"></div>
+    </aside>
+
+    <!-- ========== CENTER — Chart + Indicators ========== -->
+    <section class="panel-center">
+      <div class="chart-header">
+        <div>
+          <span class="chart-symbol" id="chartSymbol">—</span>
+        </div>
+        <div class="chart-ohlc" id="chartOhlc">—</div>
+      </div>
+      <div class="chart-area" id="chartArea"></div>
+      <div class="indicator-strip">
+        <div class="ind-panel" id="rsiPanel">
+          <div class="ind-label">RSI</div>
+        </div>
+        <div class="ind-panel" id="macdPanel">
+          <div class="ind-label">MACD</div>
+        </div>
+      </div>
+      <!-- Multi-Chart Grid (FAZ 18) -->
+      <div id="mcGrid" class="mc-grid" style="display:none"></div>
+
+      <!-- TV Chart Toolbar — bottom of chart area, compact -->
+      <nav class="tv-chart-bar tv-chart-bar-sm" id="tvChartBar">
+        <div class="tv-bar-scroll">
+          <div class="tf-group" id="tfGroupBar"></div>
+        </div>
+        <div class="tv-bar-divider"></div>
+        <div class="tv-bar-tools">
+          <button class="tv-bar-btn" data-action="open-drawings" title="Çizim Araçları">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvDrawList" title="Çizim Listesi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5h11M9 12h11M9 19h11M5 5h.01M5 12h.01M5 19h.01"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvIndBtn" title="Göstergeler">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          </button>
+          <button class="tv-bar-btn" data-action="open-analysis" title="Analiz Merkezi">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvMoreBtn" title="Daha Fazla">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="1.5"/><circle cx="6" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg>
+          </button>
+          <span class="tv-bar-separator"></span>
+          <button class="tv-bar-btn" id="tvToggleWl" title="Watchlist">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvTogglePanel" title="Analiz Paneli">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="14" y="3" width="7" height="18" rx="1.5"/><path d="M3 6h8M3 10h8M3 14h6"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvAlertBtn" title="Alarmlar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
+          </button>
+          <button class="tv-bar-btn" id="tvFullscreenBtn" title="Tam Ekran">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"/></svg>
+          </button>
+        </div>
+      </nav>
+    </section>
+
+    <!-- ========== RIGHT — Analysis Tabs ========== -->
+    <aside class="panel-right">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="signals">Signals</button>
+        <button class="tab-btn" data-tab="orderflow">Orderflow</button>
+        <button class="tab-btn" data-tab="liquidation">Liquidation</button>
+        <button class="tab-btn" data-tab="patterns">Patterns</button>
+        <button class="tab-btn" data-tab="news">News</button>
+        <button class="tab-btn" data-tab="ai">AI</button>
+        <button class="tab-btn" data-tab="copilot">Copilot</button>
+        <button class="tab-btn" data-tab="activity">Activity</button>
+        <button class="tab-btn" data-tab="simulator">Sim</button>
+      </div>
+      <div class="tab-content">
+        <!-- Signals Tab -->
+        <div class="tab-pane active" id="tab-signals">
+          <div class="r-card">
+            <div class="r-card-title">Signal Analysis <span class="badge badge-neutral" id="sigBadge">—</span></div>
+            <div class="kv-grid" id="sigKv">
+              <div class="kv-key">Decision</div><div class="kv-val" id="sigDecision">—</div>
+              <div class="kv-key">Risk</div><div class="kv-val" id="sigRisk">—</div>
+              <div class="kv-key">Confidence</div><div class="kv-val" id="sigConfidence">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Tick Checks</div>
+            <div class="tick-list" id="sigTicks">
+              <div class="loading-text">Yükleniyor…</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Pullback Targets</div>
+            <div id="sigTargets" class="kv-grid">
+              <div class="loading-text" style="grid-column:1/-1">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Destek / Direnç</div>
+            <div id="sigSR" class="kv-grid">
+              <div class="loading-text" style="grid-column:1/-1">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orderflow Tab -->
+        <div class="tab-pane" id="tab-orderflow">
+          <div class="r-card">
+            <div class="r-card-title">Market Overview</div>
+            <div class="kv-grid" id="ofOverview">
+              <div class="kv-key">Last Price</div><div class="kv-val" id="ofPrice">—</div>
+              <div class="kv-key">24h Change</div><div class="kv-val" id="ofChange">—</div>
+              <div class="kv-key">24h Volume</div><div class="kv-val" id="ofVolume">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Open Interest &amp; Funding</div>
+            <div class="kv-grid" id="ofOiFr">
+              <div class="kv-key">Open Interest</div><div class="kv-val" id="ofOi">—</div>
+              <div class="kv-key">Funding Rate</div><div class="kv-val" id="ofFr">—</div>
+              <div class="kv-key">Mark Price</div><div class="kv-val" id="ofMark">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Long/Short &amp; Taker</div>
+            <div class="kv-grid" id="ofLsTaker">
+              <div class="kv-key">L/S Ratio</div><div class="kv-val" id="ofLs">—</div>
+              <div class="kv-key">Long %</div><div class="kv-val" id="ofLong">—</div>
+              <div class="kv-key">Short %</div><div class="kv-val" id="ofShort">—</div>
+              <div class="kv-key">Taker B/S</div><div class="kv-val" id="ofTakerRatio">—</div>
+              <div class="kv-key">Buy Vol</div><div class="kv-val" id="ofBuyVol">—</div>
+              <div class="kv-key">Sell Vol</div><div class="kv-val" id="ofSellVol">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Book Imbalance</div>
+            <div class="kv-grid" id="ofBook">
+              <div class="kv-key">Bid Total</div><div class="kv-val" id="ofBidTotal">—</div>
+              <div class="kv-key">Ask Total</div><div class="kv-val" id="ofAskTotal">—</div>
+              <div class="kv-key">Imbalance</div><div class="kv-val" id="ofImbalance">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Liquidation Tab -->
+        <div class="tab-pane" id="tab-liquidation">
+          <div class="r-card">
+            <div class="r-card-title">Price Profile Summary</div>
+            <div class="kv-grid" id="liqSummary">
+              <div class="kv-key">Last Close</div><div class="kv-val" id="liqClose">—</div>
+              <div class="kv-key">POC</div><div class="kv-val" id="liqPoc">—</div>
+              <div class="kv-key">Value Area H</div><div class="kv-val" id="liqVaH">—</div>
+              <div class="kv-key">Value Area L</div><div class="kv-val" id="liqVaL">—</div>
+              <div class="kv-key">Range Position</div><div class="kv-val" id="liqRange">—</div>
+              <div class="kv-key">24h Change</div><div class="kv-val" id="liqChg24">—</div>
+              <div class="kv-key">Quote Volume</div><div class="kv-val" id="liqQvol">—</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Volume Profile</div>
+            <div class="vp-bar-container" id="vpBars">
+              <div class="loading-text">Yükleniyor…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patterns Tab -->
+        <div class="tab-pane" id="tab-patterns">
+          <div class="r-card">
+            <div class="r-card-title">Pattern Analysis</div>
+            <div id="patternsSummary" class="patterns-summary">
+              <div class="loading-text">Analiz bekleniyor…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- News Tab (FAZ 15) -->
+        <div class="tab-pane" id="tab-news">
+          <div class="r-card">
+            <div class="r-card-title">Market News <span class="badge badge-neutral" id="newsBadge">—</span></div>
+            <div class="news-controls">
+              <button class="news-type-btn active" data-ntype="crypto">Crypto</button>
+              <button class="news-type-btn" data-ntype="coin">Coin</button>
+              <button class="news-type-btn" data-ntype="macro">Macro</button>
+            </div>
+            <div class="news-list" id="newsList">
+              <div class="loading-text">Haberler yükleniyor…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Tab -->
+        <div class="tab-pane" id="tab-ai">
+          <div class="r-card">
+            <div class="r-card-title">AI Market Analysis</div>
+            <div style="display:flex; gap:6px; margin-bottom:8px;">
+              <button class="ai-btn" id="aiAnalyzeBtn" style="flex:1; justify-content:center;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M12 2a4 4 0 014 4v1h1a3 3 0 013 3v1a3 3 0 01-3 3h-1v1a4 4 0 01-8 0v-1H7a3 3 0 01-3-3v-1a3 3 0 013-3h1V6a4 4 0 014-4z"/></svg>
+                Analiz Et
+              </button>
+              <button class="tf-btn" id="aiClear" style="padding:5px 12px; border:1px solid var(--border); border-radius:var(--radius);">Temizle</button>
+            </div>
+            <div class="ai-output" id="aiOutput">AI analizini başlatmak için butona tıklayın.</div>
+          </div>
+        </div>
+
+        <!-- Copilot Tab -->
+        <div class="tab-pane" id="tab-copilot">
+          <div class="r-card">
+            <div class="r-card-title">Copilot</div>
+            <div id="copilotOutput" class="ai-output">Copilot hazır.</div>
+          </div>
+        </div>
+
+        <!-- Activity Stream Tab (FAZ 42) -->
+        <div class="tab-pane" id="tab-activity">
+          <div class="r-card">
+            <div class="r-card-title">Activity Feed <span class="badge badge-neutral" id="activityBadge">0</span></div>
+            <div id="tradeActivityFeed" style="max-height:400px;overflow-y:auto;">
+              <div class="loading-text">Loading activity…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator Tab (FAZ 22) -->
+        <div class="tab-pane" id="tab-simulator">
+          <div class="r-card">
+            <div class="r-card-title">Simülatör</div>
+            <div class="kv-grid">
+              <div class="kv-key">Sembol</div><div class="kv-val" id="simTrdSymbol">—</div>
+              <div class="kv-key">Fiyat</div><div class="kv-val" id="simTrdPrice">—</div>
+              <div class="kv-key">Bakiye</div><div class="kv-val" id="simTrdBalance">—</div>
+              <div class="kv-key">Toplam PnL</div><div class="kv-val" id="simTrdPnl">—</div>
+              <div class="kv-key">Açık Poz.</div><div class="kv-val" id="simTrdOpen">0</div>
+            </div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">İşlem Aç</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+              <input type="number" id="simTrdQty" placeholder="Miktar" min="0" step="any" style="flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 10px;font-size:13px;color:#fff;outline:none;" />
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button id="simTrdBuy" style="flex:1;padding:10px;border-radius:10px;border:none;background:rgba(0,200,83,0.15);color:#00C853;font-weight:700;font-size:13px;cursor:pointer;">LONG</button>
+              <button id="simTrdSell" style="flex:1;padding:10px;border-radius:10px;border:none;background:rgba(255,23,68,0.15);color:#FF1744;font-weight:700;font-size:13px;cursor:pointer;">SHORT</button>
+            </div>
+            <div id="simTrdMsg" class="share-msg" style="display:none;margin-top:8px;"></div>
+          </div>
+          <div class="r-card">
+            <div class="r-card-title">Açık Pozisyonlar</div>
+            <div id="simTrdPositions">
+              <div class="loading-text">Yükleniyor…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- Legal Disclaimer — FAZ 37 -->
+<section style="margin-top:16px;">
+  {% include "legal_disclaimer.html" %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="{{ url_for('static', filename='js/indicators.js') }}"></script>
+<script src="{{ url_for('static', filename='js/patterns.js') }}"></script>
+<script src="{{ url_for('static', filename='js/drawing_engine.js') }}"></script>
+<script src="{{ url_for('static', filename='js/market_stream.js') }}"></script>
+<script src="{{ url_for('static', filename='js/trade.js') }}"></script>
+<script src="{{ url_for('static', filename='js/multichart.js') }}"></script>
+<script>document.body.classList.add('trade-page');</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/alerts.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/copilot.css') }}">
+<script src="{{ url_for('static', filename='js/trade_alerts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/copilot.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chart_drawer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/analysis_center.js') }}"></script>
+<script>
+  // Initialize Chart Drawer & Analysis Center & Drawing Engine
+  document.addEventListener('DOMContentLoaded', () => {
+    ChartDrawer.init();
+    AnalysisCenter.init();
+    if (typeof DrawingEngine !== 'undefined') DrawingEngine.init();
+  });
+  // Fallback: if DOMContentLoaded already fired
+  if (document.readyState !== 'loading') {
+    ChartDrawer.init();
+    AnalysisCenter.init();
+    if (typeof DrawingEngine !== 'undefined') DrawingEngine.init();
+  }
+</script>
+<script>
+// FAZ 22 — Trade page simulator panel
+(function(){
+  const SIM = "/api/simulator";
+  function fmt(n){return "$"+Number(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+  function fmtPnl(n){const s=n>0?"+$":n<0?"-$":"$";return s+Math.abs(n||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+  function loadSimPanel(){
+    fetch(SIM+"/summary").then(r=>r.json()).then(d=>{
+      if(!d.ok)return;
+      const a=d.account||{};
+      const b=document.getElementById("simTrdBalance");
+      const p=document.getElementById("simTrdPnl");
+      const o=document.getElementById("simTrdOpen");
+      if(b)b.textContent=fmt(a.current_balance);
+      if(p){p.textContent=fmtPnl(d.total_pnl);p.style.color=d.total_pnl>0?"#00C853":d.total_pnl<0?"#FF1744":"inherit"}
+      if(o)o.textContent=d.open_positions_count||0;
+      renderSimPositions(d.open_positions||[]);
+    }).catch(()=>{});
+    // Show the currently selected chart symbol in the panel
+    const sym = getSymbol();
+    const mkt = getMarket();
+    const symEl = document.getElementById("simTrdSymbol");
+    if(symEl) symEl.textContent = sym || "—";
+    // Fetch live price for the selected symbol
+    if(sym) {
+      fetch(SIM+"/price?symbol="+encodeURIComponent(sym)+"&market="+encodeURIComponent(mkt))
+        .then(r=>r.json()).then(d=>{
+          const prEl = document.getElementById("simTrdPrice");
+          if(prEl) prEl.textContent = d.ok && d.price ? fmt(d.price) : "—";
+        }).catch(()=>{});
+    }
+  }
+
+  function renderSimPositions(positions){
+    const el=document.getElementById("simTrdPositions");
+    if(!el)return;
+    if(!positions.length){el.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.3);padding:8px 0">Açık pozisyon yok</div>';return;}
+    el.innerHTML=positions.map(p=>{
+      const c=p.pnl_abs>0?"#00C853":p.pnl_abs<0?"#FF1744":"rgba(255,255,255,0.5)";
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+        <div><span style="font-weight:600;color:#fff">${p.symbol}</span> <span style="font-size:10px;color:rgba(255,255,255,0.3)">${p.side==="buy"?"LONG":"SHORT"}</span></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:${c};font-weight:600;font-size:12px">${fmtPnl(p.pnl_abs)}</span>
+          <button onclick="simClosePos('${p.id}')" style="font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);cursor:pointer">Kapat</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  window.simClosePos=function(id){
+    fetch(SIM+"/close/"+id,{method:"POST"}).then(r=>r.json()).then(d=>{
+      const msg=document.getElementById("simTrdMsg");
+      if(d.ok){if(msg){msg.style.display="block";msg.style.background="rgba(0,200,83,0.08)";msg.style.color="#00C853";msg.textContent=d.message||"Kapatıldı";}loadSimPanel();}
+      else{if(msg){msg.style.display="block";msg.style.background="rgba(255,23,68,0.08)";msg.style.color="#FF1744";msg.textContent=d.error||"Hata";}}
+      setTimeout(()=>{if(msg)msg.style.display="none"},4000);
+    });
+  };
+
+  function getSymbol(){
+    const el=document.getElementById("chartSymbol");
+    const raw=el?el.textContent.trim().replace(/[^A-Za-z0-9.=]/g,""):"";
+    return raw||"BTCUSDT";
+  }
+
+  function getMarket(){
+    const active=document.querySelector(".market-tab.active");
+    return active?active.dataset.market:"crypto";
+  }
+
+  // Re-check periodically: once chartSymbol is populated, update the panel
+  let _simLastSym="";
+  setInterval(function(){
+    const s=getSymbol();
+    if(s&&s!==_simLastSym){_simLastSym=s;loadSimPanel();}
+  },3000);
+
+  function simTrade(side){
+    const symbol=getSymbol();
+    const market=getMarket();
+    const qty=parseFloat(document.getElementById("simTrdQty")?.value||0);
+    const msg=document.getElementById("simTrdMsg");
+    if(!qty||qty<=0){if(msg){msg.style.display="block";msg.style.background="rgba(255,23,68,0.08)";msg.style.color="#FF1744";msg.textContent="Miktar girin";}return;}
+    fetch(SIM+"/"+side,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({symbol,market,quantity:qty})})
+      .then(r=>r.json()).then(d=>{
+        if(d.ok){if(msg){msg.style.display="block";msg.style.background="rgba(0,200,83,0.08)";msg.style.color="#00C853";msg.textContent=d.message||"Başarılı";}loadSimPanel();}
+        else{if(msg){msg.style.display="block";msg.style.background="rgba(255,23,68,0.08)";msg.style.color="#FF1744";msg.textContent=d.error||"Hata";}}
+        setTimeout(()=>{if(msg)msg.style.display="none"},5000);
+      });
+  }
+
+  document.getElementById("simTrdBuy")?.addEventListener("click",()=>simTrade("buy"));
+  document.getElementById("simTrdSell")?.addEventListener("click",()=>simTrade("sell"));
+
+  // Load on tab switch
+  const obs=new MutationObserver(()=>{
+    const pane=document.getElementById("tab-simulator");
+    if(pane&&pane.classList.contains("active"))loadSimPanel();
+  });
+  const tabContent=document.querySelector(".tab-content");
+  if(tabContent)obs.observe(tabContent,{subtree:true,attributes:true,attributeFilter:["class"]});
+
+  loadSimPanel();
+})();
+</script>
+<script>
+// TV Chart Toolbar — interactions + panel toggles
+(function(){
+  // ── Indicator button ──
+  const tvIndBtn = document.getElementById('tvIndBtn');
+  if (tvIndBtn) {
+    tvIndBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const dd = document.querySelector('.ind-dropdown');
+      if (dd) {
+        dd.classList.toggle('open');
+        if (dd.classList.contains('open')) {
+          const close = function(ev) {
+            if (!dd.contains(ev.target) && ev.target !== tvIndBtn) {
+              dd.classList.remove('open');
+              document.removeEventListener('click', close);
+            }
+          };
+          setTimeout(() => document.addEventListener('click', close), 10);
+        }
+      }
+    });
+  }
+
+  // ── Search toggle ──
+  const searchToggle = document.getElementById('searchToggleBtn');
+  const searchInput = document.getElementById('symbolSearch');
+  if (searchToggle && searchInput) {
+    searchToggle.addEventListener('click', function() {
+      searchInput.classList.toggle('tv-search-active');
+      if (searchInput.classList.contains('tv-search-active')) {
+        searchInput.focus();
+      }
+    });
+    searchInput.addEventListener('blur', function() {
+      setTimeout(() => searchInput.classList.remove('tv-search-active'), 200);
+    });
+  }
+
+  // ── More button → market tabs ──
+  const tvMoreBtn = document.getElementById('tvMoreBtn');
+  if (tvMoreBtn) {
+    tvMoreBtn.addEventListener('click', function() {
+      const tabs = document.querySelector('.market-tab-bar');
+      if (tabs) tabs.classList.toggle('tv-tabs-open');
+    });
+  }
+
+  // ── Drawing list toggle ──
+  const tvDrawList = document.getElementById('tvDrawList');
+  if (tvDrawList) {
+    tvDrawList.addEventListener('click', function() {
+      if (typeof DrawingEngine !== 'undefined') DrawingEngine.toggleDrawingList();
+    });
+  }
+
+  // ── Watchlist toggle ──
+  const tvToggleWl = document.getElementById('tvToggleWl');
+  if (tvToggleWl) {
+    tvToggleWl.addEventListener('click', function() {
+      const wl = document.querySelector('.panel-left');
+      const grid = document.querySelector('.main-grid');
+      if (!wl || !grid) return;
+      const isOpen = wl.classList.toggle('panel-open');
+      tvToggleWl.classList.toggle('tv-bar-btn-active', isOpen);
+      grid.classList.toggle('wl-visible', isOpen);
+    });
+  }
+
+  // ── Right panel toggle ──
+  const tvTogglePanel = document.getElementById('tvTogglePanel');
+  if (tvTogglePanel) {
+    tvTogglePanel.addEventListener('click', function() {
+      const rp = document.querySelector('.panel-right');
+      const grid = document.querySelector('.main-grid');
+      if (!rp || !grid) return;
+      const isOpen = rp.classList.toggle('panel-open');
+      tvTogglePanel.classList.toggle('tv-bar-btn-active', isOpen);
+      grid.classList.toggle('rp-visible', isOpen);
+      // Trigger chart resize after transition
+      setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 350);
+    });
+  }
+
+  // ── Fullscreen toggle ──
+  const tvFullscreenBtn = document.getElementById('tvFullscreenBtn');
+  if (tvFullscreenBtn) {
+    tvFullscreenBtn.addEventListener('click', function() {
+      const el = document.getElementById('terminal');
+      if (!el) return;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(function(){});
+        tvFullscreenBtn.classList.add('tv-bar-btn-active');
+      } else {
+        document.exitFullscreen();
+        tvFullscreenBtn.classList.remove('tv-bar-btn-active');
+      }
+    });
+    document.addEventListener('fullscreenchange', function() {
+      tvFullscreenBtn.classList.toggle('tv-bar-btn-active', !!document.fullscreenElement);
+      setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 100);
+    });
+  }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- FAZ 36 — Share Analysis Modal & Logic                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<style>
+.share-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center; }
+.share-modal-overlay.open { display:flex; }
+.share-modal { background:#111; border-radius:20px; width:90%; max-width:480px; max-height:90vh; overflow-y:auto; border:1px solid rgba(255,255,255,0.08); }
+.share-modal-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.share-modal-header h3 { font-size:16px; font-weight:700; }
+.share-modal-close { width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.05); border:none; color:#9ca3af; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+.share-modal-close:hover { background:rgba(255,255,255,0.1); color:#fff; }
+.share-modal-body { padding:20px; }
+.share-preview-img { width:100%; border-radius:12px; border:1px solid rgba(255,255,255,0.05); margin-bottom:16px; background:#0a0a0a; min-height:120px; }
+.share-field { margin-bottom:12px; }
+.share-field label { display:block; font-size:12px; color:#6b7280; font-weight:600; margin-bottom:4px; }
+.share-field input, .share-field textarea, .share-field select { width:100%; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:10px 14px; font-size:13px; color:#fff; outline:none; font-family:inherit; box-sizing:border-box; }
+.share-field input:focus, .share-field textarea:focus { border-color:rgba(41,121,255,0.5); }
+.share-field textarea { resize:vertical; min-height:80px; }
+.share-dir-row { display:flex; gap:8px; }
+.share-dir-btn { flex:1; padding:10px; border-radius:12px; border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); color:#9ca3af; font-size:13px; font-weight:600; cursor:pointer; text-align:center; transition:all 0.2s; }
+.share-dir-btn:hover { background:rgba(255,255,255,0.06); }
+.share-dir-btn.active-long { background:rgba(0,200,83,0.1); border-color:rgba(0,200,83,0.3); color:#00C853; }
+.share-dir-btn.active-short { background:rgba(255,23,68,0.1); border-color:rgba(255,23,68,0.3); color:#FF1744; }
+.share-submit-btn { width:100%; padding:14px; border-radius:14px; background:linear-gradient(135deg,#2979FF,#00C853); color:#fff; font-size:15px; font-weight:700; cursor:pointer; border:none; margin-top:16px; transition:opacity 0.2s; }
+.share-submit-btn:hover { opacity:0.9; }
+.share-submit-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.share-msg { text-align:center; font-size:13px; padding:8px; border-radius:8px; margin-top:8px; display:none; }
+</style>
+
+<div class="share-modal-overlay" id="shareModalOverlay">
+  <div class="share-modal">
+    <div class="share-modal-header">
+      <h3>📊 Analiz Paylaş</h3>
+      <button class="share-modal-close" onclick="closeShareModal()">✕</button>
+    </div>
+    <div class="share-modal-body">
+      <img class="share-preview-img" id="sharePreviewImg" alt="Grafik önizleme" />
+      <div class="share-field">
+        <label>Başlık (opsiyonel)</label>
+        <input type="text" id="shareTitle" placeholder="Analiz başlığı…" maxlength="120" />
+      </div>
+      <div class="share-field">
+        <label>Analiz Notu *</label>
+        <textarea id="shareContent" placeholder="Analizizi açıklayın…" maxlength="2000"></textarea>
+      </div>
+      <div class="share-field">
+        <label>Yön</label>
+        <div class="share-dir-row">
+          <button class="share-dir-btn" id="shareDirLong" onclick="setShareDir('long')">📈 Long</button>
+          <button class="share-dir-btn" id="shareDirShort" onclick="setShareDir('short')">📉 Short</button>
+        </div>
+      </div>
+      <button class="share-submit-btn" id="shareSubmitBtn" onclick="submitAnalysis()">Paylaş</button>
+      <div class="share-msg" id="shareMsg"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// FAZ 36 — Chart Share Logic
+(function(){
+  let chartDataUrl = '';
+  let shareDirection = '';
+
+  window.shareChart = function() {
+    // Capture the chart canvas
+    const chartArea = document.getElementById('chartArea');
+    if (!chartArea) return;
+    const canvas = chartArea.querySelector('canvas');
+    if (canvas) {
+      try { chartDataUrl = canvas.toDataURL('image/png'); } catch(e) { chartDataUrl = ''; }
+    }
+
+    const preview = document.getElementById('sharePreviewImg');
+    if (chartDataUrl && preview) {
+      preview.src = chartDataUrl;
+      preview.style.display = 'block';
+    } else if (preview) {
+      preview.style.display = 'none';
+    }
+
+    // Pre-populate symbol & timeframe
+    const symbol = document.getElementById('chartSymbol')?.textContent?.trim() || '';
+    document.getElementById('shareTitle').value = symbol ? symbol + ' Analizi' : '';
+    document.getElementById('shareContent').value = '';
+    shareDirection = '';
+    document.getElementById('shareDirLong').className = 'share-dir-btn';
+    document.getElementById('shareDirShort').className = 'share-dir-btn';
+
+    document.getElementById('shareModalOverlay').classList.add('open');
+  };
+
+  window.closeShareModal = function() {
+    document.getElementById('shareModalOverlay').classList.remove('open');
+  };
+
+  window.setShareDir = function(dir) {
+    shareDirection = dir;
+    document.getElementById('shareDirLong').className = 'share-dir-btn' + (dir === 'long' ? ' active-long' : '');
+    document.getElementById('shareDirShort').className = 'share-dir-btn' + (dir === 'short' ? ' active-short' : '');
+  };
+
+  window.submitAnalysis = async function() {
+    const content = document.getElementById('shareContent').value.trim();
+    if (!content) {
+      showShareMsg('Analiz notu gerekli', false);
+      return;
+    }
+
+    const btn = document.getElementById('shareSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Paylaşılıyor…';
+
+    const symbol = document.getElementById('chartSymbol')?.textContent?.trim().replace(/[^A-Za-z0-9.=]/g, '') || '';
+    const market = document.querySelector('.market-tab.active')?.dataset?.market || 'crypto';
+    const tfBtn = document.querySelector('.tf-btn.active');
+    const timeframe = tfBtn ? tfBtn.textContent.trim() : '';
+
+    try {
+      const r = await fetch('/api/analysis/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          title: document.getElementById('shareTitle').value.trim(),
+          content: content,
+          symbol: symbol,
+          market: market,
+          timeframe: timeframe,
+          direction: shareDirection,
+          chart_image: chartDataUrl,
+        })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        showShareMsg('Analiz paylaşıldı! ✅', true);
+        setTimeout(() => {
+          closeShareModal();
+          // Open analysis page
+          if (d.analysis && d.analysis.id) {
+            window.open('/analysis/' + d.analysis.id, '_blank');
+          }
+        }, 1500);
+      } else {
+        showShareMsg(d.error || 'Hata oluştu', false);
+      }
+    } catch(e) {
+      showShareMsg('Bağlantı hatası', false);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Paylaş';
+  };
+
+  function showShareMsg(msg, ok) {
+    const el = document.getElementById('shareMsg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.style.background = ok ? 'rgba(0,200,83,0.08)' : 'rgba(255,23,68,0.08)';
+    el.style.color = ok ? '#00C853' : '#FF1744';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  // Close on overlay click
+  document.getElementById('shareModalOverlay')?.addEventListener('click', function(e) {
+    if (e.target === this) closeShareModal();
+  });
+})();
+
+// ═══ FAZ 42 — Trade Activity Feed ═══
+(function(){
+  const feed = document.getElementById('tradeActivityFeed');
+  const badge = document.getElementById('activityBadge');
+  if (!feed) return;
+
+  const EVENT_ICONS = {
+    volume_spike:'📊',volatility_spike:'⚡',momentum_shift:'🚀',news_impact:'📰',
+    strategy_activity:'⚙️',social_trending:'🔥',mentor_live_room:'🔴',sector_rotation:'🔄',
+    macro_impact:'🌍',asset_activity:'💹',mentor_post:'🎓',portfolio_risk_change:'🛡️'
+  };
+
+  function escH(s) {
+    if (!s) return '';
+    const d = document.createElement('div');
+    d.textContent = String(s);
+    return d.innerHTML;
+  }
+
+  function loadActivity() {
+    // Get current symbol from chart
+    const symEl = document.getElementById('chartSymbol');
+    const sym = symEl ? symEl.textContent.trim().toUpperCase() : '';
+    const url = sym && sym !== '—'
+      ? '/api/activity/symbol/' + encodeURIComponent(sym) + '?limit=15'
+      : '/api/activity?limit=15';
+
+    fetch(url)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok || !d.data || !d.data.length) {
+          feed.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:12px;">No activity for this symbol yet.</div>';
+          badge.textContent = '0';
+          return;
+        }
+        badge.textContent = d.data.length;
+        feed.innerHTML = d.data.map(ev => {
+          const icon = EVENT_ICONS[ev.event_type] || '💹';
+          const sevColor = ev.severity === 'critical' ? '#ef4444' : ev.severity === 'high' ? '#f59e0b' : ev.severity === 'medium' ? '#3b82f6' : 'var(--border)';
+          return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px;">'
+            + '<div style="display:flex;align-items:center;gap:6px;">'
+            + '<span style="width:4px;height:4px;border-radius:50%;background:'+sevColor+';flex-shrink:0;"></span>'
+            + '<span>'+icon+'</span>'
+            + '<span style="color:var(--text-primary);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escH(ev.title)+'</span>'
+            + '<span style="color:var(--text-dim);font-size:10px;">'+ev.confidence+'%</span>'
+            + '</div></div>';
+        }).join('');
+      })
+      .catch(() => {
+        feed.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-dim);font-size:12px;">Activity unavailable</div>';
+      });
+  }
+
+  // Load on tab click
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (this.dataset.tab === 'activity') loadActivity();
+    });
+  });
+
+  // Also reload when symbol changes
+  const obs = new MutationObserver(() => {
+    const pane = document.getElementById('tab-activity');
+    if (pane && pane.classList.contains('active')) loadActivity();
+  });
+  const symTarget = document.getElementById('chartSymbol');
+  if (symTarget) obs.observe(symTarget, { childList: true, characterData: true, subtree: true });
+
+  // Initial load if tab is active
+  setTimeout(loadActivity, 2000);
+})();
+</script>
+{% endblock %}

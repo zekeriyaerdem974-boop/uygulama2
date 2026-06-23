@@ -1,0 +1,43 @@
+"""BullWatch Unified App Package.
+
+Provides create_app() factory and start_background_jobs() entry points.
+
+Step 1: Thin wrapper around legacy_monolith.py — all existing routes,
+background jobs, and WebSocket handlers remain in the monolith.
+Subsequent steps will extract modules into proper blueprints.
+"""
+from __future__ import annotations
+
+
+def create_app(config_object=None):
+    """Application factory.
+
+    Currently wraps the legacy monolith.  Importing legacy_monolith
+    triggers Flask app creation and route registration at module level.
+    Future steps will incrementally move logic into blueprint modules.
+
+    Args:
+        config_object: Optional config class/object to override defaults.
+
+    Returns:
+        The configured Flask application instance.
+    """
+    import legacy_monolith
+
+    flask_app = legacy_monolith.app
+
+    # Apply config override if provided (e.g. test config)
+    if config_object is not None:
+        flask_app.config.from_object(config_object)
+
+    return flask_app
+
+
+def start_background_jobs():
+    """Start all background refresh loops (idempotent).
+
+    Delegates to the legacy monolith's start_background_jobs()
+    which uses JobManager for thread lifecycle.
+    """
+    import legacy_monolith
+    legacy_monolith.start_background_jobs()

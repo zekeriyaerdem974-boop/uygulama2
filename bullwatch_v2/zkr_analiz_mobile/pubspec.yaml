@@ -1,0 +1,37 @@
+name: zkr_analiz_mobile
+description: "ZKR Analiz Mobile - Native WebView Shell for Trading Terminal"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # WebView Package - Enterprise Grade
+  webview_flutter: ^4.4.2
+  
+  # System UI Overlays
+  system_ui_overlay_style: ^1.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700

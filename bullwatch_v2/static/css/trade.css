@@ -1,0 +1,1178 @@
+/* =====================================================================
+   ZKR Analiz Trade Terminal — FAZ 9
+   TradingView-inspired dark theme, glass panels, grid layout
+   ===================================================================== */
+
+/* ---------- CSS Variables ---------- */
+
+:root {
+  --bg:      #0b0f14;
+  --bg2:     #0e1420;
+  --panel:   #121822;
+  --panel2:  #1b2433;
+  --surface: #1b2433;
+  --border:  #1f2a3a;
+  --border2: #2a3a52;
+  --text:    #e8edf5;
+  --muted:   #8899b0;
+  --dim:     #556680;
+  --accent:  #3b82f6;
+  --accent2: #2563eb;
+  --good:    #22c55e;
+  --good2:   #16a34a;
+  --bad:     #ef4444;
+  --bad2:    #dc2626;
+  --warn:    #f59e0b;
+  --purple:  #7c5cff;
+  --glass:   rgba(255,255,255,.03);
+  --glass2:  rgba(255,255,255,.06);
+  --glow:    rgba(59,130,246,.15);
+  --radius:  8px;
+  --radius2: 12px;
+}
+
+/* ---------- Reset for trade page ---------- */
+body.trade-page {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  overflow: hidden;
+}
+body.trade-page .tl-main {
+  overflow: hidden;
+}
+body.trade-page .pro-content {
+  padding: 0;
+}
+
+/* ---------- Shell ---------- */
+.terminal {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* ---------- Top Bar (hidden - elements moved to chart header & toolbar) ---------- */
+.topbar {
+  visibility: hidden;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  overflow: visible;
+  position: relative;
+  z-index: 100;
+}
+.topbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  color: var(--text);
+}
+.topbar-logo .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--glow);
+}
+.topbar-spacer { flex: 1; }
+.topbar-search {
+  min-width: 180px;
+  max-width: 320px;
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+.topbar-search:focus {
+  border-color: var(--accent);
+}
+.topbar-search::placeholder { color: var(--dim); }
+
+/* Timeframe buttons */
+.tf-group {
+  display: flex;
+  gap: 2px;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2px;
+}
+.tf-btn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+}
+.tf-btn:hover { color: var(--text); background: var(--glass2); }
+.tf-btn.active {
+  color: var(--text);
+  background: var(--accent);
+}
+
+/* AI button */
+.ai-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(124,92,255,.12), rgba(59,130,246,.12));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.ai-btn:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(59,130,246,.22));
+}
+.ai-btn svg { width: 14px; height: 14px; }
+
+/* Status pill */
+.status-pill {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--glass);
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+.status-pill.ok { border-color: rgba(38,217,168,.3); color: var(--good); }
+.status-pill.err { border-color: rgba(240,80,110,.3); color: var(--bad); }
+
+/* ---------- Main Grid (collapsible sidebars) ---------- */
+.main-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 0fr 1fr 0fr;
+  grid-template-rows: 1fr;
+  transition: grid-template-columns .3s ease;
+}
+.main-grid.wl-visible {
+  grid-template-columns: 260px 1fr 0fr;
+}
+.main-grid.rp-visible {
+  grid-template-columns: 0fr 1fr 300px;
+}
+.main-grid.wl-visible.rp-visible {
+  grid-template-columns: 260px 1fr 300px;
+}
+
+/* ---------- Left Panel — Watchlist (collapsible) ---------- */
+.panel-left {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  transition: min-width .3s ease, opacity .3s ease;
+  opacity: 0;
+}
+.panel-left.panel-open {
+  min-width: 260px;
+  opacity: 1;
+}
+.wl-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.wl-header-title { font-weight: 700; font-size: 13px; letter-spacing: -.2px; }
+.wl-header-sub { color: var(--muted); font-size: 11px; }
+.wl-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px;
+}
+.wl-list::-webkit-scrollbar { width: 4px; }
+.wl-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+.wl-item {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .12s;
+  font-size: 12px;
+}
+.wl-item:hover { background: var(--glass2); }
+.wl-item.active { background: rgba(59,130,246,.1); }
+.wl-sym { font-weight: 700; }
+.wl-price { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.wl-chg { font-variant-numeric: tabular-nums; font-weight: 600; text-align: right; min-width: 60px; }
+.wl-chg.up { color: var(--good); }
+.wl-chg.down { color: var(--bad); }
+
+/* ---------- Center Panel — Chart ---------- */
+.panel-center {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  gap: 10px;
+  height: 40px;
+}
+.chart-header-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.chart-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.chart-symbol {
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: -.2px;
+  white-space: nowrap;
+}
+.chart-ohlc {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── TV Search Input (in chart header) ── */
+.tv-search-input {
+  width: 0;
+  padding: 0;
+  background: var(--glass);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+  opacity: 0;
+  transition: width .25s ease, opacity .2s, padding .25s, border-color .2s;
+}
+.tv-search-input.tv-search-active {
+  width: 180px;
+  padding: 6px 10px;
+  border-color: var(--border);
+  opacity: 1;
+}
+.tv-search-input.tv-search-active:focus {
+  border-color: var(--accent);
+}
+.tv-search-input::placeholder { color: var(--dim); }
+
+/* ── TV Icon Button ── */
+.tv-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.tv-icon-btn:hover {
+  color: var(--text);
+  background: var(--glass2);
+}
+.chart-area {
+  flex: 1;
+  min-height: 0;
+  background: #0b0f14;
+  position: relative;
+}
+
+/* Bottom indicator panels */
+.indicator-strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  border-top: 1px solid var(--border);
+  background: var(--border);
+  flex-shrink: 0;
+}
+.ind-panel {
+  height: 80px;
+  background: #0b0f14;
+  position: relative;
+}
+.ind-label {
+  position: absolute;
+  top: 4px;
+  left: 8px;
+  z-index: 5;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+}
+
+/* ---------- Right Panel — Analysis (collapsible) ---------- */
+.panel-right {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  transition: min-width .3s ease, opacity .3s ease;
+  opacity: 0;
+}
+.panel-right.panel-open {
+  min-width: 300px;
+  opacity: 1;
+}
+
+/* Tab bar */
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tab-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Tab content */
+.tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+.tab-content::-webkit-scrollbar { width: 4px; }
+.tab-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Cards inside right panel */
+.r-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.r-card-title {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.r-card-title .badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+.badge-good { background: rgba(38,217,168,.15); color: var(--good); }
+.badge-bad { background: rgba(240,80,110,.15); color: var(--bad); }
+.badge-warn { background: rgba(245,166,35,.15); color: var(--warn); }
+.badge-neutral { background: rgba(136,153,176,.15); color: var(--muted); }
+
+/* Key-value rows */
+.kv-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+.kv-key { color: var(--muted); }
+.kv-val { color: var(--text); font-variant-numeric: tabular-nums; text-align: right; font-weight: 500; }
+
+/* Signal ticks */
+.tick-list { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; }
+.tick-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 3px 0;
+}
+.tick-icon { font-size: 10px; }
+.tick-icon.pass { color: var(--good); }
+.tick-icon.fail { color: var(--bad); }
+
+/* Volume profile bars */
+.vp-bar-container { margin-top: 6px; }
+.vp-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 50px;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  margin-bottom: 2px;
+}
+.vp-price { color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.vp-fill {
+  height: 12px;
+  border-radius: 2px;
+  background: rgba(59,130,246,.3);
+  transition: width .3s;
+}
+.vp-fill.poc { background: rgba(245,166,35,.5); }
+.vp-fill.va { background: rgba(59,130,246,.4); }
+.vp-vol { color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* AI output */
+.ai-output {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  max-height: 400px;
+  overflow-y: auto;
+}
+.ai-output::-webkit-scrollbar { width: 4px; }
+.ai-output::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* Depth table */
+.depth-table {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.depth-table th {
+  text-align: left;
+  color: var(--dim);
+  font-weight: 600;
+  padding: 2px 4px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.depth-table td {
+  padding: 2px 4px;
+}
+.depth-ask { color: var(--bad); }
+.depth-bid { color: var(--good); }
+
+/* Loading spinner */
+.loading-text {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px;
+}
+@keyframes pulse { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
+.loading-text { animation: pulse 1.5s ease-in-out infinite; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 600px) {
+  .chart-header { padding: 6px 8px; }
+  .chart-symbol { font-size: 14px; }
+  .tv-search-input.tv-search-active { width: 120px; }
+  /* On mobile, panels overlay instead of pushing */
+  .main-grid.wl-visible { grid-template-columns: 0fr 1fr 0fr; }
+  .main-grid.rp-visible { grid-template-columns: 0fr 1fr 0fr; }
+  .main-grid.wl-visible.rp-visible { grid-template-columns: 0fr 1fr 0fr; }
+  .panel-left.panel-open {
+    position: fixed;
+    left: 0; top: 0; bottom: 40px;
+    z-index: 200;
+    width: 260px;
+    min-width: 260px;
+    box-shadow: 4px 0 24px rgba(0,0,0,.5);
+  }
+  .panel-right.panel-open {
+    position: fixed;
+    right: 0; top: 0; bottom: 40px;
+    z-index: 200;
+    width: 300px;
+    min-width: 300px;
+    box-shadow: -4px 0 24px rgba(0,0,0,.5);
+  }
+}
+
+/* =====================================================================
+   FAZ 13 — Indicator Dropdown & Overlay Styles
+   ===================================================================== */
+
+/* ── Indicator toggle button (topbar) ── */
+.ind-dropdown-wrapper {
+  position: relative;
+}
+.ind-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(59,130,246,.08), rgba(34,197,94,.08));
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+}
+.ind-toggle-btn:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, rgba(59,130,246,.18), rgba(34,197,94,.18));
+}
+.ind-arrow {
+  font-size: 9px;
+  opacity: .6;
+  transition: transform .2s;
+}
+.ind-dropdown-wrapper:has(.ind-dropdown.open) .ind-arrow {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdown panel ── */
+.ind-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 210px;
+  background: var(--panel);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.03) inset;
+  z-index: 250;
+  padding: 6px 0;
+  backdrop-filter: blur(12px);
+}
+.ind-dropdown.open {
+  display: block;
+  animation: indFadeIn .12s ease-out;
+}
+@keyframes indFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Dropdown items ── */
+.ind-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  transition: background .12s;
+  user-select: none;
+}
+.ind-dropdown-item:hover {
+  background: var(--glass2);
+}
+
+/* Custom checkbox */
+.ind-dropdown-item input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--border2);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+.ind-dropdown-item input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.ind-dropdown-item input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: -1px;
+  left: 1.5px;
+  font-size: 11px;
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Color dot */
+.ind-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* ── Pattern Analysis Styles (FAZ 14) ──────────────────────────────────── */
+
+/* Analysis Dropdown */
+.ana-dropdown-wrapper { position: relative; }
+.ana-toggle-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; font-size: 12px; color: var(--text);
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; transition: all .15s;
+}
+.ana-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ana-arrow { font-size: 8px; opacity: .5; }
+.ana-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0;
+  min-width: 200px; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 6px 0; z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+}
+.ana-dropdown.open { display: block; }
+.ana-dropdown-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; font-size: 12px; color: var(--text);
+  cursor: pointer; transition: background .1s;
+}
+.ana-dropdown-item:hover { background: rgba(255,255,255,.04); }
+.ana-dropdown-item input[type="checkbox"] {
+  accent-color: var(--accent); width: 14px; height: 14px;
+}
+
+/* Patterns Tab Summary */
+.patterns-summary { display: flex; flex-direction: column; gap: 8px; }
+.pat-section {
+  padding: 8px 10px; border-radius: var(--radius);
+  background: rgba(255,255,255,.02);
+}
+.pat-section-title {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .6px;
+  color: var(--muted); margin-bottom: 4px;
+}
+.pat-trend { font-size: 18px; font-weight: 700; }
+.pat-structure {
+  display: inline-block; padding: 3px 10px; margin: 2px 4px 2px 0;
+  font-size: 11px; font-weight: 600; border-radius: 4px;
+  background: rgba(59,130,246,.12); color: var(--accent);
+}
+.pat-none { font-size: 11px; color: var(--muted); font-style: italic; }
+.pat-levels { display: flex; flex-direction: column; gap: 2px; }
+.pat-level {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; padding: 2px 6px; border-radius: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.pat-level span:first-child { font-weight: 700; width: 16px; }
+.pat-res { color: var(--bad); background: rgba(240,80,110,.06); }
+.pat-sup { color: var(--good); background: rgba(38,217,168,.06); }
+.pat-price {
+  color: var(--accent); background: rgba(59,130,246,.08);
+  font-weight: 600;
+}
+.pat-touches { font-size: 10px; color: var(--muted); }
+.pat-breakout { font-size: 13px; font-weight: 600; }
+.pat-swings { font-size: 12px; color: var(--text); }
+
+/* ── News Tab (FAZ 15) ─────────────────────────────────────────────────── */
+.news-controls {
+  display: flex; gap: 4px; margin-bottom: 8px;
+}
+.news-type-btn {
+  flex: 1; padding: 4px 8px; font-size: 11px; font-weight: 600;
+  background: transparent; border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--muted);
+  cursor: pointer; transition: all .15s;
+}
+.news-type-btn.active {
+  background: rgba(59,130,246,.12); color: var(--accent);
+  border-color: var(--accent);
+}
+.news-type-btn:hover { border-color: var(--accent); color: var(--text); }
+
+.news-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: calc(100vh - 260px); overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.news-card {
+  display: block; padding: 10px 12px; border-radius: var(--radius);
+  background: rgba(255,255,255,.02); border: 1px solid transparent;
+  text-decoration: none; color: var(--text); transition: all .15s;
+}
+.news-card:hover {
+  background: rgba(255,255,255,.05); border-color: var(--border);
+}
+.news-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+.news-source {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; color: var(--accent);
+}
+.news-time { font-size: 10px; color: var(--muted); }
+.news-title {
+  font-size: 13px; font-weight: 600; line-height: 1.35;
+  margin-bottom: 4px; color: var(--text);
+}
+.news-summary {
+  font-size: 11px; line-height: 1.4; color: var(--muted);
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 6px;
+}
+.news-footer { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.news-sent {
+  font-size: 10px; font-weight: 700; padding: 1px 6px;
+  border-radius: 3px;
+}
+.news-sent-bull { color: var(--good); background: rgba(38,217,168,.1); }
+.news-sent-bear { color: var(--bad); background: rgba(240,80,110,.1); }
+.news-sent-neutral { color: var(--muted); background: rgba(136,153,176,.08); }
+.news-sym {
+  font-size: 10px; font-weight: 600; padding: 1px 5px;
+  border-radius: 3px; background: rgba(59,130,246,.1); color: var(--accent);
+}
+.news-empty {
+  text-align: center; padding: 20px; color: var(--muted);
+  font-size: 12px; font-style: italic;
+}
+
+/* ── Indicator/Analysis dropdown fix (topbar hidden) ── */
+.ind-dropdown.open,
+.ana-dropdown.open {
+  visibility: visible;
+  position: fixed !important;
+  top: auto !important;
+  bottom: 100px;
+  left: 12px;
+  right: auto;
+  min-width: 220px;
+  z-index: 1000;
+}
+
+/* ── TV Chart Toolbar ── */
+.tv-chart-bar {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  height: 40px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 2px;
+}
+.tv-bar-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tv-bar-scroll::-webkit-scrollbar { display: none; }
+.tv-bar-scroll .tf-group {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: transparent;
+  border: none;
+}
+.tv-bar-scroll .tf-btn {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.tv-bar-scroll .tf-btn:hover {
+  color: var(--text);
+  background: var(--glass2);
+}
+.tv-bar-scroll .tf-btn.active {
+  color: var(--text);
+  background: var(--accent);
+}
+.tv-bar-divider {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+.tv-bar-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.tv-bar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color .15s, background .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.tv-bar-btn:hover {
+  color: var(--text);
+  background: var(--glass2);
+}
+.tv-bar-btn:active {
+  color: #fff;
+  background: rgba(59,130,246,.15);
+}
+.tv-bar-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.tv-bar-btn-active {
+  color: var(--accent) !important;
+  background: rgba(59,130,246,.12) !important;
+}
+.tv-bar-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+/* ── Compact toolbar variant (bottom of chart) ── */
+.tv-chart-bar-sm {
+  height: 30px;
+  padding: 0 4px;
+  border-top: 1px solid var(--border);
+}
+.tv-chart-bar-sm .tv-bar-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+.tv-chart-bar-sm .tv-bar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.tv-chart-bar-sm .tv-bar-divider {
+  height: 18px;
+}
+.tv-chart-bar-sm .tv-bar-separator {
+  height: 16px;
+}
+.tv-chart-bar-sm .tf-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+/* =====================================================================
+   FAZ 16 — Market Tabs & Multi-Market UI
+   ===================================================================== */
+
+/* ── Market Tab Bar (hidden by default, shown via More button) ── */
+.market-tab-bar {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 10px;
+  background: linear-gradient(180deg, #0d1320, var(--bg2));
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 101;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.market-tab-bar.tv-tabs-open {
+  display: flex;
+}
+.market-tab-bar::-webkit-scrollbar { display: none; }
+
+.market-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  white-space: nowrap;
+  letter-spacing: .2px;
+}
+.market-tab:hover {
+  color: var(--text);
+  background: var(--glass2);
+  border-color: var(--border);
+}
+.market-tab.active {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border2);
+  box-shadow: 0 0 12px rgba(59,130,246,.08);
+}
+
+/* Market dot indicators */
+.market-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.crypto-dot  { background: #f5a623; box-shadow: 0 0 6px rgba(245,166,35,.4); }
+.stocks-dot  { background: #3b82f6; box-shadow: 0 0 6px rgba(59,130,246,.4); }
+.bist-dot    { background: #e03050; box-shadow: 0 0 6px rgba(224,48,80,.4); }
+.forex-dot   { background: #26d9a8; box-shadow: 0 0 6px rgba(38,217,168,.4); }
+.comm-dot    { background: #c9a84c; box-shadow: 0 0 6px rgba(201,168,76,.4); }
+
+/* ── Market Badge (in watchlist header, etc.) ── */
+.market-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+.market-badge.badge-crypto      { background: rgba(245,166,35,.15); color: #f5a623; border: 1px solid rgba(245,166,35,.25); }
+.market-badge.badge-stocks      { background: rgba(59,130,246,.15); color: #3b82f6; border: 1px solid rgba(59,130,246,.25); }
+.market-badge.badge-bist        { background: rgba(224,48,80,.15); color: #e03050; border: 1px solid rgba(224,48,80,.25); }
+.market-badge.badge-forex       { background: rgba(38,217,168,.15); color: #26d9a8; border: 1px solid rgba(38,217,168,.25); }
+.market-badge.badge-commodities { background: rgba(201,168,76,.15); color: #c9a84c; border: 1px solid rgba(201,168,76,.25); }
+
+/* ── Unavailable panel message ── */
+.panel-unavailable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--dim);
+  font-size: 12px;
+}
+.panel-unavailable-icon {
+  font-size: 24px;
+  opacity: .4;
+}
+.panel-unavailable-text {
+  font-style: italic;
+}
+
+/* ── Responsive adjustments for market tabs ── */
+@media (max-width: 600px) {
+  .market-tab { padding: 4px 8px; font-size: 10px; gap: 4px; }
+  .market-dot { width: 6px; height: 6px; }
+}
+
+/* =====================================================================
+   Drawing Engine — Canvas overlay, UI components
+   ===================================================================== */
+
+/* ── Active tool indicator (top center) ── */
+.drawing-tool-indicator {
+  position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+  z-index: 500; display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; background: rgba(59,130,246,.92); color: #fff;
+  border-radius: 20px; font-size: 12px; font-weight: 600;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3);
+}
+.drawing-tool-indicator.visible { opacity: 1; pointer-events: auto; }
+.dti-cancel {
+  background: rgba(255,255,255,.2); border: none; color: #fff;
+  width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+  font-size: 12px; display: flex; align-items: center; justify-content: center;
+}
+.dti-cancel:hover { background: rgba(255,255,255,.35); }
+
+/* ── Floating delete button ── */
+.drawing-delete-btn {
+  position: fixed; z-index: 500; display: flex; align-items: center; gap: 4px;
+  padding: 6px 12px; background: #f0506e; color: #fff; border: none;
+  border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;
+  opacity: 0; pointer-events: none; transition: opacity .2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+.drawing-delete-btn.visible { opacity: 1; pointer-events: auto; }
+.drawing-delete-btn:hover { background: #d63a5a; }
+.drawing-delete-btn svg { flex-shrink: 0; }
+
+/* ── Toast notification ── */
+.drawing-toast {
+  position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+  z-index: 600; padding: 8px 20px; background: rgba(10,14,23,.92); color: #e8edf5;
+  border-radius: 20px; font-size: 13px; opacity: 0; pointer-events: none;
+  transition: opacity .3s; border: 1px solid rgba(59,130,246,.3);
+}
+.drawing-toast.visible { opacity: 1; }
+
+/* ── Text input (on chart) ── */
+.drawing-text-input {
+  display: flex; gap: 4px; align-items: center;
+}
+.dt-inp {
+  width: 160px; padding: 6px 10px; background: var(--panel);
+  border: 1px solid var(--accent); border-radius: 6px;
+  color: var(--text); font-size: 13px; outline: none;
+}
+.dt-inp:focus { border-color: #8bb4ff; }
+.dt-ok, .dt-no {
+  width: 28px; height: 28px; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 14px; display: flex;
+  align-items: center; justify-content: center;
+}
+.dt-ok { background: var(--accent); color: #fff; }
+.dt-no { background: rgba(240,80,110,.2); color: #f0506e; }
+
+/* ── Drawing list panel ── */
+.drawing-list-panel {
+  position: fixed; right: 8px; bottom: 52px; width: 240px; max-height: 300px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+  z-index: 400; display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none; transform: translateY(10px);
+  transition: opacity .2s, transform .2s; overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,.4);
+}
+.drawing-list-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+.dl-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+}
+.dl-title { font-size: 13px; font-weight: 700; }
+.dl-hdr-acts { display: flex; gap: 6px; align-items: center; }
+.dl-clear, .dl-close {
+  background: none; border: none; color: var(--muted); cursor: pointer;
+  font-size: 12px; padding: 2px 6px; border-radius: 4px;
+}
+.dl-clear:hover, .dl-close:hover { color: var(--text); background: var(--glass2); }
+.dl-items { flex: 1; overflow-y: auto; padding: 4px; }
+.dl-empty { text-align: center; color: var(--muted); padding: 24px; font-size: 12px; }
+.dl-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 12px;
+}
+.dl-item:hover { background: var(--glass2); }
+.dl-item.selected { background: rgba(59,130,246,.1); border: 1px solid rgba(59,130,246,.3); }
+.dl-item.hidden { opacity: 0.4; }
+.dl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-acts { display: flex; gap: 4px; flex-shrink: 0; }
+.dl-vis, .dl-del {
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  padding: 2px; opacity: 0.5; color: var(--muted);
+}
+.dl-vis:hover, .dl-del:hover { opacity: 1; }
+
+/* ── Disabled tool cards in drawer ── */
+.tool-card.tool-disabled {
+  opacity: 0.35; position: relative; cursor: default;
+}
+.tool-card.tool-disabled .tool-card-icon { filter: grayscale(1); }
+.tool-card.tool-disabled:hover { background: transparent; transform: none; }
+.tool-soon {
+  position: absolute; bottom: 2px; right: 2px;
+  font-size: 7px; color: var(--muted);
+  background: rgba(0,0,0,.6); padding: 1px 4px; border-radius: 3px;
+  text-transform: uppercase; letter-spacing: .3px;
+}
+
+/* ── Multi-chart drawing canvas relative positioning ── */
+.mc-chart-area { position: relative; }
+
+/* ── FAZ 26: Real-time stream flash animations ── */
+@keyframes flashGreen {
+  0%   { background: rgba(34,197,94,.35); }
+  100% { background: transparent; }
+}
+@keyframes flashRed {
+  0%   { background: rgba(239,68,68,.35); }
+  100% { background: transparent; }
+}
+.wl-price.flash-up   { animation: flashGreen .6s ease-out; }
+.wl-price.flash-down  { animation: flashRed   .6s ease-out; }
+
+/* WS status badge */
+#wsStatusBadge {
+  display: inline-block;
+  vertical-align: middle;
+  transition: all .3s;
+}

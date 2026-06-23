@@ -1,0 +1,381 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Canlı Strateji Sinyalleri — ZKR Analiz{% endblock %}
+{% block page_title %}Canlı Strateji Sinyalleri{% endblock %}
+{% block topbar_title %}Signals{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════════════
+   FAZ 28 — Strategy Live Signals Page
+   ═══════════════════════════════════════════════════════ */
+.ss-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Panel ──────────────────────── */
+.ss-panel {
+  background: #141414;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 20px;
+}
+.ss-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #eee;
+}
+.ss-section-title svg {
+  width: 20px;
+  height: 20px;
+  opacity: 0.6;
+}
+.ss-badge {
+  background: rgba(255,109,0,0.15);
+  color: #FF9100;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+
+/* ── Stats Row ──────────────────── */
+.ss-stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.ss-stat-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 16px;
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+}
+.ss-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.ss-stat-label {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Active Strategies Grid ─────── */
+.ss-active-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.ss-strategy-card {
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 14px;
+  transition: all 0.2s;
+}
+.ss-strategy-card:hover {
+  border-color: rgba(255,109,0,0.3);
+}
+.ss-strategy-card.disabled {
+  opacity: 0.5;
+}
+.ss-strategy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.ss-strategy-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #eee;
+}
+.ss-strategy-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ss-strategy-tag {
+  background: rgba(41,121,255,0.1);
+  color: #2979FF;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.ss-strategy-tag.interval {
+  background: rgba(0,200,83,0.1);
+  color: #00C853;
+}
+.ss-strategy-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+.ss-strategy-actions {
+  display: flex;
+  gap: 8px;
+}
+.ss-btn-sm {
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #1a1a1a;
+  color: #aaa;
+  transition: all 0.15s;
+}
+.ss-btn-sm:hover {
+  background: #222;
+  color: #fff;
+}
+.ss-btn-sm.toggle {
+  background: rgba(255,109,0,0.1);
+  border-color: rgba(255,109,0,0.3);
+  color: #FF9100;
+}
+.ss-btn-sm.toggle.active {
+  background: rgba(0,200,83,0.1);
+  border-color: rgba(0,200,83,0.3);
+  color: #00C853;
+}
+.ss-btn-sm.danger:hover {
+  background: rgba(255,23,68,0.1);
+  border-color: rgba(255,23,68,0.3);
+  color: #FF1744;
+}
+
+/* ── Signal Live Dot ────────────── */
+.ss-live-dot {
+  width: 8px;
+  height: 8px;
+  background: #FF6D00;
+  border-radius: 50%;
+  display: inline-block;
+  animation: ss-pulse 1.5s infinite;
+}
+.ss-live-dot.green { background: #00C853; }
+@keyframes ss-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255,109,0,0.6); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgba(255,109,0,0); }
+}
+
+/* ── Signals List ───────────────── */
+.ss-signals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ss-signal-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  transition: all 0.15s;
+}
+.ss-signal-item:hover {
+  border-color: rgba(255,255,255,0.12);
+}
+.ss-signal-type {
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  min-width: 50px;
+  text-align: center;
+}
+.ss-signal-type.BULLISH {
+  background: rgba(0,200,83,0.12);
+  color: #00C853;
+}
+.ss-signal-type.BEARISH {
+  background: rgba(255,23,68,0.12);
+  color: #FF1744;
+}
+.ss-signal-info {
+  flex: 1;
+}
+.ss-signal-symbol {
+  font-weight: 600;
+  font-size: 14px;
+  color: #eee;
+}
+.ss-signal-strategy {
+  font-size: 12px;
+  color: #666;
+}
+.ss-signal-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ddd;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ss-signal-time {
+  font-size: 11px;
+  color: #555;
+  text-align: right;
+  min-width: 80px;
+}
+
+/* ── Chart Container ────────────── */
+.ss-chart-container {
+  width: 100%;
+  height: 350px;
+  background: #0f0f0f;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* ── Empty State ────────────────── */
+.ss-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #555;
+}
+.ss-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+.ss-empty-text {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.ss-empty-link {
+  color: #FF9100;
+  text-decoration: none;
+  font-weight: 500;
+}
+.ss-empty-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Toast ──────────────────────── */
+.ss-toast {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,109,0,0.3);
+  border-radius: 10px;
+  padding: 14px 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: ss-slideIn 0.3s ease-out;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.ss-toast.buy { border-color: rgba(0,200,83,0.5); }
+.ss-toast.sell { border-color: rgba(255,23,68,0.5); }
+@keyframes ss-slideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* ── Responsive ─────────────────── */
+@media (max-width: 600px) {
+  .ss-stats { flex-direction: column; }
+  .ss-active-grid { grid-template-columns: 1fr; }
+  .ss-signal-item { flex-wrap: wrap; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ss-container">
+
+  <!-- ══════════ STATS ══════════ -->
+  <div class="ss-stats">
+    <div class="ss-stat-card">
+      <div class="ss-stat-value" id="ss-active-count">0</div>
+      <div class="ss-stat-label">Aktif Strateji</div>
+    </div>
+    <div class="ss-stat-card">
+      <div class="ss-stat-value" id="ss-signal-count">0</div>
+      <div class="ss-stat-label">Toplam Sinyal</div>
+    </div>
+    <div class="ss-stat-card">
+      <div class="ss-stat-value" id="ss-room-count">0</div>
+      <div class="ss-stat-label">Aktif Stream</div>
+    </div>
+    <div class="ss-stat-card">
+      <div class="ss-stat-value"><span class="ss-live-dot green"></span></div>
+      <div class="ss-stat-label" id="ss-engine-status">Bağlanıyor...</div>
+    </div>
+  </div>
+
+  <!-- ══════════ ACTIVE STRATEGIES ══════════ -->
+  <section class="ss-panel">
+    <h2 class="ss-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      Aktif Stratejiler
+      <span class="ss-badge" id="ss-active-badge">0</span>
+    </h2>
+    <div class="ss-active-grid" id="ss-active-grid">
+      <div class="ss-empty">
+        <div class="ss-empty-icon">⚡</div>
+        <div class="ss-empty-text">Henüz aktif strateji yok</div>
+        <a href="/api/strategy/signals-page" class="ss-empty-link" onclick="window.location='/api/strategy/signals-page';return false;">
+          Strategy Builder'da bir strateji aktifleştirin →
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ SIGNAL CHART ══════════ -->
+  <section class="ss-panel" id="ss-chart-section" style="display:none;">
+    <h2 class="ss-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+      Sinyal Grafiği
+    </h2>
+    <div class="ss-chart-container" id="ss-chart"></div>
+  </section>
+
+  <!-- ══════════ RECENT SIGNALS ══════════ -->
+  <section class="ss-panel">
+    <h2 class="ss-section-title">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Son Sinyaller
+      <span class="ss-badge" id="ss-signal-badge">0</span>
+    </h2>
+    <div class="ss-signals-list" id="ss-signals-list">
+      <div class="ss-empty">
+        <div class="ss-empty-icon">📡</div>
+        <div class="ss-empty-text">Henüz sinyal üretilmedi</div>
+        <div style="font-size:12px;color:#444;">Stratejiler aktif olduğunda burada sinyaller görünecek</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="{{ url_for('static', filename='js/strategy_signals.js') }}"></script>
+{% endblock %}

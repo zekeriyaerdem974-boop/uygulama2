@@ -1,0 +1,89 @@
+"""Centralized cache layer for BullWatch.
+
+Supports Redis (optional) with thread-safe in-memory fallback.
+Extracted from legacy_monolith.py to be the single source of truth.
+"""
+from __future__ import annotations
+
+import json
+import os
+import threading
+import time
+from datetime import datetime, timezone
+
+# --------------- Redis (optional) ---------------
+try:
+    import redis as _redis_mod  # type: ignore
+except Exception:  # pragma: no cover
+    _redis_mod = None
+
+_REDIS_URL = os.getenv("REDIS_URL")
+_redis_client = None
+
+if _REDIS_URL and _redis_mod is not None:
+    try:
+        _redis_client = _redis_mod.Redis.from_url(
+            _REDIS_URL, decode_responses=True
+        )
+        _redis_client.ping()
+        print("[cache] redis enabled:", _REDIS_URL)
+    except Exception as exc:
+        _redis_client = None
+        print("[cache] redis disabled:", exc)
+
+# --------------- In-memory fallback ---------------
+_mem: dict = {}
+_mem_lock = threading.Lock()
+
+
+# --------------- Serialization helpers ---------------
+def _pack(val) -> str:
+    return json.dumps({"ts": time.time(), "val": val}, ensure_ascii=False)
+
+
+def _unpack(raw: str):
+    obj = json.loads(raw)
+    return float(obj.get("ts", 0)), obj.get("val")
+
+
+# --------------- Public API ---------------
+def cache_get(key: str, ttl: float = 60):
+    """Return cached value if fresh (within *ttl* seconds), else ``None``."""
+    if _redis_client is not None:
+        raw = _redis_client.get(key)
+        if not raw:
+            return None
+        try:
+            ts, val = _unpack(raw)
+        except Exception:
+            return None
+        if time.time() - ts > ttl:
+            return None
+        return val
+
+    with _mem_lock:
+        item = _mem.get(key)
+        if not item:
+            return None
+        ts, val = item
+    if time.time() - ts > ttl:
+        return None
+    return val
+
+
+def cache_set(key: str, val) -> None:
+    """Store *val* under *key* with current timestamp."""
+    if _redis_client is not None:
+        try:
+            _redis_client.set(key, _pack(val))
+            return
+        except Exception as exc:
+            print("[cache] redis set failed, fallback memory:", exc)
+
+    with _mem_lock:
+        _mem[key] = (time.time(), val)
+
+
+def utcnow() -> datetime:
+    """Timezone-aware UTC now — single source of truth."""
+    return datetime.now(timezone.utc)

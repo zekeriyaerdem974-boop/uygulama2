@@ -1,0 +1,537 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}AI Market Agent • ZKR Analiz Pro{% endblock %}
+{% block page_title %}AI Market Agent{% endblock %}
+{% block topbar_title %}AI Market Agent{% endblock %}
+
+{% block topbar_right %}
+<div class="pro-badge-accent" style="font-size:10px;padding:2px 8px;">AI</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ═══════════════════════════════════════════════════════════ */
+/* AI Agent Page — FAZ 49                                      */
+/* ═══════════════════════════════════════════════════════════ */
+.ai-agent-container { max-width: 1200px; margin: 0 auto; }
+
+/* Sentiment bar */
+.ai-sentiment-bar {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 20px; border-radius: var(--radius-lg);
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  margin-bottom: var(--space-6);
+}
+.ai-sentiment-bar .sentiment-icon { font-size: 28px; }
+.ai-sentiment-bar .sentiment-label {
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+}
+.ai-sentiment-bar .sentiment-score {
+  font-size: 13px; color: var(--text-dim);
+  margin-left: auto; font-family: var(--font-mono);
+}
+
+/* Brief card */
+.ai-brief-card {
+  background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(139,92,246,0.06));
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: var(--radius-lg); padding: 20px;
+  margin-bottom: var(--space-6);
+}
+.ai-brief-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: var(--text-primary); }
+.ai-brief-highlights { list-style: none; padding: 0; margin: 0; }
+.ai-brief-highlights li {
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.ai-brief-highlights li:last-child { border-bottom: none; }
+.ai-brief-highlights li::before { content: "→"; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+
+/* Insight card */
+.ai-insight-card {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px 16px;
+  margin-bottom: 10px; display: flex; gap: 12px;
+}
+.ai-insight-card .insight-icon { font-size: 20px; flex-shrink: 0; }
+.ai-insight-card .insight-body { flex: 1; min-width: 0; }
+.ai-insight-card .insight-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ai-insight-card .insight-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+.ai-insight-card.severity-warning { border-left: 3px solid var(--warning); }
+.ai-insight-card.severity-info { border-left: 3px solid var(--accent); }
+
+/* Opportunity explained */
+.ai-opp-item {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: 14px 16px;
+  margin-bottom: 10px; cursor: pointer; transition: border-color 0.15s;
+}
+.ai-opp-item:hover { border-color: var(--accent); }
+.ai-opp-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.ai-opp-symbol { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.ai-opp-type { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--bg-primary); color: var(--text-dim); }
+.ai-opp-confidence { font-size: 11px; margin-left: auto; font-family: var(--font-mono); }
+.ai-opp-explain { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+/* Ask input */
+.ai-ask-form {
+  display: flex; gap: 8px; margin-top: 12px;
+}
+.ai-ask-input {
+  flex: 1; padding: 10px 14px; border-radius: var(--radius-md);
+  border: 1px solid var(--border); background: var(--bg-primary);
+  color: var(--text-primary); font-size: 13px; outline: none;
+}
+.ai-ask-input:focus { border-color: var(--accent); }
+.ai-ask-btn {
+  padding: 10px 20px; border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent), #8B5CF6);
+  color: #fff; border: none; font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.ai-ask-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ai-ask-output {
+  margin-top: 12px; padding: 14px; border-radius: var(--radius-md);
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  display: none;
+}
+
+/* Tab nav */
+.ai-tabs { display: flex; gap: 4px; margin-bottom: var(--space-5); overflow-x: auto; }
+.ai-tab {
+  padding: 8px 16px; border-radius: var(--radius-md);
+  font-size: 13px; font-weight: 500; cursor: pointer;
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  color: var(--text-secondary); white-space: nowrap; transition: all 0.15s;
+}
+.ai-tab:hover { color: var(--text-primary); }
+.ai-tab.active {
+  background: linear-gradient(135deg, var(--accent), #8B5CF6);
+  color: #fff; border-color: transparent;
+}
+
+/* Section */
+.ai-section { display: none; }
+.ai-section.active { display: block; }
+
+/* Loading */
+.ai-loading { text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px; }
+.ai-loading .spinner {
+  width: 24px; height: 24px; border: 2px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%;
+  animation: aispin 0.8s linear infinite; margin: 0 auto 12px;
+}
+@keyframes aispin { to { transform: rotate(360deg); } }
+
+/* Timestamp */
+.ai-timestamp { font-size: 11px; color: var(--text-dim); margin-top: 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ai-agent-container">
+
+  <!-- ═══════════ TABS ═══════════ -->
+  <div class="ai-tabs">
+    <button class="ai-tab active" data-tab="brief">🧠 AI Brief</button>
+    <button class="ai-tab" data-tab="portfolio">💼 Portfolio</button>
+    <button class="ai-tab" data-tab="watchlist">👁️ Watchlist</button>
+    <button class="ai-tab" data-tab="opportunities">🎯 Opportunities</button>
+    <button class="ai-tab" data-tab="ask">💬 Ask AI</button>
+  </div>
+
+  <!-- ═══════════ SECTION: AI BRIEF ═══════════ -->
+  <div class="ai-section active" id="section-brief">
+    <div class="ai-loading" id="brief-loading">
+      <div class="spinner"></div>
+      AI piyasa brifingi hazırlanıyor...
+    </div>
+
+    <div id="brief-content" style="display:none;">
+      <!-- Sentiment bar -->
+      <div class="ai-sentiment-bar" id="brief-sentiment">
+        <span class="sentiment-icon" id="brief-sentiment-icon">⬜</span>
+        <div>
+          <div class="sentiment-label" id="brief-sentiment-label">Yükleniyor...</div>
+          <div style="font-size:12px;color:var(--text-dim);" id="brief-sentiment-desc">Piyasa durumu analiz ediliyor</div>
+        </div>
+        <span class="sentiment-score" id="brief-sentiment-score">—</span>
+      </div>
+
+      <!-- Highlights -->
+      <div class="ai-brief-card">
+        <h3>📋 Piyasa Özeti</h3>
+        <ul class="ai-brief-highlights" id="brief-highlights"></ul>
+      </div>
+
+      <!-- Portfolio insights -->
+      <div id="brief-portfolio-section" style="display:none;">
+        <div class="pro-section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;">💼 Portföy Sinyalleri</h3>
+        </div>
+        <div id="brief-portfolio-insights"></div>
+      </div>
+
+      <!-- Watchlist insights -->
+      <div id="brief-watchlist-section" style="display:none;margin-top:var(--space-5);">
+        <div class="pro-section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;">👁️ İzleme Listesi Sinyalleri</h3>
+        </div>
+        <div id="brief-watchlist-insights"></div>
+      </div>
+
+      <!-- Top opportunities -->
+      <div style="margin-top:var(--space-5);">
+        <div class="pro-section-header" style="margin-bottom:12px;">
+          <h3 style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;">🎯 Öne Çıkan Fırsatlar</h3>
+        </div>
+        <div id="brief-opportunities"></div>
+      </div>
+
+      <div class="ai-timestamp" id="brief-timestamp"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ SECTION: PORTFOLIO ═══════════ -->
+  <div class="ai-section" id="section-portfolio">
+    <div class="ai-loading" id="portfolio-loading">
+      <div class="spinner"></div>
+      Portföy analizi hazırlanıyor...
+    </div>
+    <div id="portfolio-content" style="display:none;"></div>
+  </div>
+
+  <!-- ═══════════ SECTION: WATCHLIST ═══════════ -->
+  <div class="ai-section" id="section-watchlist">
+    <div class="ai-loading" id="watchlist-loading">
+      <div class="spinner"></div>
+      İzleme listesi analizi hazırlanıyor...
+    </div>
+    <div id="watchlist-content" style="display:none;"></div>
+  </div>
+
+  <!-- ═══════════ SECTION: OPPORTUNITIES ═══════════ -->
+  <div class="ai-section" id="section-opportunities">
+    <div class="ai-loading" id="opps-loading">
+      <div class="spinner"></div>
+      AI fırsat analizi hazırlanıyor...
+    </div>
+    <div id="opps-content" style="display:none;"></div>
+  </div>
+
+  <!-- ═══════════ SECTION: ASK AI ═══════════ -->
+  <div class="ai-section" id="section-ask">
+    <div class="ai-brief-card">
+      <h3>💬 AI'ya Sor</h3>
+      <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">
+        Piyasa, portföy veya izleme listeniz hakkında soru sorun.
+      </p>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+        <button class="pro-chip ai-quick-q" data-q="Piyasadaki genel durum nedir?">📊 Piyasa Durumu</button>
+        <button class="pro-chip ai-quick-q" data-q="Portföyüm hakkında ne düşünüyorsun?">💼 Portföy Analizi</button>
+        <button class="pro-chip ai-quick-q" data-q="Bugünkü en dikkat çekici fırsatlar neler?">🎯 Fırsatlar</button>
+        <button class="pro-chip ai-quick-q" data-q="Bugünkü en önemli haberleri özetle">📰 Haberler</button>
+      </div>
+      <div class="ai-ask-form">
+        <input type="text" class="ai-ask-input" id="ai-ask-input"
+               placeholder="Piyasa hakkında bir şey sorun..."
+               maxlength="500" autocomplete="off">
+        <button class="ai-ask-btn" id="ai-ask-btn">Sor</button>
+      </div>
+      <div class="ai-ask-output" id="ai-ask-output"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Legal Disclaimer -->
+<section style="margin-top:var(--space-6);margin-bottom:16px;">
+  {% include "legal_disclaimer.html" %}
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  'use strict';
+
+  // ── Tab switching ──────────────────────────────────────────
+  const tabs = document.querySelectorAll('.ai-tab');
+  const sections = document.querySelectorAll('.ai-section');
+  const loaded = {};
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const target = tab.dataset.tab;
+      tabs.forEach(t => t.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('section-' + target).classList.add('active');
+      if (!loaded[target]) loadSection(target);
+    });
+  });
+
+  // ── Helpers ────────────────────────────────────────────────
+  function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+  function renderInsights(container, insights) {
+    if (!insights || !insights.length) {
+      container.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:13px;">Veri bulunamadı.</div>';
+      return;
+    }
+    container.innerHTML = insights.map(i =>
+      `<div class="ai-insight-card ${i.severity ? 'severity-' + i.severity : ''}">
+        <span class="insight-icon">${esc(i.icon || '💡')}</span>
+        <div class="insight-body">
+          <div class="insight-title">${esc(i.title)}</div>
+          <div class="insight-text">${esc(i.text)}</div>
+        </div>
+      </div>`
+    ).join('');
+  }
+
+  function renderOpps(container, opps) {
+    if (!opps || !opps.length) {
+      container.innerHTML = '<div style="padding:16px;color:var(--text-dim);font-size:13px;">Aktif fırsat bulunamadı.</div>';
+      return;
+    }
+    container.innerHTML = opps.map(o => {
+      const confColor = o.confidence >= 75 ? 'var(--success)' : (o.confidence >= 50 ? 'var(--warning)' : 'var(--danger)');
+      return `<div class="ai-opp-item">
+        <div class="ai-opp-header">
+          <span class="ai-opp-symbol">${esc(o.symbol)}</span>
+          <span class="ai-opp-type">${esc((o.event_type||'').replace(/_/g,' '))}</span>
+          <span class="ai-opp-confidence" style="color:${confColor}">${o.confidence}%</span>
+        </div>
+        <div class="ai-opp-explain">${esc(o.explanation)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function fetchJSON(url, opts) {
+    try {
+      const r = await fetch(url, opts);
+      return await r.json();
+    } catch(e) { return { ok: false, error: e.message }; }
+  }
+
+  // ── Section loaders ───────────────────────────────────────
+  async function loadSection(name) {
+    loaded[name] = true;
+    if (name === 'brief') await loadBrief();
+    else if (name === 'portfolio') await loadPortfolio();
+    else if (name === 'watchlist') await loadWatchlist();
+    else if (name === 'opportunities') await loadOpportunities();
+  }
+
+  async function loadBrief() {
+    const loading = document.getElementById('brief-loading');
+    const content = document.getElementById('brief-content');
+    loading.style.display = '';
+    content.style.display = 'none';
+
+    let res = await fetchJSON('/api/ai/brief');
+    let isPublic = false;
+
+    // FAZ 64: If auth required, fall back to public market summary
+    if (!res.ok) {
+      res = await fetchJSON('/api/ai/market-summary');
+      isPublic = true;
+    }
+
+    loading.style.display = 'none';
+    content.style.display = '';
+
+    if (!res.ok) {
+      content.innerHTML = '<div class="ai-loading">Piyasa verileri yüklenemedi. Lütfen daha sonra tekrar deneyin.</div>';
+      return;
+    }
+
+    const d = res.data;
+
+    // FAZ 64: Show login notice for public mode
+    if (isPublic) {
+      const notice = document.createElement('div');
+      notice.className = 'ai-insight-card severity-info';
+      notice.style.marginBottom = '12px';
+      notice.innerHTML = '<span class="insight-icon">🔑</span><div class="insight-body">' +
+        '<div class="insight-title">Genel Piyasa Özeti</div>' +
+        '<div class="insight-text">Kişiselleştirilmiş brifing için <a href="/login" style="color:var(--primary);text-decoration:underline;">giriş yapın</a>. ' +
+        'Portföy ve izleme listesi analizi giriş sonrası aktif olur.</div></div>';
+      content.appendChild(notice);
+    }
+
+    // Sentiment
+    const s = d.sentiment || {};
+    document.getElementById('brief-sentiment-icon').textContent = s.icon || '⬜';
+    document.getElementById('brief-sentiment-label').textContent = s.label || 'N/A';
+    document.getElementById('brief-sentiment-score').textContent = 'Skor: ' + (s.score || 50) + '/100';
+    document.getElementById('brief-sentiment').style.borderLeft = '4px solid ' + (s.color || 'var(--border)');
+
+    // Highlights
+    const hlEl = document.getElementById('brief-highlights');
+    if (d.highlights && d.highlights.length) {
+      hlEl.innerHTML = d.highlights.map(h => '<li>' + esc(h) + '</li>').join('');
+    } else {
+      hlEl.innerHTML = '<li>Piyasa verileri yükleniyor...</li>';
+    }
+
+    // Portfolio insights (only available for authenticated users)
+    const pfSec = document.getElementById('brief-portfolio-section');
+    if (!isPublic && d.portfolio && d.portfolio.has_data && d.portfolio.insights && d.portfolio.insights.length) {
+      pfSec.style.display = '';
+      renderInsights(document.getElementById('brief-portfolio-insights'), d.portfolio.insights);
+    }
+
+    // Watchlist insights (only available for authenticated users)
+    const wlSec = document.getElementById('brief-watchlist-section');
+    if (!isPublic && d.watchlist && d.watchlist.insights && d.watchlist.insights.length) {
+      wlSec.style.display = '';
+      renderInsights(document.getElementById('brief-watchlist-insights'), d.watchlist.insights);
+    }
+
+    // Top opportunities — use brief data or fetch from public endpoint
+    if (!isPublic && d.opportunities) {
+      renderOpps(document.getElementById('brief-opportunities'), d.opportunities.top || []);
+    } else {
+      const oppsRes = await fetchJSON('/api/ai/opportunities?limit=5');
+      renderOpps(document.getElementById('brief-opportunities'), oppsRes.ok ? (oppsRes.data || []) : []);
+    }
+
+    // Timestamp
+    document.getElementById('brief-timestamp').textContent =
+      'Oluşturulma: ' + new Date(d.generated_at).toLocaleString('tr-TR') +
+      ' | Süre: ' + (d.generation_time_ms || 0) + 'ms';
+  }
+
+  async function loadPortfolio() {
+    const loading = document.getElementById('portfolio-loading');
+    const content = document.getElementById('portfolio-content');
+    loading.style.display = '';
+    content.style.display = 'none';
+
+    const res = await fetchJSON('/api/ai/portfolio');
+    loading.style.display = 'none';
+    content.style.display = '';
+
+    if (!res.ok) {
+      content.innerHTML = '<div class="ai-insight-card severity-info"><span class="insight-icon">🔑</span><div class="insight-body"><div class="insight-title">Giriş Gerekli</div><div class="insight-text">Portföy analizi için <a href="/login" style="color:var(--primary);text-decoration:underline;">giriş yapın</a>.</div></div></div>';
+      return;
+    }
+
+    const d = res.data;
+    if (!d.has_data) {
+      content.innerHTML = '<div class="ai-insight-card severity-info"><span class="insight-icon">💼</span><div class="insight-body"><div class="insight-title">Portföy Boş</div><div class="insight-text">' + esc(d.message) + '</div></div></div>';
+      return;
+    }
+
+    renderInsights(content, d.insights);
+    content.innerHTML += '<div class="ai-timestamp">Oluşturulma: ' + new Date(d.generated_at).toLocaleString('tr-TR') + '</div>';
+  }
+
+  async function loadWatchlist() {
+    const loading = document.getElementById('watchlist-loading');
+    const content = document.getElementById('watchlist-content');
+    loading.style.display = '';
+    content.style.display = 'none';
+
+    const res = await fetchJSON('/api/ai/watchlist');
+    loading.style.display = 'none';
+    content.style.display = '';
+
+    if (!res.ok) {
+      content.innerHTML = '<div class="ai-insight-card severity-info"><span class="insight-icon">🔑</span><div class="insight-body"><div class="insight-title">Giriş Gerekli</div><div class="insight-text">İzleme listesi analizi için <a href="/login" style="color:var(--primary);text-decoration:underline;">giriş yapın</a>.</div></div></div>';
+      return;
+    }
+
+    const d = res.data;
+    if (!d.has_data) {
+      content.innerHTML = '<div class="ai-insight-card severity-info"><span class="insight-icon">👁️</span><div class="insight-body"><div class="insight-title">İzleme Listesi Boş</div><div class="insight-text">' + esc(d.message) + '</div></div></div>';
+      return;
+    }
+
+    renderInsights(content, d.insights);
+    content.innerHTML += '<div class="ai-timestamp">Oluşturulma: ' + new Date(d.generated_at).toLocaleString('tr-TR') + '</div>';
+  }
+
+  async function loadOpportunities() {
+    const loading = document.getElementById('opps-loading');
+    const content = document.getElementById('opps-content');
+    loading.style.display = '';
+    content.style.display = 'none';
+
+    const res = await fetchJSON('/api/ai/opportunities?limit=15');
+    loading.style.display = 'none';
+    content.style.display = '';
+
+    if (!res.ok) {
+      content.innerHTML = '<div class="ai-loading">Fırsatlar yüklenemedi.</div>';
+      return;
+    }
+
+    renderOpps(content, res.data);
+  }
+
+  // ── Ask AI ─────────────────────────────────────────────────
+  const askInput = document.getElementById('ai-ask-input');
+  const askBtn = document.getElementById('ai-ask-btn');
+  const askOutput = document.getElementById('ai-ask-output');
+
+  async function doAsk(question) {
+    if (!question) return;
+    askBtn.disabled = true;
+    askOutput.style.display = '';
+    askOutput.textContent = 'Yanıt hazırlanıyor...';
+
+    const res = await fetchJSON('/api/ai/ask', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question })
+    });
+
+    askBtn.disabled = false;
+
+    if (!res.ok) {
+      askOutput.textContent = res.error === 'Giriş yapmanız gerekiyor'
+        ? 'Soru sormak için giriş yapmanız gerekiyor.'
+        : (res.error || 'Hata oluştu.');
+      return;
+    }
+
+    const d = res.data || {};
+    let html = '';
+    if (d.answer) html += '<div style="margin-bottom:8px;">' + esc(d.answer).replace(/\n/g, '<br>') + '</div>';
+    if (d.key_points && d.key_points.length) {
+      html += '<ul style="margin:8px 0;padding-left:18px;">';
+      d.key_points.forEach(p => { html += '<li style="margin-bottom:4px;">' + esc(p) + '</li>'; });
+      html += '</ul>';
+    }
+    askOutput.innerHTML = html || esc(d.summary || 'Yanıt alınamadı.');
+  }
+
+  askBtn.addEventListener('click', () => doAsk(askInput.value.trim()));
+  askInput.addEventListener('keydown', e => { if (e.key === 'Enter') doAsk(askInput.value.trim()); });
+
+  document.querySelectorAll('.ai-quick-q').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = btn.dataset.q;
+      askInput.value = q;
+      // Switch to ask tab
+      tabs.forEach(t => t.classList.remove('active'));
+      sections.forEach(s => s.classList.remove('active'));
+      document.querySelector('[data-tab="ask"]').classList.add('active');
+      document.getElementById('section-ask').classList.add('active');
+      doAsk(q);
+    });
+  });
+
+  // ── Auto-load brief on page load ──────────────────────────
+  loadSection('brief');
+
+})();
+</script>
+{% endblock %}

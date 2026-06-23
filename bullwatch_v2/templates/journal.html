@@ -1,0 +1,280 @@
+{% extends "layout_terminal.html" %}
+{% block title %}Trade Journal — ZKR Analiz{% endblock %}
+{% block page_title %}Trade Journal{% endblock %}
+{% block topbar_title %}Journal{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="jrn-container">
+
+  <!-- ══════════ STATS CARDS ══════════ -->
+  <section class="jrn-stats" id="jrn-stats"></section>
+
+  <!-- ══════════ ADD ENTRY ══════════ -->
+  <section class="jrn-panel">
+    <h2 class="jrn-section-title">Yeni Kayıt Ekle</h2>
+
+    <div class="jrn-form-grid">
+      <div class="jrn-field">
+        <label>Sembol</label>
+        <input type="text" id="jrn-symbol" class="jrn-input" placeholder="BTCUSDT" />
+      </div>
+      <div class="jrn-field">
+        <label>Piyasa</label>
+        <select id="jrn-market" class="jrn-input">
+          <option value="crypto">Kripto</option>
+          <option value="stocks">Hisse</option>
+          <option value="bist">BIST</option>
+          <option value="forex">Forex</option>
+        </select>
+      </div>
+      <div class="jrn-field">
+        <label>Yön</label>
+        <select id="jrn-side" class="jrn-input">
+          <option value="buy">Long</option>
+          <option value="sell">Short</option>
+        </select>
+      </div>
+      <div class="jrn-field">
+        <label>Giriş Fiyat</label>
+        <input type="number" id="jrn-entry-price" class="jrn-input" placeholder="0" step="any" />
+      </div>
+      <div class="jrn-field">
+        <label>Çıkış Fiyat</label>
+        <input type="number" id="jrn-exit-price" class="jrn-input" placeholder="0" step="any" />
+      </div>
+      <div class="jrn-field">
+        <label>Miktar</label>
+        <input type="number" id="jrn-quantity" class="jrn-input" placeholder="0" step="any" />
+      </div>
+      <div class="jrn-field">
+        <label>PnL ($)</label>
+        <input type="number" id="jrn-pnl" class="jrn-input" placeholder="0" step="any" />
+      </div>
+      <div class="jrn-field">
+        <label>Strateji</label>
+        <select id="jrn-strategy" class="jrn-input">
+          <option value="">Seçiniz</option>
+          <option value="ema_cross">EMA Cross</option>
+          <option value="rsi_reversal">RSI Reversal</option>
+          <option value="breakout">Breakout</option>
+          <option value="vwap_trend">VWAP Trend</option>
+          <option value="manual">Manuel</option>
+        </select>
+      </div>
+      <div class="jrn-field">
+        <label>Duygu</label>
+        <div class="jrn-emotion-row" id="jrn-emotion-row">
+          <button class="jrn-emo-btn" data-emo="confident" title="Güvenli">😎</button>
+          <button class="jrn-emo-btn active" data-emo="neutral" title="Nötr">😐</button>
+          <button class="jrn-emo-btn" data-emo="fear" title="Korku">😰</button>
+          <button class="jrn-emo-btn" data-emo="greed" title="Açgözlülük">🤑</button>
+          <button class="jrn-emo-btn" data-emo="mistake" title="Hata">😵</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="jrn-field" style="margin-top:8px;">
+      <label>Notlar</label>
+      <textarea id="jrn-notes" class="jrn-input jrn-textarea" placeholder="İşlem hakkında notlar..."></textarea>
+    </div>
+
+    <button class="jrn-add-btn" onclick="addEntry()">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Kayıt Ekle
+    </button>
+  </section>
+
+  <!-- ══════════ ENTRIES TABLE ══════════ -->
+  <section class="jrn-panel">
+    <h2 class="jrn-section-title">İşlem Geçmişi <span id="jrn-count" class="jrn-badge">0</span></h2>
+    <div class="jrn-table-wrap">
+      <table class="jrn-table">
+        <thead>
+          <tr>
+            <th>Sembol</th>
+            <th>Yön</th>
+            <th>Giriş</th>
+            <th>Çıkış</th>
+            <th>PnL</th>
+            <th>Duygu</th>
+            <th>Strateji</th>
+            <th>Tarih</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="jrn-entries-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
+
+<!-- ══════════ NOTES MODAL ══════════ -->
+<div id="jrn-modal" class="jrn-modal" style="display:none;">
+  <div class="jrn-modal-content">
+    <h3>Notlar</h3>
+    <textarea id="jrn-modal-notes" class="jrn-input jrn-textarea"></textarea>
+    <div class="jrn-modal-actions">
+      <button class="jrn-modal-btn cancel" onclick="closeModal()">İptal</button>
+      <button class="jrn-modal-btn save" onclick="saveNotes()">Kaydet</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  "use strict";
+
+  var selectedEmotion = "neutral";
+  var editingId = null;
+
+  // ── Emotion buttons ─────────────────────────
+  document.getElementById("jrn-emotion-row").addEventListener("click", function(e) {
+    var btn = e.target.closest(".jrn-emo-btn");
+    if (!btn) return;
+    document.querySelectorAll(".jrn-emo-btn").forEach(function(b) { b.classList.remove("active"); });
+    btn.classList.add("active");
+    selectedEmotion = btn.getAttribute("data-emo");
+  });
+
+  // ── Add entry ───────────────────────────────
+  window.addEntry = function() {
+    var symbol = document.getElementById("jrn-symbol").value.trim().toUpperCase();
+    if (!symbol) { alert("Sembol girin"); return; }
+
+    var body = {
+      symbol: symbol,
+      market: document.getElementById("jrn-market").value,
+      side: document.getElementById("jrn-side").value,
+      entry_price: parseFloat(document.getElementById("jrn-entry-price").value) || 0,
+      exit_price: parseFloat(document.getElementById("jrn-exit-price").value) || 0,
+      quantity: parseFloat(document.getElementById("jrn-quantity").value) || 0,
+      pnl: parseFloat(document.getElementById("jrn-pnl").value) || 0,
+      strategy: document.getElementById("jrn-strategy").value,
+      emotion: selectedEmotion,
+      notes: document.getElementById("jrn-notes").value.trim()
+    };
+
+    fetch("/api/journal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.ok) {
+        // Clear form
+        document.getElementById("jrn-symbol").value = "";
+        document.getElementById("jrn-entry-price").value = "";
+        document.getElementById("jrn-exit-price").value = "";
+        document.getElementById("jrn-quantity").value = "";
+        document.getElementById("jrn-pnl").value = "";
+        document.getElementById("jrn-notes").value = "";
+        loadEntries();
+        loadStats();
+      } else {
+        alert("Hata: " + (d.error || "Bilinmeyen hata"));
+      }
+    })
+    .catch(function(err) { alert("Bağlantı hatası: " + err.message); });
+  };
+
+  // ── Delete entry ────────────────────────────
+  window.deleteEntry = function(id) {
+    if (!confirm("Bu kaydı silmek istediğinize emin misiniz?")) return;
+    fetch("/api/journal/" + id, { method: "DELETE" })
+      .then(function(r) { return r.json(); })
+      .then(function() { loadEntries(); loadStats(); });
+  };
+
+  // ── Notes modal ─────────────────────────────
+  window.editNotes = function(id, notes) {
+    editingId = id;
+    document.getElementById("jrn-modal-notes").value = notes || "";
+    document.getElementById("jrn-modal").style.display = "flex";
+  };
+  window.closeModal = function() {
+    document.getElementById("jrn-modal").style.display = "none";
+    editingId = null;
+  };
+  window.saveNotes = function() {
+    if (!editingId) return;
+    var notes = document.getElementById("jrn-modal-notes").value.trim();
+    fetch("/api/journal/" + editingId, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: notes })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function() { closeModal(); loadEntries(); });
+  };
+
+  // ── Load entries ────────────────────────────
+  function loadEntries() {
+    fetch("/api/journal?limit=100")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        document.getElementById("jrn-count").textContent = d.count;
+        var tbody = document.getElementById("jrn-entries-body");
+        if (!d.entries.length) {
+          tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;opacity:.5;padding:20px;">Henüz kayıt yok</td></tr>';
+          return;
+        }
+        var emoMap = { confident:"😎", neutral:"😐", fear:"😰", greed:"🤑", mistake:"😵" };
+        tbody.innerHTML = d.entries.map(function(e) {
+          var cls = e.pnl >= 0 ? "positive" : "negative";
+          var date = e.created_at ? e.created_at.substring(0, 10) : "";
+          return '<tr>'
+            + '<td><strong>' + e.symbol + '</strong></td>'
+            + '<td>' + e.side.toUpperCase() + '</td>'
+            + '<td>$' + (e.entry_price || 0).toLocaleString() + '</td>'
+            + '<td>$' + (e.exit_price || 0).toLocaleString() + '</td>'
+            + '<td class="' + cls + '">$' + (e.pnl || 0).toLocaleString() + '</td>'
+            + '<td title="' + e.emotion + '">' + (emoMap[e.emotion] || "😐") + '</td>'
+            + '<td>' + (e.strategy || "—") + '</td>'
+            + '<td style="font-size:11px;color:#888;">' + date + '</td>'
+            + '<td>'
+            + '<button class="jrn-icon-btn" onclick="editNotes(\'' + e.id + '\',\'' + (e.notes||"").replace(/'/g,"\\'") + '\')" title="Not düzenle">📝</button>'
+            + '<button class="jrn-icon-btn del" onclick="deleteEntry(\'' + e.id + '\')" title="Sil">🗑️</button>'
+            + '</td></tr>';
+        }).join("");
+      });
+  }
+
+  // ── Load stats ──────────────────────────────
+  function loadStats() {
+    fetch("/api/journal/stats")
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (!d.ok) return;
+        var s = d.stats;
+        var container = document.getElementById("jrn-stats");
+        var items = [
+          { label: "Toplam İşlem", value: s.total_entries },
+          { label: "Kazanma", value: s.win_rate + "%" },
+          { label: "Toplam PnL", value: "$" + (s.total_pnl || 0).toLocaleString(), cls: s.total_pnl >= 0 ? "positive" : "negative" },
+          { label: "Seri", value: s.streak > 0 ? "+" + s.streak + " W" : s.streak + " L" }
+        ];
+        container.innerHTML = items.map(function(it) {
+          return '<div class="jrn-stat-card">'
+            + '<div class="jrn-stat-label">' + it.label + '</div>'
+            + '<div class="jrn-stat-value ' + (it.cls || "") + '">' + it.value + '</div>'
+            + '</div>';
+        }).join("");
+      });
+  }
+
+  // Initial load
+  loadEntries();
+  loadStats();
+
+})();
+</script>
+{% endblock %}

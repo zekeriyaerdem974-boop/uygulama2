@@ -1,0 +1,232 @@
+{% extends "layout_terminal.html" %}
+
+{% block title %}{{ t('sidebar.pricing', 'Fiyatlandırma') }} — ZKR Analiz Pro{% endblock %}
+{% block page_title %}💎 {{ t('sidebar.pricing', 'Fiyatlandırma') }}{% endblock %}
+{% block topbar_title %}<span data-i18n="sidebar.pricing">Pricing</span>{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 max-w-4xl mx-auto space-y-8">
+
+  <!-- ── PAYMENT STATUS BANNER ────────────────────────────────── -->
+  <div id="payment-banner" class="hidden rounded-xl p-4 text-sm font-semibold text-center"></div>
+
+  <!-- ── HERO ─────────────────────────────────────────────────── -->
+  <div class="text-center space-y-2">
+    <h2 class="text-2xl font-bold" data-i18n="pricing.choose_plan">Planınızı Seçin</h2>
+    <p class="text-white/50 text-sm" data-i18n="pricing.plan_desc">İhtiyacınıza uygun planla yatırım deneyiminizi güçlendirin</p>
+    <p id="current-plan-info" class="text-xs text-white/30 hidden"></p>
+  </div>
+
+  <!-- ── PLAN CARDS ────────────────────────────────────────────── -->
+  <div id="plan-cards" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+    <!-- FREE -->
+    <div class="rounded-2xl border border-white/10 bg-surface-50 p-6 space-y-4 flex flex-col">
+      <div>
+        <h3 class="text-lg font-bold">Free</h3>
+        <p class="text-3xl font-black mt-1">₺0<span class="text-sm font-normal text-white/40">/ay</span></p>
+        <p class="text-xs text-white/40 mt-1">Temel özellikler</p>
+      </div>
+      <ul class="text-sm space-y-2 flex-1">
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Grafik terminal</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Temel indikatörler</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Social feed</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Mentor profilleri</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Kurs görüntüleme</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Canlı oda izleme</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Simulator</li>
+        <li class="flex items-center gap-2"><span class="text-yellow-400">⚡</span> 5 alarm</li>
+        <li class="flex items-center gap-2"><span class="text-yellow-400">⚡</span> 1 aktif strateji</li>
+        <li class="flex items-center gap-2"><span class="text-yellow-400">⚡</span> 3 kayıtlı strateji</li>
+        <li class="flex items-center gap-2"><span class="text-yellow-400">⚡</span> Sınırlı copilot (10/gün)</li>
+        <li class="flex items-center gap-2"><span class="text-red-400">✗</span><span class="text-white/30">Premium kurslar</span></li>
+        <li class="flex items-center gap-2"><span class="text-red-400">✗</span><span class="text-white/30">Advanced screener</span></li>
+        <li class="flex items-center gap-2"><span class="text-red-400">✗</span><span class="text-white/30">Advanced backtest</span></li>
+      </ul>
+      <button id="btn-free"
+              class="w-full py-2.5 rounded-xl bg-white/10 text-white/60 text-sm font-semibold cursor-default">
+        Mevcut Plan
+      </button>
+    </div>
+
+    <!-- PRO -->
+    <div class="rounded-2xl border-2 border-bull-blue bg-gradient-to-b from-blue-900/20 to-surface-50 p-6 space-y-4 flex flex-col relative">
+      <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-bull-blue text-black text-xs font-bold px-3 py-0.5 rounded-full">
+        POPÜLER
+      </div>
+      <div>
+        <h3 class="text-lg font-bold text-bull-blue">Pro</h3>
+        <p class="text-3xl font-black mt-1">₺149<span class="text-sm font-normal text-white/40">.99/ay</span></p>
+        <p class="text-xs text-white/40 mt-1" data-i18n="pricing.pro_desc">Profesyonel yatırımcılar için</p>
+      </div>
+      <ul class="text-sm space-y-2 flex-1">
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Tüm Free özellikler</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sınırsız alarm</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 10 aktif strateji</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 20 kayıtlı strateji</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Advanced screener</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Advanced backtest</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Live strategy signals</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Premium kurs erişimi</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Premium oda erişimi</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Gelişmiş copilot (100/gün)</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Marketplace premium</li>
+      </ul>
+      <button id="btn-pro" onclick="buyPlan('pro')"
+              class="w-full py-2.5 rounded-xl bg-bull-blue text-black text-sm font-bold hover:opacity-90 transition">
+        Pro'ya Yükselt
+      </button>
+    </div>
+
+    <!-- PRO+ -->
+    <div class="rounded-2xl border border-bull-amber/40 bg-gradient-to-b from-yellow-900/20 to-surface-50 p-6 space-y-4 flex flex-col">
+      <div>
+        <h3 class="text-lg font-bold text-bull-amber">Pro+</h3>
+        <p class="text-3xl font-black mt-1">₺299<span class="text-sm font-normal text-white/40">.99/ay</span></p>
+        <p class="text-xs text-white/40 mt-1">Sınırsız erişim</p>
+      </div>
+      <ul class="text-sm space-y-2 flex-1">
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Tüm Pro özellikler</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sınırsız strateji</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sınırsız live signal</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Premium mentor içerikleri</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Özel odalar</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Gelişmiş AI analiz</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Sınırsız copilot</li>
+        <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Erken erişim içerikleri</li>
+      </ul>
+      <button id="btn-proplus" onclick="buyPlan('pro_plus')"
+              class="w-full py-2.5 rounded-xl bg-bull-amber text-black text-sm font-bold hover:opacity-90 transition">
+        Pro+'a Geç
+      </button>
+    </div>
+
+  </div>
+
+  <!-- ── COMPARISON TABLE ──────────────────────────────────────── -->
+  <div class="rounded-2xl border border-white/10 bg-surface-50 overflow-hidden">
+    <div class="px-4 py-3 border-b border-white/5">
+      <h3 class="font-bold">Özellik Karşılaştırması</h3>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-white/50 border-b border-white/5">
+            <th class="text-left px-4 py-2">Özellik</th>
+            <th class="text-center px-4 py-2">Free</th>
+            <th class="text-center px-4 py-2 text-bull-blue">Pro</th>
+            <th class="text-center px-4 py-2 text-bull-amber">Pro+</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-white/5">
+          <tr><td class="px-4 py-2">Grafik &amp; İndikatörler</td><td class="text-center">✓</td><td class="text-center">✓</td><td class="text-center">✓</td></tr>
+          <tr><td class="px-4 py-2">Social Feed</td><td class="text-center">✓</td><td class="text-center">✓</td><td class="text-center">✓</td></tr>
+          <tr><td class="px-4 py-2">Simulator</td><td class="text-center">✓</td><td class="text-center">✓</td><td class="text-center">✓</td></tr>
+          <tr><td class="px-4 py-2">Alarm Limiti</td><td class="text-center">5</td><td class="text-center">∞</td><td class="text-center">∞</td></tr>
+          <tr><td class="px-4 py-2">Aktif Strateji</td><td class="text-center">1</td><td class="text-center">10</td><td class="text-center">∞</td></tr>
+          <tr><td class="px-4 py-2">Kayıtlı Strateji</td><td class="text-center">3</td><td class="text-center">20</td><td class="text-center">∞</td></tr>
+          <tr><td class="px-4 py-2">Live Signals</td><td class="text-center">1</td><td class="text-center">10</td><td class="text-center">∞</td></tr>
+          <tr><td class="px-4 py-2">Copilot (günlük)</td><td class="text-center">10</td><td class="text-center">100</td><td class="text-center">∞</td></tr>
+          <tr><td class="px-4 py-2">Premium Kurslar</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td><td class="text-center text-green-400">✓</td></tr>
+          <tr><td class="px-4 py-2">Premium Odalar</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td><td class="text-center text-green-400">✓</td></tr>
+          <tr><td class="px-4 py-2">Advanced Screener</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td><td class="text-center text-green-400">✓</td></tr>
+          <tr><td class="px-4 py-2">Advanced Backtest</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td><td class="text-center text-green-400">✓</td></tr>
+          <tr><td class="px-4 py-2">Strategy Marketplace Premium</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td><td class="text-center text-green-400">✓</td></tr>
+          <tr><td class="px-4 py-2">Özel Mentor İçerikleri</td><td class="text-center text-red-400">✗</td><td class="text-center text-red-400">✗</td><td class="text-center text-green-400">✓</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── PAYMENT SECURITY NOTE ────────────────────────────────── -->
+  <div class="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 text-sm text-blue-200/70">
+    <p class="font-semibold text-blue-300 mb-1">🔒 Güvenli Ödeme</p>
+    <p>Ödemeleriniz iyzico altyapısı ile güvenle işlenir. Kartınız bilgileri sunucumuzda saklanmaz.</p>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // Check URL for payment status
+  var params = new URLSearchParams(window.location.search);
+  var paymentStatus = params.get('payment');
+  if(paymentStatus){
+    var banner = document.getElementById('payment-banner');
+    banner.classList.remove('hidden');
+    if(paymentStatus === 'success'){
+      banner.className = 'rounded-xl p-4 text-sm font-semibold text-center bg-green-500/15 border border-green-500/25 text-green-400';
+      banner.textContent = '✅ Ödeme başarılı! Planınız aktive edildi.';
+    } else if(paymentStatus === 'failed'){
+      banner.className = 'rounded-xl p-4 text-sm font-semibold text-center bg-red-500/15 border border-red-500/25 text-red-400';
+      banner.textContent = '❌ Ödeme başarısız oldu. Lütfen tekrar deneyin.';
+    } else if(paymentStatus === 'notfound'){
+      banner.className = 'rounded-xl p-4 text-sm font-semibold text-center bg-yellow-500/15 border border-yellow-500/25 text-yellow-400';
+      banner.textContent = '⚠️ Ödeme bulunamadı.';
+    }
+    // Clean URL
+    window.history.replaceState({}, '', '/pricing');
+  }
+
+  // Load current plan to update buttons
+  fetch('/api/subscription/me').then(function(r){ return r.json(); }).then(function(d){
+    if(!d.ok) return;
+    var cur = d.current || {};
+    var code = cur.plan_code || 'free';
+    var info = document.getElementById('current-plan-info');
+    info.classList.remove('hidden');
+    info.textContent = 'Mevcut planınız: ' + (cur.plan_name || 'Free');
+
+    // Update buttons based on current plan
+    if(code === 'pro'){
+      document.getElementById('btn-free').textContent = 'Downgrade';
+      document.getElementById('btn-free').classList.remove('cursor-default');
+      document.getElementById('btn-pro').textContent = '✓ Mevcut Plan';
+      document.getElementById('btn-pro').classList.add('cursor-default','opacity-60');
+      document.getElementById('btn-pro').onclick = null;
+    } else if(code === 'pro_plus'){
+      document.getElementById('btn-free').textContent = 'Downgrade';
+      document.getElementById('btn-free').classList.remove('cursor-default');
+      document.getElementById('btn-pro').textContent = 'Downgrade';
+      document.getElementById('btn-proplus').textContent = '✓ Mevcut Plan';
+      document.getElementById('btn-proplus').classList.add('cursor-default','opacity-60');
+      document.getElementById('btn-proplus').onclick = null;
+    }
+  }).catch(function(){});
+})();
+
+function buyPlan(planCode){
+  var btn = planCode === 'pro' ? document.getElementById('btn-pro') : document.getElementById('btn-proplus');
+  var origText = btn.textContent;
+  btn.textContent = 'İşleniyor...';
+  btn.disabled = true;
+
+  fetch('/api/payment/create', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({plan_code: planCode})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok && d.checkout_url){
+      // Redirect to checkout (iyzico or demo)
+      window.location.href = d.checkout_url;
+    } else {
+      var errMsg = d.error || 'Bir hata oluştu';
+      if(d.error && d.error.indexOf('Giriş') >= 0){
+        window.location.href = '/login?next=/pricing';
+        return;
+      }
+      alert(errMsg);
+      btn.textContent = origText;
+      btn.disabled = false;
+    }
+  })
+  .catch(function(){
+    alert('Bağlantı hatası');
+    btn.textContent = origText;
+    btn.disabled = false;
+  });
+}
+</script>
+{% endblock %}
