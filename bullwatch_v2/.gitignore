@@ -20,11 +20,13 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual Environment
+# Virtual Environment - EXCLUDE ALL
 .venv/
 venv/
 ENV/
 env/
+env_311/
+node_modules/
 
 # IDE
 .vscode/
