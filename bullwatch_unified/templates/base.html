@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Bullwatch Unified" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+  </head>
+  <body>
+    <main class="main-container">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Tab Navigation -->
+    <nav class="bottom-tabs">
+      <!-- Sosyal Akış -->
+      <a href="{{ url_for('core.dashboard') }}" class="tab-item {% if request.path == '/' %}active{% endif %}">
+        <span class="tab-icon">📱</span>
+        <span class="tab-label">Sosyal Akış</span>
+      </a>
+
+      <!-- Strateji Pazarı -->
+      <a href="{{ url_for('core.dashboard') }}" class="tab-item">
+        <span class="tab-icon">📊</span>
+        <span class="tab-label">Strateji Pazarı</span>
+      </a>
+
+      <!-- Live Terminal (Kamera) - MAIN FEATURE -->
+      <a href="{{ url_for('core.trading_terminal') }}" class="tab-item {% if '/tv' in request.path %}active{% endif %} live-tab">
+        <span class="tab-icon">🎥</span>
+        <span class="tab-label">Canlı Yayın</span>
+      </a>
+
+      <!-- Liderlik Tablosu -->
+      <a href="{{ url_for('core.dashboard') }}" class="tab-item">
+        <span class="tab-icon">🏆</span>
+        <span class="tab-label">Liderlik</span>
+      </a>
+
+      <!-- Ayarlar -->
+      <a href="{{ url_for('core.dashboard') }}" class="tab-item">
+        <span class="tab-icon">⚙️</span>
+        <span class="tab-label">Ayarlar</span>
+      </a>
+    </nav>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

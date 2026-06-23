@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZKR Analiz Pro - Trading Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f1419;
+            color: #e0e6ed;
+            overflow-x: hidden;
+            padding-bottom: 70px;
+        }
+        
+        .terminal {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 70px);
+            background: #0f1419;
+        }
+        
+        .header {
+            background: #1a1f2e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2a3142;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .symbol-selector {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .symbol-input {
+            padding: 8px 12px;
+            background: #252d3a;
+            border: 1px solid #3a4557;
+            color: #e0e6ed;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .terminal-content {
+            display: flex;
+            flex: 1;
+            gap: 10px;
+            padding: 10px;
+            min-height: 0;
+        }
+        
+        .main-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 0;
+        }
+        
+        .chart-panel {
+            flex: 2;
+            background: #1a1f2e;
+            border: 1px solid #2a3142;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        #chart-container {
+            flex: 1;
+            min-height: 400px;
+            min-height: 0;
+        }
+        
+        .watchlist-panel {
+            flex: 1;
+            background: #1a1f2e;
+            border: 1px solid #2a3142;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            min-height: 0;
+        }
+        
+        .watchlist-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e6ed;
+            margin-bottom: 12px;
+            border-bottom: 1px solid #2a3142;
+            padding-bottom: 8px;
+        }
+        
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            border-bottom: 1px solid #252d3a;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .watchlist-item:hover {
+            background: #252d3a;
+        }
+        
+        .watchlist-symbol {
+            font-weight: 600;
+            color: #e0e6ed;
+        }
+        
+        .watchlist-price {
+            color: #b0b8c4;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .watchlist-change {
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+        
+        .watchlist-change.positive {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+        
+        .watchlist-change.negative {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+        
+        .metrics-bar {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: #151b26;
+            border-bottom: 1px solid #2a3142;
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        
+        .metric-card {
+            background: #1a1f2e;
+            border: 1px solid #2a3142;
+            border-radius: 4px;
+            padding: 12px 15px;
+            min-width: 140px;
+            text-align: center;
+        }
+        
+        .metric-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #8a95a8;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4ade80;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            max-height: 100%;
+            background: #1a1f2e;
+            border-left: 1px solid #2a3142;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 15px;
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            background: #252d3a;
+            border: 1px solid #3a4557;
+            border-radius: 4px;
+            padding: 12px;
+        }
+        
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #8a95a8;
+            margin-bottom: 10px;
+        }
+        
+        .info-text {
+            font-size: 13px;
+            color: #b0b8c4;
+            line-height: 1.6;
+        }
+        
+        .button {
+            padding: 8px 12px;
+            background: #2a5f3f;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        
+        .button:hover {
+            background: #3a7a4f;
+        }
+        
+        .button:active {
+            background: #1a3f2f;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ===== BOTTOM TAB NAVIGATION ===== */
+        .bottom-tabs {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 70px;
+            background: rgba(26, 31, 46, 0.95);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #2a3142;
+            z-index: 1000;
+            padding: 0 10px;
+        }
+        
+        .tab-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 8px 16px;
+            color: #8a95a8;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 12px;
+            position: relative;
+        }
+        
+        .tab-item:hover {
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.1);
+        }
+        
+        .tab-item.active {
+            color: #60a5fa;
+            background: rgba(96, 165, 250, 0.2);
+        }
+        
+        .tab-item.live-tab {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.3), rgba(239, 68, 68, 0.2));
+            border: 1px solid rgba(220, 38, 38, 0.4);
+        }
+        
+        .tab-item.live-tab:hover {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.4), rgba(239, 68, 68, 0.3));
+            color: #ef4444;
+        }
+        
+        .tab-item.live-tab.active {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.5), rgba(239, 68, 68, 0.4));
+            color: #ff6b6b;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        
+        .tab-icon {
+            font-size: 24px;
+        }
+        
+        .tab-label {
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        
+        /* Adjust terminal for bottom tabs */
+        .terminal {
+            padding-bottom: 70px;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <!-- Header -->
+        <div class="header">
+            <h1>📊 ZKR Analiz Pro - Trading Terminal</h1>
+            <div class="symbol-selector">
+                <label>Symbol:</label>
+                <input type="text" id="symbolInput" class="symbol-input" value="BTCUSDT" placeholder="BTCUSDT">
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="terminal-content">
+            <!-- Left: Chart + Watchlist -->
+            <div class="main-section">
+                <!-- Chart Panel -->
+                <div class="chart-panel">
+                    <!-- Metrics Bar -->
+                    <div class="metrics-bar">
+                        <div class="metric-card">
+                            <div class="metric-label">24h Volume</div>
+                            <div class="metric-value" id="metric-volume">$0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Open Interest</div>
+                            <div class="metric-value" id="metric-oi">$0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Fear & Greed</div>
+                            <div class="metric-value" id="metric-fng">0</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Funding Rate</div>
+                            <div class="metric-value" id="metric-funding">0%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">BTC Dominance</div>
+                            <div class="metric-value" id="metric-dom">0%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Sentiment</div>
+                            <div class="metric-value" id="metric-sentiment">Neutral</div>
+                        </div>
+                    </div>
+                    
+                <!-- Chart -->
+                    <div id="chart-container" style="position: relative;">
+                        <canvas id="priceChart" style="display: block; width: 100%; height: 100%;"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Watchlist Panel -->
+                <div class="watchlist-panel">
+                    <div class="watchlist-header">📊 Watchlist</div>
+                    <div id="watchlist-items" style="flex: 1; overflow-y: auto;"></div>
+                </div>
+            </div>
+            
+            <!-- Right Sidebar: Live Status, STEP 3, STEP 4 -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title"><span class="status-indicator"></span>Live Status</div>
+                    <div class="info-text">
+                        <p>Server connected</p>
+                        <p>Metrics: <strong>6/6</strong></p>
+                        <p>WebSocket: <strong>ACTIVE</strong></p>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">📡 STEP 3</div>
+                    <div class="info-text">
+                        True Live Viewport<br>
+                        Enriched metrics broadcast every 1 second from Binance API
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">🎭 STEP 4</div>
+                    <div class="info-text">
+                        Interactive Mentor Amphitheater<br>
+                        Isolated WebSocket rooms for live mentoring sessions<br>
+                        <em style="color: #6a7580; font-size: 11px;">Coming Soon...</em>
+                    </div>
+                </div>
+                
+                <div class="sidebar-section">
+                    <div class="sidebar-title">ℹ️ About</div>
+                    <div class="info-text">
+                        ZKR Analiz Pro v2.6<br>
+                        Unified Backend 34000<br>
+                        Socket.IO ✓<br>
+                        Binance Integrated ✓
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // ============================================================
+        // TRADING TERMINAL INITIALIZATION
+        // ============================================================
+        
+        // Mock data for candlesticks
+        const mockCandleData = [
+            { time: '2025-01-01', open: 42000, high: 43000, low: 41500, close: 42500 },
+            { time: '2025-01-02', open: 42500, high: 43500, low: 42000, close: 43000 },
+            { time: '2025-01-03', open: 43000, high: 44000, low: 42500, close: 43500 },
+            { time: '2025-01-04', open: 43500, high: 44500, low: 43000, close: 44000 },
+            { time: '2025-01-05', open: 44000, high: 45000, low: 43500, close: 44500 },
+            { time: '2025-01-06', open: 44500, high: 45500, low: 44000, close: 45000 },
+            { time: '2025-01-07', open: 45000, high: 46000, low: 44500, close: 45500 },
+            { time: '2025-01-08', open: 45500, high: 46500, low: 45000, close: 46000 },
+            { time: '2025-01-09', open: 46000, high: 47000, low: 45500, close: 46500 },
+            { time: '2025-01-10', open: 46500, high: 47500, low: 46000, close: 47000 }
+        ];
+        
+        // Draw candlestick chart on Canvas
+        function drawCandlestickChart() {
+            const canvas = document.getElementById('priceChart');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            
+            if (!ctx || canvas.width === 0) {
+                setTimeout(drawCandlestickChart, 100);
+                return;
+            }
+            
+            // Colors
+            const bgColor = '#1a1f2e';
+            const gridColor = '#252d3a';
+            const upColor = '#4ade80';
+            const downColor = '#f87171';
+            const textColor = '#b0b8c4';
+            
+            // Clear canvas
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Find min/max prices
+            let minPrice = Infinity, maxPrice = -Infinity;
+            mockCandleData.forEach(candle => {
+                minPrice = Math.min(minPrice, candle.low);
+                maxPrice = Math.max(maxPrice, candle.high);
+            });
+            
+            const padding = 40;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+            const priceRange = maxPrice - minPrice;
+            const candleWidth = chartWidth / mockCandleData.length * 0.6;
+            const spacing = chartWidth / mockCandleData.length;
+            
+            // Draw grid
+            ctx.strokeStyle = gridColor;
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = padding + (chartHeight / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(canvas.width - padding, y);
+                ctx.stroke();
+                
+                // Price labels
+                const price = maxPrice - (priceRange / 5) * i;
+                ctx.fillStyle = textColor;
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(price.toFixed(0), padding - 10, y + 4);
+            }
+            
+            // Draw candles
+            mockCandleData.forEach((candle, index) => {
+                const x = padding + index * spacing + spacing / 2;
+                const openY = padding + chartHeight - ((candle.open - minPrice) / priceRange * chartHeight);
+                const highY = padding + chartHeight - ((candle.high - minPrice) / priceRange * chartHeight);
+                const lowY = padding + chartHeight - ((candle.low - minPrice) / priceRange * chartHeight);
+                const closeY = padding + chartHeight - ((candle.close - minPrice) / priceRange * chartHeight);
+                
+                // Wick
+                ctx.strokeStyle = candle.close >= candle.open ? upColor : downColor;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(x, highY);
+                ctx.lineTo(x, lowY);
+                ctx.stroke();
+                
+                // Body
+                ctx.fillStyle = candle.close >= candle.open ? upColor : downColor;
+                const bodyTop = Math.min(openY, closeY);
+                const bodyHeight = Math.abs(closeY - openY) || 1;
+                ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyHeight);
+                
+                // Time label
+                ctx.fillStyle = textColor;
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(candle.time.slice(5), x, canvas.height - padding + 15);
+            });
+            
+            // Title
+            ctx.fillStyle = '#e0e6ed';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('BTCUSDT - 1D', padding + 10, 25);
+        }
+        
+        // Draw chart when window loads and on resize
+        window.addEventListener('load', drawCandlestickChart);
+        window.addEventListener('resize', drawCandlestickChart);
+        setTimeout(drawCandlestickChart, 500);
+        
+        // Watchlist data
+        const watchlistData = [
+            { symbol: 'BTCUSDT', price: 47000, change: 5.2 },
+            { symbol: 'ETHUSDT', price: 2800, change: -2.1 },
+            { symbol: 'BNBUSDT', price: 620, change: 3.5 },
+            { symbol: 'XRPUSDT', price: 2.5, change: 8.3 },
+            { symbol: 'ADAUSDT', price: 1.05, change: -1.2 },
+            { symbol: 'DOGEUSDT', price: 0.35, change: 12.4 },
+            { symbol: 'MATICUSDT', price: 1.2, change: -3.5 },
+            { symbol: 'SOLUSDT', price: 195, change: 6.8 }
+        ];
+        
+        // Populate Watchlist
+        function initWatchlist() {
+            const watchlistContainer = document.getElementById('watchlist-items');
+            watchlistContainer.innerHTML = watchlistData.map(item => {
+                const changeClass = item.change >= 0 ? 'positive' : 'negative';
+                const changeSign = item.change >= 0 ? '+' : '';
+                return `
+                    <div class="watchlist-item" onclick="selectSymbol('${item.symbol}')">
+                        <div>
+                            <div class="watchlist-symbol">${item.symbol}</div>
+                            <div class="watchlist-price">$${item.price.toFixed(2)}</div>
+                        </div>
+                        <div class="watchlist-change ${changeClass}">${changeSign}${item.change.toFixed(1)}%</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function selectSymbol(symbol) {
+            console.log('[WATCHLIST] Selected:', symbol);
+            document.getElementById('symbolInput').value = symbol;
+            // Grafik güncelleme kodu buraya gelecek
+        }
+        
+        initWatchlist();
+        
+        // ============================================================
+        // SOCKET.IO INTEGRATION (STEP 3: Price Updates)
+        // ============================================================
+        
+        // Socket.IO connection
+        const socket = io();
+        
+        socket.on('connect', () => {
+            console.log('✅ Connected to server');
+        });
+        
+        socket.on('price_update_batch', (data) => {
+            if (data && data.metrics) {
+                updateMetricsFromWebSocket(data);
+            }
+        });
+        
+        function updateMetricsFromWebSocket(data) {
+            if (!data || !data.metrics) return;
+            
+            var metrics = data.metrics;
+            var safeUpdate = function(id, value) {
+                var el = document.getElementById(id);
+                if (el && el.innerText !== value) {
+                    el.innerText = value;
+                }
+            };
+            
+            safeUpdate('metric-volume', metrics.volume_24h);
+            safeUpdate('metric-oi', metrics.open_interest);
+            safeUpdate('metric-fng', metrics.fear_and_greed);
+            safeUpdate('metric-funding', metrics.funding_rate);
+            safeUpdate('metric-dom', metrics.btc_dominance);
+            safeUpdate('metric-sentiment', metrics.sentiment);
+            
+            console.log('[TV] 📊 Metrics updated from WebSocket');
+        }
+    </script>
+    
+    <!-- Bottom Tab Navigation -->
+    <nav class="bottom-tabs">
+        <!-- Sosyal Akış -->
+        <a href="/" class="tab-item">
+            <span class="tab-icon">📱</span>
+            <span class="tab-label">Sosyal Akış</span>
+        </a>
+
+        <!-- Strateji Pazarı -->
+        <a href="/" class="tab-item">
+            <span class="tab-icon">📊</span>
+            <span class="tab-label">Strateji Pazarı</span>
+        </a>
+
+        <!-- Live Terminal (Kamera) - MAIN FEATURE -->
+        <a href="/tv" class="tab-item live-tab active">
+            <span class="tab-icon">🎥</span>
+            <span class="tab-label">Canlı Yayın</span>
+        </a>
+
+        <!-- Liderlik Tablosu -->
+        <a href="/" class="tab-item">
+            <span class="tab-icon">🏆</span>
+            <span class="tab-label">Liderlik</span>
+        </a>
+
+        <!-- Ayarlar -->
+        <a href="/" class="tab-item">
+            <span class="tab-icon">⚙️</span>
+            <span class="tab-label">Ayarlar</span>
+        </a>
+    </nav>
+</body>
+</html>
