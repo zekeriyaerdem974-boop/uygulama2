@@ -15,3 +15,10 @@ class Config:
 
     TEMPLATES_AUTO_RELOAD = True
     JSON_SORT_KEYS = False
+
+    # Database Configuration
+    SQLALCHEMY_DATABASE_URI = os.getenv(
+        "DATABASE_URL", 
+        "sqlite:////home/zkr-kripto2/Belgeler/uygulama2/bullwatch_unified/instance/bullwatch.db"
+    )
+    SQLALCHEMY_TRACK_MODIFICATIONS = False

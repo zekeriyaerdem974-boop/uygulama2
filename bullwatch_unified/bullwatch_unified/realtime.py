@@ -81,9 +81,93 @@ def run_binance_ws() -> None:
         current_delay = int(current_delay)
 
 
+def _get_market_metrics() -> dict:
+    """Piyasa ölçümlerini topla ve human-readable format'ta döndür"""
+    try:
+        import requests
+        
+        metrics = {
+            "volume_24h": "$0",
+            "open_interest": "$0",
+            "fear_and_greed": "0 (Unknown)",
+            "funding_rate": "0.0000%",
+            "btc_dominance": "0.0%",
+            "sentiment": "Neutral"
+        }
+        
+        # BTC 24h Volume (Binance)
+        try:
+            r = requests.get("https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT", timeout=3)
+            if r.ok:
+                data = r.json()
+                volume_usd = float(data.get("quoteAssetVolume", 0))
+                if volume_usd >= 1e9:
+                    metrics["volume_24h"] = f"${volume_usd/1e9:.1f}B"
+                elif volume_usd >= 1e6:
+                    metrics["volume_24h"] = f"${volume_usd/1e6:.1f}M"
+        except:
+            pass
+        
+        # Open Interest (mock için sabit, production'da CoinGlass)
+        metrics["open_interest"] = "$18.2B"
+        
+        # Fear & Greed Index (cache'den al)
+        fng_data = cache_get("fng_latest", {})
+        if fng_data:
+            fng_idx = fng_data.get("value", 50)
+            fng_class = fng_data.get("value_classification", "Neutral")
+            metrics["fear_and_greed"] = f"{int(fng_idx)} ({fng_class})"
+        
+        # Funding Rate (BTC perpetual)
+        try:
+            r = requests.get("https://fapi.binance.com/fapi/v1/fundingRate?symbol=BTCUSDT&limit=1", timeout=3)
+            if r.ok:
+                data = r.json()
+                if data:
+                    rate = float(data[0].get("fundingRate", 0)) * 100
+                    metrics["funding_rate"] = f"{rate:+.4f}%"
+        except:
+            pass
+        
+        # BTC Dominance (mock veya cache)
+        dom = cache_get("btc_dominance", 54.2)
+        metrics["btc_dominance"] = f"{dom:.1f}%"
+        
+        # Sentiment (F&G bazlı)
+        try:
+            fng_idx = int(fng_data.get("value", 50))
+            if fng_idx >= 70:
+                metrics["sentiment"] = "Extreme Greed"
+            elif fng_idx >= 55:
+                metrics["sentiment"] = "Greed"
+            elif fng_idx >= 45:
+                metrics["sentiment"] = "Neutral"
+            elif fng_idx >= 25:
+                metrics["sentiment"] = "Fear"
+            else:
+                metrics["sentiment"] = "Extreme Fear"
+        except:
+            pass
+        
+        return metrics
+    except Exception as e:
+        logger.warning("Market metrics collection error: %s", e)
+        return {
+            "volume_24h": "$0",
+            "open_interest": "$0",
+            "fear_and_greed": "0 (Unknown)",
+            "funding_rate": "0.0000%",
+            "btc_dominance": "0.0%",
+            "sentiment": "Neutral"
+        }
+
+
 def _broadcast_loop() -> None:
     from .extensions import socketio
 
+    logger.info("[BROADCAST LOOP] Starting price_update_batch broadcast thread")
+    broadcast_count = 0
+    
     while True:
         time.sleep(_BROADCAST_INTERVAL)
         batch: dict[str, float] = {}
@@ -92,11 +176,23 @@ def _broadcast_loop() -> None:
                 if key.startswith("rt_price_"):
                     batch[key[len("rt_price_"):]] = value
 
-        if batch:
-            try:
-                socketio.emit("price_update_batch", batch)
-            except Exception as exc:
-                logger.warning("Broadcast error: %s", exc)
+        try:
+            # Market metrics'i ekle (her zaman emit et, boş batch da sorun değil)
+            metrics = _get_market_metrics()
+            payload = {
+                "prices": batch,
+                "metrics": metrics,
+                "timestamp": time.time()
+            }
+            # Broadcast to all connected clients
+            socketio.emit("price_update_batch", payload, broadcast=True, skip_sid=None)
+            broadcast_count += 1
+            
+            # Her 10. broadcast'te log et (spam'ı azalt)
+            if broadcast_count % 10 == 0:
+                logger.info("[BROADCAST] #%d Emitted metrics. Prices in cache: %d", broadcast_count, len(batch))
+        except Exception as exc:
+            logger.exception("[BROADCAST ERROR] Failed to emit price_update_batch: %s", exc)
 
 
 def start_binance_ws_thread() -> None:

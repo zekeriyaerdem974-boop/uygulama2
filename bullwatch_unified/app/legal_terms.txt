@@ -1,0 +1,27 @@
+ZKR ANALİZ PRO EĞİTİM VE SİMÜLASYON PLATFORMU KULLANICI SÖZLEŞMESİ VE RİSK BİLDİRİM BEYANI
+
+1. TARAFLAR VE PLATFORMUN AMACI
+1.1. İşbu Kullanıcı Sözleşmesi ("Sözleşme"), ZKR Analiz Pro ("Platform") altyapısını sağlayan ZKR Teknoloji ("Şirket") ile Platform'a kayıt olan kullanıcı ("Kullanıcı") arasında, kayıt anında elektronik ortamda onaylanmasıyla yürürlüğe girmiştir.
+1.2. Platform'un yegane amacı; finansal piyasalar, teknik analiz metodolojileri ve algoritmik döngüler hakkında teorik eğitim vermek ve sanal piyasa simülasyonları (paper trading) sunmaktır. 
+1.3. Platform, hiçbir koşulda bir borsa, aracı kurum, saklama kuruluşu (custody) veya portföy yönetim şirketi değildir. Kullanıcılardan hiçbir şekilde gerçek borsa hesabı API anahtarı talep edilmez, fon toplanmaz ve gerçek finansal varlık alım-satımı gerçekleştirilmez.
+
+2. SPK MEVZUATI UYARINCA YASAL UYARI VE SORUMLULUK REDDİ
+2.1. Platform içerisinde yer alan her türlü anlık piyasa verisi, fiyat grafiği, teknik indikatör, "Korku ve Açgözlülük Endeksi", "Boğa/Ayı" sayaçları ve yapay zeka destekli analizler tamamen teorik eğitim ve görselleştirme materyali niteliğindedir.
+2.2. Sunulan hiçbir içerik, 6362 sayılı Sermaye Piyasası Kanunu ve ilgili mevzuat uyarınca "Yatırım Danışmanlığı" veya "Portföy Yöneticiliği" kapsamında değildir. Yatırım danışmanlığı hizmeti; yetkili kuruluşlar tarafından kişilerin risk ve getiri tercihleri dikkate alınarak kişiye özel sunulmaktadır.
+2.3. Kullanıcı, Platform'da yer alan simülasyon senaryolarından, sanal kâr/zarar tablolarından veya teknik analiz araçlarından yola çıkarak gerçek hayatta borsa hesaplarında (Binance, Borsa İstanbul vb.) alacağı finansal kararların ve doğabilecek tüm maddi kayıpların tek ve nihai sorumlusunun kendisi olduğunu gayrikabili rücu kabul, beyan ve taahhüt eder.
+
+3. FİKRİ MÜLKİYET HAKLARI VE KORSAN YAYIN YASAĞI
+3.1. Platform'un tüm yazılım mimarisi, "Boğa Ne Zaman?" algoritmik modülleri, veritabanı şemaları, arayüz tasarımları (UI/UX) ve üretilen eğitim içeriklerinin fikri mülkiyeti 5846 sayılı FSEK ve 6769 sayılı SMK uyarınca Şirket'e aittir.
+3.2. Kullanıcı; Platform'da yer alan canlı veri akışlarını, algoritmik sinyal çıktılarını veya eğitim dökümanlarını ekran görüntüsü, video kaydı veya otomatik botlar (web scraping) aracılığıyla kopyalayarak Telegram, Discord, WhatsApp, Twitter (X) veya benzeri mecralarda "VİP Sinyal Grubu", "Yatırım Tavsiyesi" veya benzeri isimler altında ücretli ya da ücretsiz olarak üçüncü kişilerle paylaşamaz.
+3.3. İşbu madde hükmünün ihlal edildiğinin tespiti halinde Kullanıcı'nın hesabı derhal ve bildirimsiz olarak kapatılır. Kullanıcı, doğacak munzam zararlardan bağımsız olarak, ihlal başına 500.000 TL (Beş Yüz Bin Türk Lirası) cezai şartı Şirket'e ilk talepte nakden ve defaten ödemeyi kabul ve taahhüt eder.
+
+4. SİSTEM ERİŞİMİ VE KESİNTİLER
+4.1. Platform, eğitim simülasyonu için gerekli olan piyasa verilerini global üçüncü taraf sağlayıcılardan (TwelveData vb.) anlık olarak temin eder. Veri sağlayıcılardan kaynaklanan gecikmeler, anlık fiyat sapmaları, küresel internet aksaklıkları veya sunucu bakımları nedeniyle ekrana yansıyan veri kayıplarından Şirket sorumlu tutulamaz.
+4.2. Şirket, teknik gereksinimler veya siber güvenlik tedbirleri kapsamında Platform erişimini önceden bildirim yapmaksızın geçici olarak durdurma veya kısıtlama hakkını saklı tutar.
+
+5. HUKUKİ DELİL VE KRİPTOGRAFİK MÜHÜR SÖZLEŞMESİ (HMK MADDE 193)
+5.1. Kullanıcı, Platform'a kayıt olurken "Kullanım Koşullarını ve Risk Bildirimini Kabul Ediyorum" onayını verdiği an; erişim sağladığı IP adresinin, cihaz/tarayıcı bilgisinin (User-Agent), zaman damgasının (Timestamp) ve onayladığı işbu sözleşme metninin SHA-256 algoritması ile üretilmiş kriptografik özetinin (Hash) Şirket veritabanına silinmez biçimde işlendiğini kabul eder.
+5.2. Taraflar, olası bir hukuki uyuşmazlık durumunda Şirket veritabanında loglanan bu SHA-256 şifreli kayıtların, 6100 sayılı Hukuk Muhakemeleri Kanunu Madde 193 uyarınca geçerli, bağlayıcı, münhasır ve KESİN DELİL teşkil edeceğini peşinen kabul ve beyan ederler.
+
+6. YETKİLİ MAHKEME VE UYGULANACAK HUKUK
+İşbu Sözleşme'nin uygulanmasından ve yorumlanmasından doğacak her türlü uyuşmazlığın çözümünde Türkiye Cumhuriyeti Hukuku uygulanacak olup, İstanbul (Çağlayan) Mahkemeleri ve İcra Daireleri kesin yetkilidir.

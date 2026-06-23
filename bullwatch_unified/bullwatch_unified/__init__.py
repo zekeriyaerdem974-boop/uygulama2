@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import Flask
 
 from .config import Config
-from .extensions import register_extensions
+from .extensions import register_extensions, db
 from .blueprints import register_blueprints
 from .realtime import start_binance_ws_thread
 
@@ -22,6 +22,14 @@ def create_app(config_object: object | None = None) -> Flask:
 
     register_extensions(app)
     register_blueprints(app)
+
+    # Models'i import et (veritabanı tanımlaması için)
+    with app.app_context():
+        from . import models  # noqa
+
+    # Socket.IO event handlers'ı import et (register ediliyor)
+    with app.app_context():
+        from . import socket_events  # noqa
 
     app.before_request(start_binance_ws_thread)
 

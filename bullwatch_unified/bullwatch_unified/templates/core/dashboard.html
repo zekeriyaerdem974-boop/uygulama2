@@ -1,26 +1,74 @@
 {% extends 'base.html' %}
 
 {% block content %}
-  <section class="card">
-    <h1>Dashboard</h1>
-    <p>Starter dashboard page. Add widgets here (price, OI, funding, alerts).</p>
-  </section>
+  <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <!-- Header -->
+    <section class="card" style="margin-bottom: 30px;">
+      <h1>📊 Dashboard</h1>
+      <p>Crypto Trading & Analysis Hub</p>
+    </section>
 
-  <section class="grid">
-    <div class="card">
-      <h2>Orderflow</h2>
-      <p>Spot/perp trades, delta, CVD, footprint.</p>
-      <a class="btn" href="{{ url_for('orderflow.index') }}">Open</a>
+    <!-- Main Grid -->
+    <div class="grid">
+      <!-- Sosyal Akış -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">📱</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Sosyal Akış</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">Trader postları, analiz ve trade sinyalleri</p>
+        <a class="btn" href="{{ url_for('social.get_feed') }}" style="display: inline-block;">Aç</a>
+      </div>
+
+      <!-- Strateji Pazarı -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">📊</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Strateji Pazarı</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">Hazır stratejiler, indicators ve backtest</p>
+        <a class="btn" href="{{ url_for('core.dashboard') }}" style="display: inline-block;">Aç</a>
+      </div>
+
+      <!-- Canlı Yayın Terminal -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">🎥</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Canlı Yayın</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">Live mentoring ve trading sessions</p>
+        <a class="btn" href="{{ url_for('core.trading_terminal') }}" style="display: inline-block;">Aç</a>
+      </div>
+
+      <!-- Liderlik Tablosu -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">🏆</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Liderlik Tablosu</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">Top traders, win rates ve leaderboard</p>
+        <a class="btn" href="{{ url_for('social.get_leaderboard') }}" style="display: inline-block;">Aç</a>
+      </div>
+
+      <!-- Ayarlar -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">⚙️</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Ayarlar</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">Profil, preferences, bildirimler</p>
+        <a class="btn" href="{{ url_for('core.dashboard') }}" style="display: inline-block;">Aç</a>
+      </div>
+
+      <!-- Hakkında -->
+      <div class="card" style="background: #252d3a; border: 1px solid #3a4557; border-radius: 8px; padding: 20px; cursor: pointer; transition: all 0.2s;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+          <span style="font-size: 36px;">💡</span>
+          <h3 style="margin: 0; font-size: 18px; font-weight: 600;">Hakkında</h3>
+        </div>
+        <p style="color: #b0b8c4; margin: 8px 0 16px 0; font-size: 14px;">App version, credits ve info</p>
+        <a class="btn" href="#" style="display: inline-block;">Aç</a>
+      </div>
     </div>
-    <div class="card">
-      <h2>Liquidation</h2>
-      <p>Liquidation feed, clusters, heatmap placeholders.</p>
-      <a class="btn" href="{{ url_for('liquidation.index') }}">Open</a>
-    </div>
-    <div class="card">
-      <h2>Alpha</h2>
-      <p>Signals, scanners, backtest hooks placeholder.</p>
-      <a class="btn" href="{{ url_for('alpha.index') }}">Open</a>
-    </div>
-  </section>
+  </div>
 {% endblock %}
