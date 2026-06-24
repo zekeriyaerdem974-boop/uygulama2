@@ -50,12 +50,35 @@ if not exist ".env" (
 REM Adim 6: Database
 echo.
 echo [5/6] Veritabani baslatiliyor...
-python -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all(); print('OK: Database olusturuldu')"
+python -c "
+from app import create_app, db
+try:
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print('OK: Database olusturuldu')
+except Exception as e:
+    print(f'HATA: {e}')
+    exit(1)
+" || (
+    echo HATA: Database baslatma basarisiz!
+    pause
+    exit /b 1
+)
 
-REM Adim 7: Ornekler
+REM Adim 7: Ornekler (varsa)
 echo.
 echo [6/6] Ornekleri ekleniyor...
-python seed_courses.py
+if exist "seed_courses.py" (
+    python seed_courses.py 2>nul
+    if errorlevel 1 (
+        echo UYARI: Ornekler eklenemedi ^(opsiyonel^)
+    ) else (
+        echo OK: Ornekler eklendi
+    )
+) else (
+    echo INFO: seed_courses.py bulunamadi ^(opsiyonel^)
+)
 
 echo.
 echo ====================================

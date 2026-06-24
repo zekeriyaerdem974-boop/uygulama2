@@ -58,13 +58,29 @@ fi
 # Adım 5: Database
 echo ""
 echo -e "${YELLOW}🗄️  Step 5: Veritabanı başlatılıyor...${NC}"
-python -c "from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all(); print('✅ Database oluşturuldu')"
+python -c "
+from app import create_app, db
+try:
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print('✅ Database oluşturuldu')
+except Exception as e:
+    print(f'❌ Database hatası: {e}')
+    exit(1)
+" || {
+    echo -e "${RED}❌ Database başlatma başarısız${NC}"
+    exit 1
+}
 
-# Adım 6: Örnek veriler
+# Adım 6: Örnek veriler (varsa)
 echo ""
 echo -e "${YELLOW}📚 Step 6: Örnek kurslar ekleniyor...${NC}"
-python seed_courses.py
-echo -e "${GREEN}✅ Kurslar eklendi${NC}"
+if [ -f "seed_courses.py" ]; then
+    python seed_courses.py 2>/dev/null && echo -e "${GREEN}✅ Kurslar eklendi${NC}" || echo -e "${YELLOW}⚠️  Kurslar eklenemedi (opsiyonel)${NC}"
+else
+    echo -e "${YELLOW}ℹ️  seed_courses.py bulunamadı (opsiyonel)${NC}"
+fi
 
 # Adım 7: Server başlat
 echo ""
