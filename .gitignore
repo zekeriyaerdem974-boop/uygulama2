@@ -1,31 +1,24 @@
 # Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.pyd
+*.so
+.pytest_cache/
+
+# Environments
 .venv/
-*.egg-info/
-dist/
-build/
+venv/
+.env
 
 # Node
 node_modules/
+dist/
+.npm
 
-# Logs
-*.log
-backend.log
-server.log
+# Flask
+instance/
 
-# DB / secrets
-*.db
-.env
-
-# IDE / OS
-.claude/
-.vscode/
+# OS/editor
 .DS_Store
-
-# ML logs (large)
-lightning_logs/
-
-# Inner git repos (tracked separately as main branch)
-bullwatch_unified/.git/
+.vscode/
+*.log

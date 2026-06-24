@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     cfg = get_config()
     host = getattr(cfg, "HOST", "0.0.0.0")
-    port = getattr(cfg, "PORT", 34000)
+    port = getattr(cfg, "PORT", 48200)
     debug = getattr(cfg, "DEBUG", False)
 
     logger.info("Serving on http://%s:%s  debug=%s  env=%s",
